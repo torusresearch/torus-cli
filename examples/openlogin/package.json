@@ -1,5 +1,5 @@
 {
-  "name": "openlogin-app",
+  "name": "@torus-examples/openlogin",
   "version": "0.0.0",
   "private": true,
   "scripts": {

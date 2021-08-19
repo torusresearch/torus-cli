@@ -1,5 +1,5 @@
 {
-  "name": "customauth-app",
+  "name": "@torus-examples/customauth",
   "version": "0.0.0",
   "private": true,
   "scripts": {

@@ -124,26 +124,21 @@ async function run(): Promise<void> {
       message: "Choose an example",
       choices: [
         {
-          value: "default",
-          title: "Simple Web3 Wallet (HTML)",
+          value: "wallet",
+          title: "Your First Dapp (HTML)",
         },
         {
           value: "wallet-react",
-          title: "Simple Web3 Wallet (React)",
+          title: "Your First Dapp (React)",
         },
         {
           value: "openlogin",
           title:
-            "Multi-factor Passwordless, SSO, Face/TouchID Login - Connect to Ethereum (HTML)",
+            "Dapp with Multi-factor Passwordless, SSO, Face/TouchID Login (HTML)",
         },
         {
           value: "customauth",
-          title: "Fully-customizable Login (HTML)",
-        },
-        {
-          value:
-            "https://github.com/torusresearch/torus-direct-web-sdk examples/vue-app",
-          title: "Fully-customizable Login (Vue)",
+          title: "Dapp with Fully-Customizable Login (HTML)",
         },
       ],
     });

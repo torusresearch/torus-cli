@@ -1,6 +1,6 @@
 {
   "name": "create-torus-app",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "license": "MIT",
   "bin": {
     "create-torus-app": "./dist/index.js"

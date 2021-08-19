@@ -12,6 +12,7 @@
   "cSpell.words": [
     "IntelliJ",
     "autoclean",
+    "browserslist",
     "cdpath",
     "customauth",
     "gitattributes",
@@ -27,6 +28,7 @@
     "repos",
     "toruslabs",
     "vercel",
+    "wordmark",
     "yarnpkg"
   ]
 }

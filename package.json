@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "engines": {
+    "node": "14"
+  },
+  "scripts": {
+    "check:styles": "prettier --check .",
+    "fix:styles": "prettier --write ."
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "prettier": "^2.3.2"
+  }
+}

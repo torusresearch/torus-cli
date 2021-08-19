@@ -132,6 +132,10 @@ async function run(): Promise<void> {
           title: "Your First Dapp (React)",
         },
         {
+          value: "wallet-vue",
+          title: "Your First Dapp (Vue)",
+        },
+        {
           value: "openlogin",
           title:
             "Dapp with Multi-factor Passwordless, SSO, Face/TouchID Login (HTML)",

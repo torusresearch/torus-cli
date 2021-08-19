@@ -39,7 +39,7 @@
             // Your Google project client ID
             clientId:
               "221898609709-obfn3p63741l5333093430j3qeiinaa8.apps.googleusercontent.com",
-            // Your Google login verifier created in Torus Developers (developer.tor.us)
+            // Your Google login verifier created in Torus Developers (https://developer.tor.us)
             verifier: "google-lrc",
           })
           .then(function (res) {
@@ -49,8 +49,8 @@
               "Public address: " + res.publicAddress + "."
             );
             $("#private-key").text("Private key: " + res.privateKey + ".");
-            $("#error").hide();
             $("#login").hide();
+            $("#error").hide();
           })
           .catch(function (err) {
             $("#error").show().text(`Error: ${err.message}`);

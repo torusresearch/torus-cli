@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Torus App</title>
+  </head>
+  <body>
+    <div>
+      <p id="text">Loading...</p>
+      <p id="error"></p>
+      <p id="private-key"></p>
+      <p id="address"></p>
+      <p id="balance"></p>
+      <button id="login" hidden>Login</button>
+      <button id="logout" hidden>Logout</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@toruslabs/openlogin@0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.ethers.io/scripts/ethers-v4.min.js"></script>
+    <script>
+      $(document).ready(async function init() {
+        const openlogin = new Openlogin.default({
+          clientId:
+            "BC01p_js5KUIjvqYYAzWlDKt6ft--5joV0TbZEKO7YbDTqnmU5v0sq_4wgkyh0QAfZZAi-v6nKD4kcxkAqPuj8U", // Your OpenLogin project ID
+          network: "mainnet", // Valid values: 'testnet' or 'mainnet'
+        });
+        window.openlogin = openlogin;
+        await openlogin.init();
+
+        if (openlogin.privKey) {
+          $("#text").text("Logged in.");
+          $("#private-key").text("Private key: " + openlogin.privKey + ".");
+          $("#logout").show();
+          await connectToEthereum(openlogin.privKey);
+        } else {
+          $("#text").text("Didn't log in.");
+          $("#login").show();
+        }
+      });
+
+      $("#login").click(async function () {
+        const { privKey } = await window.openlogin.login();
+        if (privKey) {
+          $("#private-key").text("Private key: " + privKey + ".");
+          $("#login").hide();
+          $("#logout").show();
+          await connectToEthereum(privKey);
+        }
+      });
+
+      $("#logout").click(async function () {
+        await window.openlogin.logout();
+        $("#text").text("Didn't log in.");
+        $("#private-key").text("");
+        $("#address").text("");
+        $("#balance").text("");
+        $("#login").show();
+        $("#logout").hide();
+      });
+
+      async function connectToEthereum(privKey) {
+        const wallet = new ethers.Wallet(privKey, ethers.getDefaultProvider());
+        const address = await wallet.getAddress();
+        const balance = await wallet.getBalance();
+        $("#address").text("Address: " + address + ".");
+        $("#balance").text("Balance: " + balance + ".");
+      }
+    </script>
+  </body>
+</html>

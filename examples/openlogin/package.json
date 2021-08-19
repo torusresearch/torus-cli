@@ -1,0 +1,11 @@
+{
+  "name": "openlogin-app",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "serve"
+  },
+  "dependencies": {
+    "serve": "^12.0.0"
+  }
+}

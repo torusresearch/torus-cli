@@ -144,6 +144,30 @@ async function run(): Promise<void> {
           value: "customauth",
           title: "Dapp with Fully-Customizable Login (HTML)",
         },
+        {
+          value: "https://github.com/torusresearch/openlogin-binance-example",
+          title: "Binance Smart Chain (React)",
+        },
+        {
+          value: "https://github.com/torusresearch/openlogin-solana-example",
+          title: "Solana (React)",
+        },
+        {
+          value: "https://github.com/torusresearch/openlogin-polygon-example",
+          title: "Polygon (React)",
+        },
+        {
+          value: "https://github.com/torusresearch/openlogin-avalanche-example",
+          title: "Avalanche (React)",
+        },
+        {
+          value: "https://github.com/torusresearch/openlogin-arbitrum-example",
+          title: "Arbitrum (React)",
+        },
+        {
+          value: "https://github.com/torusresearch/openlogin-zkSync-example",
+          title: "zkSync (React)",
+        },
       ],
     });
     if (typeof res.example === "string") {

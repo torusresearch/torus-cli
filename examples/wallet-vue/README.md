@@ -5,9 +5,9 @@ This is a [Torus](https://tor.us) project bootstrapped with [`create-torus-app`]
 First, run the development server:
 
 ```bash
-npm start
+npm run serve
 # or
-yarn start
+yarn serve
 ```
 
 Open [http://localhost:8080](http://localhost:8080) with your browser to see the result.

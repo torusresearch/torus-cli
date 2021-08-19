@@ -30,8 +30,8 @@
           const user = await torus.getUserInfo();
           $("#text").text("Logged in as " + user.name + ".");
           $("#logout").show();
-          await showEthereumAccountInfo();
-        } catch (error) {
+          await connectToWeb3();
+        } catch {
           $("#text").text("Didn't log in.");
           $("#login").show();
         }
@@ -40,7 +40,7 @@
       $("#login").click(function () {
         window.torus
           .login()
-          .then(showEthereumAccountInfo)
+          .then(connectToWeb3)
           .then(window.torus.getUserInfo.bind(window.torus))
           .then(function (user) {
             $("#text").text("Logged in as " + user.name + ".");
@@ -69,12 +69,16 @@
           });
       });
 
-      async function showEthereumAccountInfo() {
+      async function connectToWeb3() {
         const web3 = new Web3(window.torus.provider);
         const address = (await web3.eth.getAccounts())[0];
         const balance = await web3.eth.getBalance(address);
         $("#address").text("Address: " + address + ".");
         $("#balance").text("Balance: " + balance + ".");
+        /**
+         * Interact with Web3, e.g. send transactions, etc.
+         * See https://web3js.readthedocs.io.
+         */
       }
     </script>
   </body>

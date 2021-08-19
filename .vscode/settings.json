@@ -2,11 +2,31 @@
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
   "files.insertFinalNewline": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "files.exclude": {
     "**/node_modules": true,
     "yarn.lock": true
   },
-  "cSpell.words": ["toruslabs"]
+  "cSpell.words": [
+    "IntelliJ",
+    "autoclean",
+    "cdpath",
+    "customauth",
+    "gitattributes",
+    "gitlab",
+    "hgcheck",
+    "hgignore",
+    "mkdocs",
+    "npmignore",
+    "opencollective",
+    "openlogin",
+    "passwordless",
+    "relocator",
+    "repos",
+    "toruslabs",
+    "vercel",
+    "yarnpkg"
+  ]
 }

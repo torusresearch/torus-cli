@@ -10,16 +10,17 @@
     "yarn.lock": true
   },
   "cSpell.words": [
-    "IntelliJ",
     "arbitrum",
     "autoclean",
     "browserslist",
     "cdpath",
     "customauth",
+    "eslintconfig",
     "gitattributes",
     "gitlab",
     "hgcheck",
     "hgignore",
+    "intellij",
     "mkdocs",
     "npmignore",
     "opencollective",

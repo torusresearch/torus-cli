@@ -1,7 +1,6 @@
 {
-  "name": "eslint-config-vue-at-torus",
+  "name": "@toruslabs/eslint-config-vue",
   "version": "0.0.0",
-  "private": true,
   "keywords": [
     "eslint",
     "eslintconfig"

@@ -11,6 +11,7 @@ module.exports = {
     "@vue/prettier",
     "@vue/prettier/@typescript-eslint",
   ],
+  plugins: ["simple-import-sort"],
   parserOptions: {
     ecmaVersion: 2021,
   },
@@ -20,5 +21,17 @@ module.exports = {
     defineEmits: "readonly",
     defineExpose: "readonly",
     withDefaults: "readonly"
+  },
+  rules: {
+    "simple-import-sort/imports": 2,
+    "simple-import-sort/exports": 2,
+    "prettier/prettier": [
+      2,
+      {
+        singleQuote: false,
+        printWidth: 150,
+        semi: true,
+      },
+    ],
   }
 };

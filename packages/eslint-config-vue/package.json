@@ -11,12 +11,13 @@
     "@vue/eslint-config-typescript": "^7.0.0"
   },
   "peerDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.30.0",
-    "eslint": "^7.32.0",
-    "eslint-plugin-prettier": "^3.4.1",
-    "eslint-plugin-vue": "^7.17.0",
-    "prettier": "^2.3.2",
-    "typescript": "^4.4.2"
+    "@typescript-eslint/eslint-plugin": "^4.x",
+    "eslint": "^7.x",
+    "eslint-plugin-prettier": "^3.x",
+    "eslint-plugin-vue": "^7.x",
+    "prettier": "^2.x",
+    "typescript": "^4.x",
+    "eslint-plugin-simple-import-sort": "^7.x"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.30.0",
@@ -24,7 +25,8 @@
     "eslint-plugin-prettier": "^3.4.1",
     "eslint-plugin-vue": "^7.17.0",
     "prettier": "^2.3.2",
-    "typescript": "^4.4.2"
+    "typescript": "^4.4.2",
+    "eslint-plugin-simple-import-sort": "^7.0.0"
   },
   "publishConfig": {
     "access": "public"

@@ -25,6 +25,9 @@ module.exports = {
   rules: {
     "simple-import-sort/imports": 2,
     "simple-import-sort/exports": 2,
+    "no-unused-vars": 0,
+    "@typescript-eslint/no-unused-vars": ["error", { "args": "after-used", "argsIgnorePattern": "_" }],
+    "no-console": 2,
     "prettier/prettier": [
       2,
       {

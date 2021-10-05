@@ -6,14 +6,14 @@
     "eslintconfig"
   ],
   "dependencies": {
-    "@typescript-eslint/parser": "^4.30.0",
+    "@typescript-eslint/parser": "^4.33.0",
     "@vue/eslint-config-prettier": "^6.0.0",
     "@vue/eslint-config-typescript": "^7.0.0"
   },
   "peerDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.x",
     "eslint": "^7.x",
-    "eslint-plugin-prettier": "^3.x",
+    "eslint-plugin-prettier": "^4.x",
     "eslint-plugin-simple-import-sort": "^7.x",
     "eslint-plugin-vue": "^7.x",
     "prettier": "^2.x",

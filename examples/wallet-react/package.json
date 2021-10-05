@@ -3,17 +3,17 @@
   "version": "0.1.1",
   "private": true,
   "dependencies": {
-    "@babel/runtime": "^7.15.3",
-    "@testing-library/dom": "^8.1.0",
-    "@testing-library/jest-dom": "^5.11.4",
-    "@testing-library/react": "^11.1.0",
-    "@testing-library/user-event": "^12.1.10",
-    "@toruslabs/torus-embed": "^1.12.2",
+    "@babel/runtime": "^7.15.4",
+    "@testing-library/dom": "^8.7.2",
+    "@testing-library/jest-dom": "^5.14.1",
+    "@testing-library/react": "^12.1.2",
+    "@testing-library/user-event": "^13.2.1",
+    "@toruslabs/torus-embed": "^1.13.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
-    "web-vitals": "^1.0.1",
-    "web3": "^1.5.2"
+    "web-vitals": "^2.1.0",
+    "web3": "^1.6.0"
   },
   "scripts": {
     "start": "react-scripts start",

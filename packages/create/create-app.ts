@@ -20,6 +20,7 @@ import { getOnline } from "./helpers/is-online";
 import { shouldUseYarn } from "./helpers/should-use-yarn";
 import { isWriteable } from "./helpers/is-writeable";
 import { findStartScript } from "./helpers/find-start-script";
+import isObject from "is-object";
 
 export class DownloadError extends Error {}
 
@@ -43,7 +44,7 @@ export async function createApp({
     try {
       repoUrl = new URL(example);
     } catch (error) {
-      if (error.code !== "ERR_INVALID_URL") {
+      if (!isObject(error) || error.code !== "ERR_INVALID_URL") {
         console.error(error);
         process.exit(1);
       }
@@ -156,7 +157,9 @@ export async function createApp({
         });
       }
     } catch (error) {
-      throw new DownloadError(error);
+      throw new DownloadError(
+        error instanceof Error ? error.message : "Something went wrong."
+      );
     }
     // Copy our default `.gitignore` if the application did not provide one
     const ignorePath = path.join(root, ".gitignore");

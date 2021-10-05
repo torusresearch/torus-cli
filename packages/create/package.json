@@ -17,6 +17,7 @@
   "devDependencies": {
     "@types/async-retry": "^1.4.3",
     "@types/cross-spawn": "^6.0.2",
+    "@types/is-object": "^1.0.2",
     "@types/node": "^16.10.2",
     "@types/prompts": "^2.0.14",
     "@types/rimraf": "^3.0.2",
@@ -36,5 +37,7 @@
     "update-check": "^1.5.4",
     "validate-npm-package-name": "^3.0.0"
   },
-  "gitHead": "5035ccbf0e5e977704cfde3833242441c940455c"
+  "dependencies": {
+    "is-object": "^1.0.2"
+  }
 }

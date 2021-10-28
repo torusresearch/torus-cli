@@ -17,7 +17,7 @@ const getDefaultConfig = (name) => {
   return {
     input: paths.appIndexFile,
     external: Object.keys(pkg.dependencies),
-    output: { file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true },
+    output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
     plugins: [
       typescript({ ...tsconfigBuild.compilerOptions, tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig }),
       sourceMaps(),
@@ -34,6 +34,17 @@ function customizer(objValue, srcValue, key) {
       srcValue.concat(objValue).reduce((acc, x) => {
         if (!acc[x.name]) {
           acc[x.name] = x;
+        }
+        return acc;
+      }, {})
+    );
+  }
+  if (key === "output") {
+    // concat first and remove duplicates by format (keep the first occurrence)
+    return Object.values(
+      srcValue.concat(objValue).reduce((acc, x) => {
+        if (!acc[x.format]) {
+          acc[x.format] = x;
         }
         return acc;
       }, {})

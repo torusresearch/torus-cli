@@ -30,12 +30,17 @@ async function build() {
   console.log(finalArgs);
   const config = await generateRollupConfig(finalArgs.name);
   console.log(config);
-  const outputOptions = config.output;
-  const bundle = await rollup.rollup(config);
+  const outputOptions = Array.isArray(config.output) ? config.output : [config.output];
   // console.log(bundle.watchFiles);
-  await bundle.generate(outputOptions);
-  // console.log(output);
-  await bundle.write(outputOptions);
+  const bundle = await rollup.rollup(config);
+
+  await Promise.all(
+    outputOptions.map(async (outputOption) => {
+      await bundle.generate(outputOption);
+      // console.log(output);
+      await bundle.write(outputOption);
+    })
+  );
   await bundle.close();
 }
 

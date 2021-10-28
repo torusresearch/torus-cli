@@ -18,12 +18,27 @@ const getDefaultConfig = (name) => {
     input: paths.appIndexFile,
     external: Object.keys(pkg.dependencies),
     output: { file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true },
-    plugins: [typescript({ ...tsconfigBuild }), sourceMaps()],
+    plugins: [
+      typescript({ ...tsconfigBuild.compilerOptions, tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig }),
+      sourceMaps(),
+    ],
   };
 };
 
 // objValue is the first object (our default config)
-function customizer(objValue, srcValue) {
+function customizer(objValue, srcValue, key) {
+  // merge plugins nicely knowing that name is common
+  if (key === "plugins") {
+    // concat first and remove duplicates by name (keep the first occurrence)
+    return Object.values(
+      srcValue.concat(objValue).reduce((acc, x) => {
+        if (!acc[x.name]) {
+          acc[x.name] = x;
+        }
+        return acc;
+      }, {})
+    );
+  }
   if (Array.isArray(objValue)) {
     return srcValue;
   }
@@ -32,9 +47,7 @@ function customizer(objValue, srcValue) {
 // We just return the user's array value
 
 module.exports = async (name) => {
-  console.log(paths.appRollupConfig);
   const code = babel.transformFileSync(paths.appRollupConfig, { presets: ["@babel/env"] }).code;
   const userConfig = fs.existsSync(paths.appRollupConfig) ? requireFromString(code).default : {};
-  console.log(code, userConfig);
   return mergewith(getDefaultConfig(name), userConfig, customizer);
 };

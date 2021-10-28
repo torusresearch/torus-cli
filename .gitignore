@@ -1,3 +1,5 @@
 node_modules
 dist
 toruslabs-*.tgz
+
+create-torus-app-*tgz

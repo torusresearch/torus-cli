@@ -9,6 +9,8 @@ const merge = require("lodash.mergewith");
 
 const defaultConfig = {
   compilerOptions: {
+    rootDir: "src",
+    moduleResolution: "node",
     strict: false,
     module: "es6",
     target: "es6",
@@ -18,9 +20,12 @@ const defaultConfig = {
     noImplicitThis: true,
     declaration: true,
     declarationDir: "./types",
+    outDir: paths.appBuildPath,
     allowSyntheticDefaultImports: true,
     skipLibCheck: true,
+    resolveJsonModule: true,
   },
+  include: ["src"],
 };
 
 const userPathExists = fs.existsSync(paths.appTsBuildConfig);

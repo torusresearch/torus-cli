@@ -5,18 +5,26 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
+  "eslint.workingDirectories": [
+    {
+      "directory": "packages/*",
+      "changeProcessCWD": true
+    }
+  ],
   "cSpell.words": [
     "arbitrum",
     "autoclean",
     "browserslist",
     "cdpath",
     "customauth",
+    "customizer",
     "eslintconfig",
     "gitattributes",
     "gitlab",
     "hgcheck",
     "hgignore",
     "intellij",
+    "mergewith",
     "mkdocs",
     "npmignore",
     "opencollective",

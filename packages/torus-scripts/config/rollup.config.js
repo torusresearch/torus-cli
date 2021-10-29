@@ -13,6 +13,7 @@ const tsconfigBuild = require("./tsconfig.build");
 
 const paths = require("./paths");
 const pkg = require(paths.appPackageJson);
+// we want to create only one build set with rollup
 const getDefaultConfig = (name) => {
   return {
     input: paths.appIndexFile,
@@ -57,7 +58,7 @@ function customizer(objValue, srcValue, key) {
 
 // We just return the user's array value
 
-module.exports = async (name) => {
+module.exports = (name) => {
   const code = babel.transformFileSync(paths.appRollupConfig, { presets: ["@babel/env"] }).code;
   const userConfig = fs.existsSync(paths.appRollupConfig) ? requireFromString(code).default : {};
   return mergewith(getDefaultConfig(name), userConfig, customizer);

@@ -24,12 +24,16 @@ argv.forEach((val) => {
 });
 
 const rollup = require("rollup");
+const webpack = require("webpack");
 const generateRollupConfig = require("../config/rollup.config");
+const generateWebpackConfig = require("../config/webpack.config");
+const torusConfig = require("../config/torus.config");
+const formatWebpackMessages = require("../helpers/formatWebpackMessages");
 
-async function build() {
-  console.log(finalArgs);
-  const config = await generateRollupConfig(finalArgs.name);
-  console.log(config);
+finalArgs.name = finalArgs.name || torusConfig.name;
+
+async function buildRollup() {
+  const config = generateRollupConfig(finalArgs.name);
   const outputOptions = Array.isArray(config.output) ? config.output : [config.output];
   // console.log(bundle.watchFiles);
   const bundle = await rollup.rollup(config);
@@ -44,4 +48,53 @@ async function build() {
   await bundle.close();
 }
 
-build();
+async function buildWebpack() {
+  const configs = generateWebpackConfig(finalArgs.name);
+  const results = await Promise.all(
+    configs.map(async (x) => {
+      return new Promise((resolve, reject) => {
+        webpack(x, (err, stats) => {
+          let messages;
+          if (err) {
+            if (!err.message) {
+              return reject(err);
+            }
+            messages = formatWebpackMessages({
+              errors: [err.message],
+              warnings: [],
+            });
+          } else {
+            messages = formatWebpackMessages(stats.toJson({ all: false, warnings: true, errors: true }));
+          }
+
+          if (messages.errors.length) {
+            // Only keep the first error. Others are often indicative
+            // of the same problem, but confuse the reader with noise.
+            if (messages.errors.length > 1) {
+              messages.errors.length = 1;
+            }
+            return reject(new Error(messages.errors.join("\n\n")));
+          }
+
+          const resolveArgs = {
+            stats,
+            warnings: messages.warnings,
+          };
+          return resolve(resolveArgs);
+        });
+      });
+    })
+  );
+  console.log(
+    results.map((x) =>
+      x.stats?.toJson({
+        all: false,
+        assets: true,
+      })
+    )
+  );
+}
+
+if (torusConfig.esm) buildRollup();
+
+buildWebpack();

@@ -29,8 +29,13 @@ const generateRollupConfig = require("../config/rollup.config");
 const generateWebpackConfig = require("../config/webpack.config");
 const torusConfig = require("../config/torus.config");
 const formatWebpackMessages = require("../helpers/formatWebpackMessages");
+const paths = require("../config/paths");
 
 finalArgs.name = finalArgs.name || torusConfig.name;
+
+if (paths.dotenv) {
+  require("dotenv").config({ path: paths.dotenv });
+}
 
 async function buildRollup() {
   const config = generateRollupConfig(finalArgs.name);

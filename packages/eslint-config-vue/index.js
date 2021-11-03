@@ -1,11 +1,10 @@
 module.exports = {
   env: {
-    es2021: true,
+    es2020: true,
     browser: true,
     node: true,
   },
   extends: [
-    "airbnb-typescript/base",
     "problems",
     "standard",
     "plugin:vue/vue3-recommended",
@@ -19,15 +18,9 @@ module.exports = {
     "plugin:promise/recommended",
     "prettier",
   ],
-  plugins: [
-    "prettier",
-    "promise",
-    "import",
-    "simple-import-sort",
-    "eslint-plugin-tsdoc",
-  ],
+  plugins: ["prettier", "promise", "import", "simple-import-sort", "eslint-plugin-tsdoc"],
   parserOptions: {
-    ecmaVersion: 2021,
+    ecmaVersion: 2020,
   },
   // Workaround https://eslint.vuejs.org/user-guide/#compiler-macros-such-as-defineprops-and-defineemits-are-warned-by-no-undef-rule
   globals: {
@@ -47,10 +40,7 @@ module.exports = {
     "no-useless-constructor": 0,
     "@typescript-eslint/no-useless-constructor": 2,
     "no-unused-vars": 0,
-    "@typescript-eslint/no-unused-vars": [
-      "error",
-      { args: "after-used", argsIgnorePattern: "_" },
-    ],
+    "@typescript-eslint/no-unused-vars": ["error", { args: "after-used", argsIgnorePattern: "_" }],
     "no-console": 2,
     "prettier/prettier": [
       2,

@@ -18,7 +18,15 @@ module.exports = {
     "plugin:mocha/recommended",
     "prettier",
   ],
-  plugins: ["prettier", "promise", "import", "simple-import-sort", "mocha", "@typescript-eslint", "eslint-plugin-tsdoc"],
+  plugins: [
+    "prettier",
+    "promise",
+    "import",
+    "simple-import-sort",
+    "mocha",
+    "@typescript-eslint",
+    "eslint-plugin-tsdoc",
+  ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaVersion: 11,
@@ -41,7 +49,10 @@ module.exports = {
     "no-useless-constructor": 0,
     "@typescript-eslint/no-useless-constructor": 2,
     "no-unused-vars": 0,
-    "@typescript-eslint/no-unused-vars": ["error", { args: "after-used", argsIgnorePattern: "_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { args: "after-used", argsIgnorePattern: "_" },
+    ],
     "import/extensions": [
       "error",
       "ignorePackages",

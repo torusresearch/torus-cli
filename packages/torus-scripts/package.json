@@ -1,32 +1,32 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "bin": {
     "torus-scripts": "./bin/torus-scripts.js"
   },
   "dependencies": {
-    "dotenv": "^10.0.0",
-    "require-from-string": "^2.0.2",
     "@babel/core": "^7.15.8",
-    "@babel/runtime": "^7.15.4",
-    "@babel/preset-typescript": "^7.15.0",
-    "@babel/preset-env": "^7.15.8",
-    "@babel/plugin-syntax-bigint": "^7.8.3",
     "@babel/plugin-proposal-class-properties": "^7.14.5",
     "@babel/plugin-proposal-object-rest-spread": "^7.15.6",
+    "@babel/plugin-syntax-bigint": "^7.8.3",
     "@babel/plugin-transform-runtime": "^7.15.8",
+    "@babel/preset-env": "^7.15.8",
+    "@babel/preset-typescript": "^7.15.0",
+    "@babel/runtime": "^7.15.4",
     "@rollup/plugin-typescript": "^8.3.0",
-    "rollup-plugin-sourcemaps": "^0.6.3",
-    "lodash.mergewith": "^4.6.2",
-    "babel-merge": "^3.0.0",
     "babel-loader": "^8.2.3",
+    "babel-merge": "^3.0.0",
+    "dotenv": "^10.0.0",
     "eslint-webpack-plugin": "^2.5.4",
+    "lodash.mergewith": "^4.6.2",
+    "require-from-string": "^2.0.2",
     "rollup": "^2.58.3",
+    "rollup-plugin-sourcemaps": "^0.6.3",
+    "typescript": "^4.4.4",
     "webpack": "^4.46.0",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-cli": "^4.9.1",
-    "webpack-node-externals": "^3.0.0",
-    "typescript": "^4.4.4"
+    "webpack-node-externals": "^3.0.0"
   },
   "publishConfig": {
     "access": "public"

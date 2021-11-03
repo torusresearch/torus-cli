@@ -59,7 +59,8 @@ function customizer(objValue, srcValue, key) {
 // We just return the user's array value
 
 module.exports = (name) => {
-  const code = babel.transformFileSync(paths.appRollupConfig, { presets: ["@babel/env"] }).code;
-  const userConfig = fs.existsSync(paths.appRollupConfig) ? requireFromString(code).default : {};
+  const userConfig = fs.existsSync(paths.appRollupConfig)
+    ? requireFromString(babel.transformFileSync(paths.appRollupConfig, { presets: ["@babel/env"] }).code).default
+    : {};
   return mergewith(getDefaultConfig(name), userConfig, customizer);
 };

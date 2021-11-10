@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-typescript",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "keywords": [
     "eslint",
     "eslintconfig"

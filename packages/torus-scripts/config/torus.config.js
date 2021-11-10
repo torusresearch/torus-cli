@@ -11,17 +11,17 @@ function camelCase(input) {
   return input.toLowerCase().replace(/-(.)/g, (_, group1) => group1.toUpperCase());
 }
 
-function generateLibraryName(name) {
+function generatePackageName(name) {
   const splits = name.split("/");
   const pkgName = splits[splits.length - 1];
   const usableName = camelCase(pkgName);
-  return usableName.charAt(0).toUpperCase() + usableName.slice(1);
+  return usableName;
 }
 
 const pkg = require(paths.appPackageJson);
 
 const defaultConfig = {
-  name: generateLibraryName(pkg.name),
+  name: generatePackageName(pkg.name),
   esm: true,
   cjs: true,
   umd: true,

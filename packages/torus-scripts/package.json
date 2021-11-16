@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "bin": {
     "torus-scripts": "./bin/torus-scripts.js"
   },
@@ -17,9 +17,9 @@
     "babel-loader": "^8.2.3",
     "babel-merge": "^3.0.0",
     "chalk": "^4.1.2",
-    "listr": "^0.14.3",
     "dotenv": "^10.0.0",
     "eslint-webpack-plugin": "^2.5.4",
+    "listr": "^0.14.3",
     "lodash.mergewith": "^4.6.2",
     "require-from-string": "^2.0.2",
     "rollup": "^2.60.0",

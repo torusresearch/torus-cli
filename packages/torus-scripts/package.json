@@ -16,6 +16,8 @@
     "@rollup/plugin-typescript": "^8.3.0",
     "babel-loader": "^8.2.3",
     "babel-merge": "^3.0.0",
+    "chalk": "^4.1.2",
+    "listr": "^0.14.3",
     "dotenv": "^10.0.0",
     "eslint-webpack-plugin": "^2.5.4",
     "lodash.mergewith": "^4.6.2",

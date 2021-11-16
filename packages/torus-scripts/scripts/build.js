@@ -25,11 +25,17 @@ argv.forEach((val) => {
 
 const rollup = require("rollup");
 const webpack = require("webpack");
+const chalk = require("chalk");
+const Listr = require("listr");
+const ui = require("cliui")({ width: process.stdout.columns || 80 });
+
 const generateRollupConfig = require("../config/rollup.config");
 const generateWebpackConfig = require("../config/webpack.config");
 const torusConfig = require("../config/torus.config");
-const formatWebpackMessages = require("../helpers/formatWebpackMessages");
 const paths = require("../config/paths");
+const formatWebpackStats = require("../helpers/formatWebpackStats");
+const formatWebpackMessages = require("../helpers/formatWebpackMessages");
+const formatRollupStats = require("../helpers/formatRollupStats");
 
 finalArgs.name = finalArgs.name || torusConfig.name;
 
@@ -37,69 +43,123 @@ if (paths.dotenv) {
   require("dotenv").config({ path: paths.dotenv });
 }
 
-async function buildRollup() {
+function addOutput({ ctx, filename, formattedStats, type, warnings }) {
+  if (!ctx.outputs) ctx.outputs = {};
+  ctx.outputs[filename] = {
+    type,
+    formattedStats,
+    warnings,
+  };
+}
+
+function getRollupTasks() {
   const config = generateRollupConfig(finalArgs.name);
   const outputOptions = Array.isArray(config.output) ? config.output : [config.output];
-  // console.log(bundle.watchFiles);
-  const bundle = await rollup.rollup(config);
 
-  await Promise.all(
-    outputOptions.map(async (outputOption) => {
-      await bundle.generate(outputOption);
-      // console.log(output);
-      await bundle.write(outputOption);
-    })
-  );
-  await bundle.close();
+  return outputOptions.map((outputOption) => {
+    const filenameChunks = outputOption.file.split("/");
+    const filename = filenameChunks[filenameChunks.length - 1];
+    return {
+      title: filename,
+      task: async (ctx) => {
+        const start = process.hrtime.bigint();
+        const bundle = await rollup.rollup(config);
+        await bundle.generate(outputOption);
+        const output = await bundle.write(outputOption);
+        await bundle.close();
+        const end = process.hrtime.bigint();
+        const time = ((end - start) / BigInt(1e6)).toString();
+        const formattedStats = formatRollupStats(output.output, paths.appBuild, time);
+
+        // time is in ms
+        addOutput({ ctx, filename, formattedStats, warnings: [], type: "rollup" });
+      },
+    };
+  });
 }
 
-async function buildWebpack() {
+function getWebpackTasks() {
   const configs = generateWebpackConfig(finalArgs.name);
-  const results = await Promise.all(
-    configs.map(async (x) => {
-      return new Promise((resolve, reject) => {
-        webpack(x, (err, stats) => {
-          let messages;
-          if (err) {
-            if (!err.message) {
-              return reject(err);
-            }
-            messages = formatWebpackMessages({
-              errors: [err.message],
-              warnings: [],
-            });
-          } else {
-            messages = formatWebpackMessages(stats.toJson({ all: false, warnings: true, errors: true }));
-          }
+  return configs.map((x) => {
+    return {
+      title: x.output.filename,
+      task: (ctx) => {
+        return new Promise((resolve, reject) => {
+          webpack(x, (err, stats) => {
+            let messages;
+            if (err) {
+              if (!err.message) {
+                return reject(err);
+              }
 
-          if (messages.errors.length) {
-            // Only keep the first error. Others are often indicative
-            // of the same problem, but confuse the reader with noise.
-            if (messages.errors.length > 1) {
-              messages.errors.length = 1;
+              messages = formatWebpackMessages({
+                errors: [err.message],
+                warnings: [],
+              });
+            } else {
+              messages = formatWebpackMessages(stats.toJson({ all: false, warnings: true, errors: true }));
             }
-            return reject(new Error(messages.errors.join("\n\n")));
-          }
 
-          const resolveArgs = {
-            stats,
-            warnings: messages.warnings,
-          };
-          return resolve(resolveArgs);
+            if (messages.errors.length) {
+              // Only keep the first error. Others are often indicative
+              // of the same problem, but confuse the reader with noise.
+              if (messages.errors.length > 1) {
+                messages.errors.length = 1;
+              }
+              return reject(new Error(messages.errors.join("\n\n")));
+            }
+
+            const formattedStats = formatWebpackStats(stats, paths.appBuild);
+
+            addOutput({ ctx, filename: x.output.filename, warnings: messages.warnings, formattedStats, type: "webpack" });
+
+            return resolve();
+          });
         });
-      });
-    })
-  );
-  console.log(
-    results.map((x) =>
-      x.stats?.toJson({
-        all: false,
-        assets: true,
-      })
-    )
-  );
+      },
+    };
+  });
 }
 
-if (torusConfig.esm) buildRollup();
+async function main() {
+  const tasks = new Listr([], { concurrent: true });
+  console.log(chalk.yellow("Collating builds..."));
+  if (torusConfig.esm) {
+    tasks.add(getRollupTasks());
+  }
+  tasks.add(getWebpackTasks());
+  try {
+    const ctx = await tasks.run();
 
-buildWebpack();
+    Object.keys(ctx.outputs).forEach((filename) => {
+      const outputObj = ctx.outputs[filename];
+      const warnings = outputObj.warnings;
+      if (warnings.length > 0) {
+        console.log(chalk.yellow("\nCompiled with warnings.\n"));
+        console.log(warnings.join("\n\n"));
+        console.log("\nSearch for the " + chalk.underline(chalk.yellow("keywords")) + " to learn more about each warning.");
+        console.log("To ignore, add " + chalk.cyan("// eslint-disable-next-line") + " to the line before.\n");
+      }
+    });
+
+    ui.div(chalk.cyan.bold(`File`), chalk.cyan.bold(`Size`), chalk.cyan.bold(`Gzipped`), chalk.cyan.bold(`Time`));
+
+    Object.keys(ctx.outputs).forEach((filename) => {
+      const outputObj = ctx.outputs[filename];
+      outputObj.formattedStats.map((x) => ui.div(...x));
+    });
+
+    ui.div(`\n ${chalk.gray(`Images and other types of assets omitted.`)}\n`);
+
+    console.log(ui.toString());
+
+    console.log(chalk.green("✔"), "Build complete");
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    console.error(chalk.red(error.stack));
+    // Throw to exit with code 1
+    throw new Error("Build failed");
+  }
+}
+
+main();

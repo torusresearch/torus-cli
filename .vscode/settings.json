@@ -24,6 +24,7 @@
     "hgcheck",
     "hgignore",
     "intellij",
+    "listr",
     "mergewith",
     "mkdocs",
     "npmignore",

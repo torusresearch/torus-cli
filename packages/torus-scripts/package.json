@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "bin": {
     "torus-scripts": "./bin/torus-scripts.js"
   },

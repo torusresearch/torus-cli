@@ -5,6 +5,7 @@
 // By default this generates cjs, umd builds
 const merge = require("lodash.mergewith");
 const path = require("path");
+const fs = require("fs");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const nodeExternals = require("webpack-node-externals");
 
@@ -29,6 +30,7 @@ const babelLoader = {
       babelrc: false,
       configFile: false,
       cacheDirectory: true,
+      browserslistConfigFile: fs.existsSync(paths.appBrowserslistConfig) ? paths.appBrowserslistConfig : true,
     },
   },
 };
@@ -105,6 +107,7 @@ module.exports = (pkgName) => {
     plugins: [
       ...baseConfig.plugins,
       new ESLintPlugin({
+        context: paths.appPath,
         files: "src",
         extensions: ".ts",
       }),

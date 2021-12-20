@@ -5,23 +5,30 @@
 const mergewith = require("lodash.mergewith");
 const babel = require("@babel/core");
 const typescript = require("@rollup/plugin-typescript");
-const sourceMaps = require("rollup-plugin-sourcemaps");
+const babelPlugin = require("@rollup/plugin-babel").default;
 const path = require("path");
 const fs = require("fs");
 const requireFromString = require("require-from-string");
 const tsconfigBuild = require("./tsconfig.build");
-
+const babelConfig = require("./babel.config");
 const paths = require("./paths");
 const pkg = require(paths.appPackageJson);
 // we want to create only one build set with rollup
 const getDefaultConfig = (name) => {
   return {
     input: paths.appIndexFile,
-    external: Object.keys(pkg.dependencies),
+    external: [...Object.keys(pkg.dependencies), /@babel\/runtime/],
     output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
     plugins: [
       typescript({ ...tsconfigBuild.compilerOptions, tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig }),
-      sourceMaps(),
+      babelPlugin({
+        extensions: [".ts", ".js", ".tsx", ".jsx", ".mjs"],
+        babelHelpers: "runtime",
+        babelrc: false,
+        ...babelConfig,
+        configFile: false,
+        browserslistConfigFile: fs.existsSync(paths.appBrowserslistConfig) ? paths.appBrowserslistConfig : true,
+      }),
     ],
   };
 };

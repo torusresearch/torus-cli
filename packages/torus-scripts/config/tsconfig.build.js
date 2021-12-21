@@ -13,7 +13,7 @@ const defaultConfig = {
     moduleResolution: "node",
     strict: false,
     module: "es6",
-    target: "es2016",
+    target: "esnext",
     lib: ["ES2020", "DOM"],
     sourceMap: true,
     esModuleInterop: true,

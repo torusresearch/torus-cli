@@ -11,8 +11,25 @@ const fs = require("fs");
 const requireFromString = require("require-from-string");
 const tsconfigBuild = require("./tsconfig.build");
 const babelConfig = require("./babel.config");
+const torusConfig = require("./torus.config");
+
 const paths = require("./paths");
 const pkg = require(paths.appPackageJson);
+
+const babelPluginOptions = {
+  extensions: [".ts", ".js", ".tsx", ".jsx", ".mjs"],
+  babelHelpers: "runtime",
+  babelrc: false,
+  ...babelConfig,
+  configFile: false,
+};
+
+if (fs.existsSync(paths.appBrowserslistConfig)) {
+  babelPluginOptions.browserslistConfigFile = paths.appBrowserslistConfig;
+} else {
+  babelPluginOptions.targets = torusConfig.browserslistrc;
+}
+
 // we want to create only one build set with rollup
 const getDefaultConfig = (name) => {
   return {
@@ -21,14 +38,7 @@ const getDefaultConfig = (name) => {
     output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
     plugins: [
       typescript({ ...tsconfigBuild.compilerOptions, tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig }),
-      babelPlugin({
-        extensions: [".ts", ".js", ".tsx", ".jsx", ".mjs"],
-        babelHelpers: "runtime",
-        babelrc: false,
-        ...babelConfig,
-        configFile: false,
-        browserslistConfigFile: fs.existsSync(paths.appBrowserslistConfig) ? paths.appBrowserslistConfig : true,
-      }),
+      babelPlugin(babelPluginOptions),
     ],
   };
 };

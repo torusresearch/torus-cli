@@ -20,18 +20,25 @@ const { NODE_ENV = "production" } = process.env;
 const pkg = require(paths.appPackageJson);
 const { baseConfig: userBaseConfig, ...rest } = require(appWebpackConfig);
 
+const babelLoaderOptions = {
+  ...babelConfig,
+  babelrc: false,
+  configFile: false,
+  cacheDirectory: true,
+};
+
+if (fs.existsSync(paths.appBrowserslistConfig)) {
+  babelLoaderOptions.browserslistConfigFile = paths.appBrowserslistConfig;
+} else {
+  babelLoaderOptions.targets = torusConfig.browserslistrc;
+}
+
 const babelLoader = {
   test: /\.(ts|js)x?$/,
   exclude: /(node_modules|bower_components)/,
   use: {
     loader: "babel-loader",
-    options: {
-      ...babelConfig,
-      babelrc: false,
-      configFile: false,
-      cacheDirectory: true,
-      browserslistConfigFile: fs.existsSync(paths.appBrowserslistConfig) ? paths.appBrowserslistConfig : true,
-    },
+    options: babelLoaderOptions,
   },
 };
 
@@ -66,6 +73,7 @@ module.exports = (pkgName) => {
       module: {
         rules: [babelLoader],
       },
+      node: {},
       // cache: {
       //   type: "filesystem",
       //   cacheDirectory: paths.appWebpackCache,
@@ -113,6 +121,10 @@ module.exports = (pkgName) => {
       }),
     ],
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],
+    node: {
+      Buffer: false,
+      ...baseConfig.node,
+    },
   };
 
   const cjsBundledConfig = {

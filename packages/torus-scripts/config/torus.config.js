@@ -30,6 +30,9 @@ const defaultConfig = {
   bundledDeps: [],
 
   analyzerMode: "disabled",
+
+  browserslistrc:
+    pkg.browserslist && pkg.browserslist.production ? pkg.browserslist.production : pkg.browserslist || ["> 0.5%", "not dead", "not ie 11"],
 };
 
 const userConfig = fs.existsSync(paths.appTorusConfig) ? require(paths.appTorusConfig) : {};

@@ -1,6 +1,7 @@
 {
   "name": "@toruslabs/torus-scripts",
   "version": "0.1.4",
+  "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
     "torus-scripts": "./bin/torus-scripts.js"
   },
@@ -33,5 +34,19 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=14.17.0",
+    "npm": ">=6.x"
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/torusresearch/torus-cli/issues"
+  },
+  "homepage": "https://github.com/torusresearch/torus-cli/tree/main/packages/torus-scripts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/torus-cli.git"
   }
 }

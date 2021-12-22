@@ -1,9 +1,11 @@
 {
   "name": "@toruslabs/eslint-config-vue",
   "version": "0.1.2",
+  "description": "Eslint config for Vue.js",
   "keywords": [
     "eslint",
-    "eslintconfig"
+    "eslintconfig",
+    "vue"
   ],
   "dependencies": {
     "@typescript-eslint/parser": "^5.8.0",
@@ -43,6 +45,20 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=14.17.0",
+    "npm": ">=6.x"
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/torusresearch/torus-cli/issues"
+  },
+  "homepage": "https://github.com/torusresearch/torus-cli/tree/main/packages/eslint-config-vue",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/torus-cli.git"
   },
   "gitHead": "5035ccbf0e5e977704cfde3833242441c940455c"
 }

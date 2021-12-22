@@ -1,6 +1,7 @@
 {
   "name": "@toruslabs/eslint-config-typescript",
   "version": "0.1.2",
+  "description": "Eslint configuration for TypeScript libraries",
   "keywords": [
     "eslint",
     "eslintconfig"
@@ -41,5 +42,19 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=14.17.0",
+    "npm": ">=6.x"
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/torusresearch/torus-cli/issues"
+  },
+  "homepage": "https://github.com/torusresearch/torus-cli/tree/main/packages/eslint-config-typescript",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/torus-cli.git"
   }
 }

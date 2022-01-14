@@ -94,9 +94,9 @@
   integrity sha512-JepeIUPFDARgIs0zD/SKPgFsJEAF0X5/qO80llx59gOxFTboS9Amv3S+QfB7lqBId5sFXJ99BN0J6zFRvL9dDA==
 
 "@types/node@16":
-  version "16.11.15"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.15.tgz#724da13bc1ba99fe8190d0f5cd35cb53c67db942"
-  integrity sha512-LMGR7iUjwZRxoYnfc9+YELxwqkaLmkJlo4/HUvOMyGvw9DaHO0gtAbH2FUdoFE6PXBTYZIT7x610r7kdo8o1fQ==
+  version "16.11.19"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.19.tgz#1afa165146997b8286b6eabcb1c2d50729055169"
+  integrity sha512-BPAcfDPoHlRQNKktbsbnpACGdypPFBuX4xQlsWDE7B8XXcfII+SpOLay3/qZmCLb39kV5S1RTYwXdkx2lwLYng==
 
 "@types/prompts@^2.0.14":
   version "2.0.14"
@@ -620,10 +620,10 @@ globby@^9.2.0:
     pify "^4.0.1"
     slash "^2.0.0"
 
-got@^12.0.0:
-  version "12.0.0"
-  resolved "https://registry.yarnpkg.com/got/-/got-12.0.0.tgz#2ee3d5ff25eabc47dae975d376ddcee1d450bec1"
-  integrity sha512-gNNNghQ1yw0hyzie1FLK6gY90BQlXU9zSByyRygnbomHPruKQ6hAKKbpO1RfNZp8b+qNzNipGeRG3tUelKcVsA==
+got@^12.0.1:
+  version "12.0.1"
+  resolved "https://registry.yarnpkg.com/got/-/got-12.0.1.tgz#78747f1c5bc7069bbd739636ed8b70c7f2140a39"
+  integrity sha512-1Zhoh+lDej3t7Ks1BP/Jufn+rNqdiHQgUOcTxHzg2Dao1LQfp5S4Iq0T3iBxN4Zdo7QqCJL+WJUNzDX6rCP2Ew==
   dependencies:
     "@sindresorhus/is" "^4.2.0"
     "@szmarczak/http-timer" "^5.0.1"

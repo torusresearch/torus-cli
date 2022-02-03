@@ -52,7 +52,9 @@ function generateLibraryName(pkgName) {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 }
 
-exports.getDefaultBaseConfig = (pkgName) => {
+module.exports.babelLoader = babelLoader;
+
+module.exports.getDefaultBaseConfig = (pkgName) => {
   return {
     mode: NODE_ENV,
     devtool: "source-map",
@@ -86,7 +88,7 @@ exports.getDefaultBaseConfig = (pkgName) => {
   };
 };
 
-exports.getDefaultUmdConfig = (pkgName) => {
+module.exports.getDefaultUmdConfig = (pkgName) => {
   return {
     output: {
       filename: `${pkgName}.umd.min.js`,
@@ -101,7 +103,7 @@ exports.getDefaultUmdConfig = (pkgName) => {
   };
 };
 
-exports.getDefaultCjsConfig = (pkgName) => {
+module.exports.getDefaultCjsConfig = (pkgName) => {
   return {
     ...optimization,
     output: {
@@ -111,8 +113,10 @@ exports.getDefaultCjsConfig = (pkgName) => {
     plugins: [
       new ESLintPlugin({
         context: paths.appPath,
-        files: "src",
-        extensions: ".ts",
+        extensions: ["ts", "tsx"],
+        emitError: true,
+        emitWarning: true,
+        failOnError: true,
       }),
     ],
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],
@@ -122,7 +126,7 @@ exports.getDefaultCjsConfig = (pkgName) => {
   };
 };
 
-exports.getDefaultCjsBundledConfig = (pkgName) => {
+module.exports.getDefaultCjsBundledConfig = (pkgName) => {
   return {
     ...optimization,
     output: {

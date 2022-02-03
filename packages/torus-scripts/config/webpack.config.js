@@ -52,6 +52,26 @@ function generateLibraryName(pkgName) {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 }
 
+module.exports = (pkgName) => {
+  const baseConfig = merge(this.getDefaultBaseConfig(pkgName), userBaseConfig);
+  const umdConfig = merge(this.getDefaultUmdConfig(pkgName), baseConfig, rest.umdConfig || {});
+  const cjsConfig = merge(this.getDefaultCjsConfig(pkgName), baseConfig, rest.cjsConfig || {});
+  const cjsBundledConfig = merge(this.getDefaultCjsBundledConfig(pkgName), baseConfig, rest.cjsBundledConfig || {});
+
+  const finalConfigs = [];
+
+  if (torusConfig.cjs) finalConfigs.push(cjsConfig);
+  if (torusConfig.umd) finalConfigs.push(umdConfig);
+  if (torusConfig.cjsBundled) finalConfigs.push(cjsBundledConfig);
+
+  return [
+    ...finalConfigs,
+    ...Object.values(rest || {}).map((x) => {
+      return merge(baseConfig, x);
+    }),
+  ];
+};
+
 module.exports.babelLoader = babelLoader;
 
 module.exports.getDefaultBaseConfig = (pkgName) => {
@@ -135,24 +155,4 @@ module.exports.getDefaultCjsBundledConfig = (pkgName) => {
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
   };
-};
-
-module.exports = (pkgName) => {
-  const baseConfig = merge(this.getDefaultBaseConfig(pkgName), userBaseConfig);
-  const umdConfig = merge(this.getDefaultUmdConfig(pkgName), baseConfig, rest.umdConfig || {});
-  const cjsConfig = merge(this.getDefaultCjsConfig(pkgName), baseConfig, rest.cjsConfig || {});
-  const cjsBundledConfig = merge(this.getDefaultCjsBundledConfig(pkgName), baseConfig, rest.cjsBundledConfig || {});
-
-  const finalConfigs = [];
-
-  if (torusConfig.cjs) finalConfigs.push(cjsConfig);
-  if (torusConfig.umd) finalConfigs.push(umdConfig);
-  if (torusConfig.cjsBundled) finalConfigs.push(cjsBundledConfig);
-
-  return [
-    ...finalConfigs,
-    ...Object.values(rest || {}).map((x) => {
-      return merge(baseConfig, x);
-    }),
-  ];
 };

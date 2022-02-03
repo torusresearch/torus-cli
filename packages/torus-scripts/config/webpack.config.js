@@ -53,10 +53,10 @@ function generateLibraryName(pkgName) {
 }
 
 module.exports = (pkgName) => {
-  const baseConfig = merge(this.getDefaultBaseConfig(pkgName), userBaseConfig);
-  const umdConfig = merge(this.getDefaultUmdConfig(pkgName), baseConfig, rest.umdConfig || {});
-  const cjsConfig = merge(this.getDefaultCjsConfig(pkgName), baseConfig, rest.cjsConfig || {});
-  const cjsBundledConfig = merge(this.getDefaultCjsBundledConfig(pkgName), baseConfig, rest.cjsBundledConfig || {});
+  const baseConfig = merge(getDefaultBaseConfig(pkgName), userBaseConfig);
+  const umdConfig = merge(getDefaultUmdConfig(pkgName), baseConfig, rest.umdConfig || {});
+  const cjsConfig = merge(getDefaultCjsConfig(pkgName), baseConfig, rest.cjsConfig || {});
+  const cjsBundledConfig = merge(getDefaultCjsBundledConfig(pkgName), baseConfig, rest.cjsBundledConfig || {});
 
   const finalConfigs = [];
 
@@ -74,7 +74,7 @@ module.exports = (pkgName) => {
 
 module.exports.babelLoader = babelLoader;
 
-module.exports.getDefaultBaseConfig = (pkgName) => {
+const getDefaultBaseConfig = (pkgName) => {
   return {
     mode: NODE_ENV,
     devtool: "source-map",
@@ -108,7 +108,9 @@ module.exports.getDefaultBaseConfig = (pkgName) => {
   };
 };
 
-module.exports.getDefaultUmdConfig = (pkgName) => {
+module.exports.getDefaultBaseConfig = getDefaultBaseConfig;
+
+const getDefaultUmdConfig = (pkgName) => {
   return {
     output: {
       filename: `${pkgName}.umd.min.js`,
@@ -123,7 +125,9 @@ module.exports.getDefaultUmdConfig = (pkgName) => {
   };
 };
 
-module.exports.getDefaultCjsConfig = (pkgName) => {
+module.exports.getDefaultUmdConfig = getDefaultUmdConfig;
+
+const getDefaultCjsConfig = (pkgName) => {
   return {
     ...optimization,
     output: {
@@ -146,7 +150,9 @@ module.exports.getDefaultCjsConfig = (pkgName) => {
   };
 };
 
-module.exports.getDefaultCjsBundledConfig = (pkgName) => {
+module.exports.getDefaultCjsConfig = getDefaultCjsConfig;
+
+const getDefaultCjsBundledConfig = (pkgName) => {
   return {
     ...optimization,
     output: {
@@ -156,3 +162,5 @@ module.exports.getDefaultCjsBundledConfig = (pkgName) => {
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
   };
 };
+
+module.exports.getDefaultCjsBundledConfig = getDefaultCjsBundledConfig;

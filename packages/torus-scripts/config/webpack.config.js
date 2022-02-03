@@ -18,7 +18,7 @@ const { appWebpackConfig, appBuild } = paths;
 const { NODE_ENV = "production" } = process.env;
 
 const pkg = require(paths.appPackageJson);
-const { baseConfig: userBaseConfig, ...rest } = require(appWebpackConfig);
+const { baseConfig: userBaseConfig, ...rest } = fs.existsSync(appWebpackConfig) ? require(appWebpackConfig) : { baseConfig: {} };
 
 const babelLoaderOptions = {
   ...babelConfig,
@@ -52,68 +52,63 @@ function generateLibraryName(pkgName) {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 }
 
-module.exports = (pkgName) => {
-  const baseConfig = merge(
-    {
-      mode: NODE_ENV,
-      devtool: "source-map",
-      entry: paths.appIndexFile,
-      target: "web",
-      output: {
-        path: appBuild,
-        library: generateLibraryName(pkgName),
-      },
-      resolve: {
-        extensions: paths.moduleFileExtensions.map((x) => `.${x}`),
-        alias: {
-          "bn.js": path.resolve(paths.appNodeModules, "bn.js"),
-        },
-      },
-      plugins: [],
-      module: {
-        rules: [babelLoader],
-      },
-      node: {},
-      // cache: {
-      //   type: "filesystem",
-      //   cacheDirectory: paths.appWebpackCache,
-      //   store: "pack",
-      //   buildDependencies: {
-      //     defaultWebpack: ["webpack/lib/"],
-      //     config: [__filename],
-      //     tsconfig: paths.appTsConfig,
-      //   },
-      // },
-    },
-    userBaseConfig
-  );
-
-  const umdConfig = {
-    ...baseConfig,
+exports.getDefaultBaseConfig = (pkgName) => {
+  return {
+    mode: NODE_ENV,
+    devtool: "source-map",
+    entry: paths.appIndexFile,
+    target: "web",
     output: {
-      ...baseConfig.output,
+      path: appBuild,
+      library: generateLibraryName(pkgName),
+    },
+    resolve: {
+      extensions: paths.moduleFileExtensions.map((x) => `.${x}`),
+      alias: {
+        "bn.js": path.resolve(paths.appNodeModules, "bn.js"),
+      },
+    },
+    plugins: [],
+    module: {
+      rules: [babelLoader],
+    },
+    node: {},
+    // cache: {
+    //   type: "filesystem",
+    //   cacheDirectory: paths.appWebpackCache,
+    //   store: "pack",
+    //   buildDependencies: {
+    //     defaultWebpack: ["webpack/lib/"],
+    //     config: [__filename],
+    //     tsconfig: paths.appTsConfig,
+    //   },
+    // },
+  };
+};
+
+exports.getDefaultUmdConfig = (pkgName) => {
+  return {
+    output: {
       filename: `${pkgName}.umd.min.js`,
       libraryTarget: "umd",
     },
     plugins: [
-      ...baseConfig.plugins,
       new BundleAnalyzerPlugin({
         analyzerMode: torusConfig.analyzerMode,
         openAnalyzer: false,
       }),
     ],
   };
+};
 
-  const cjsConfig = {
-    ...baseConfig,
+exports.getDefaultCjsConfig = (pkgName) => {
+  return {
     ...optimization,
     output: {
-      ...baseConfig.output,
       filename: `${pkgName}.cjs.js`,
       libraryTarget: "commonjs2",
     },
     plugins: [
-      ...baseConfig.plugins,
       new ESLintPlugin({
         context: paths.appPath,
         files: "src",
@@ -123,20 +118,26 @@ module.exports = (pkgName) => {
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],
     node: {
       Buffer: false,
-      ...baseConfig.node,
     },
   };
+};
 
-  const cjsBundledConfig = {
-    ...baseConfig,
+exports.getDefaultCjsBundledConfig = (pkgName) => {
+  return {
     ...optimization,
     output: {
-      ...baseConfig.output,
       filename: `${pkgName}-bundled.cjs.js`,
       libraryTarget: "commonjs2",
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
   };
+};
+
+module.exports = (pkgName) => {
+  const baseConfig = merge(this.getDefaultBaseConfig(pkgName), userBaseConfig);
+  const umdConfig = merge(this.getDefaultUmdConfig(pkgName), baseConfig, rest.umdConfig || {});
+  const cjsConfig = merge(this.getDefaultCjsConfig(pkgName), baseConfig, rest.cjsConfig || {});
+  const cjsBundledConfig = merge(this.getDefaultCjsBundledConfig(pkgName), baseConfig, rest.cjsBundledConfig || {});
 
   const finalConfigs = [];
 
@@ -146,7 +147,7 @@ module.exports = (pkgName) => {
 
   return [
     ...finalConfigs,
-    ...Object.values(rest || []).map((x) => {
+    ...Object.values(rest || {}).map((x) => {
       return merge(baseConfig, x);
     }),
   ];

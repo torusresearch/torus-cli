@@ -17,7 +17,7 @@
     "eslint-plugin-security": "^1.x"
   },
   "devDependencies": {
-    "eslint": "^8.6.0",
+    "eslint": "^8.8.0",
     "eslint-plugin-chai-expect": "^3.0.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-security": "^1.4.0"

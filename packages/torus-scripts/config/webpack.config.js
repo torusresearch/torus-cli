@@ -18,7 +18,7 @@ const { appWebpackConfig, appBuild } = paths;
 const { NODE_ENV = "production" } = process.env;
 
 const pkg = require(paths.appPackageJson);
-const { baseConfig: userBaseConfig, ...rest } = require(appWebpackConfig);
+const { baseConfig: userBaseConfig, ...rest } = fs.existsSync(appWebpackConfig) ? require(appWebpackConfig) : { baseConfig: {} };
 
 const babelLoaderOptions = {
   ...babelConfig,
@@ -53,90 +53,10 @@ function generateLibraryName(pkgName) {
 }
 
 module.exports = (pkgName) => {
-  const baseConfig = merge(
-    {
-      mode: NODE_ENV,
-      devtool: "source-map",
-      entry: paths.appIndexFile,
-      target: "web",
-      output: {
-        path: appBuild,
-        library: generateLibraryName(pkgName),
-      },
-      resolve: {
-        extensions: paths.moduleFileExtensions.map((x) => `.${x}`),
-        alias: {
-          "bn.js": path.resolve(paths.appNodeModules, "bn.js"),
-        },
-      },
-      plugins: [],
-      module: {
-        rules: [babelLoader],
-      },
-      node: {},
-      // cache: {
-      //   type: "filesystem",
-      //   cacheDirectory: paths.appWebpackCache,
-      //   store: "pack",
-      //   buildDependencies: {
-      //     defaultWebpack: ["webpack/lib/"],
-      //     config: [__filename],
-      //     tsconfig: paths.appTsConfig,
-      //   },
-      // },
-    },
-    userBaseConfig
-  );
-
-  const umdConfig = {
-    ...baseConfig,
-    output: {
-      ...baseConfig.output,
-      filename: `${pkgName}.umd.min.js`,
-      libraryTarget: "umd",
-    },
-    plugins: [
-      ...baseConfig.plugins,
-      new BundleAnalyzerPlugin({
-        analyzerMode: torusConfig.analyzerMode,
-        openAnalyzer: false,
-      }),
-    ],
-  };
-
-  const cjsConfig = {
-    ...baseConfig,
-    ...optimization,
-    output: {
-      ...baseConfig.output,
-      filename: `${pkgName}.cjs.js`,
-      libraryTarget: "commonjs2",
-    },
-    plugins: [
-      ...baseConfig.plugins,
-      new ESLintPlugin({
-        context: paths.appPath,
-        files: "src",
-        extensions: ".ts",
-      }),
-    ],
-    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],
-    node: {
-      Buffer: false,
-      ...baseConfig.node,
-    },
-  };
-
-  const cjsBundledConfig = {
-    ...baseConfig,
-    ...optimization,
-    output: {
-      ...baseConfig.output,
-      filename: `${pkgName}-bundled.cjs.js`,
-      libraryTarget: "commonjs2",
-    },
-    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
-  };
+  const baseConfig = merge(getDefaultBaseConfig(pkgName), userBaseConfig);
+  const umdConfig = merge(getDefaultUmdConfig(pkgName), baseConfig, rest.umdConfig || {});
+  const cjsConfig = merge(getDefaultCjsConfig(pkgName), baseConfig, rest.cjsConfig || {});
+  const cjsBundledConfig = merge(getDefaultCjsBundledConfig(pkgName), baseConfig, rest.cjsBundledConfig || {});
 
   const finalConfigs = [];
 
@@ -146,8 +66,101 @@ module.exports = (pkgName) => {
 
   return [
     ...finalConfigs,
-    ...Object.values(rest || []).map((x) => {
+    ...Object.values(rest || {}).map((x) => {
       return merge(baseConfig, x);
     }),
   ];
 };
+
+module.exports.babelLoader = babelLoader;
+
+const getDefaultBaseConfig = (pkgName) => {
+  return {
+    mode: NODE_ENV,
+    devtool: "source-map",
+    entry: paths.appIndexFile,
+    target: "web",
+    output: {
+      path: appBuild,
+      library: generateLibraryName(pkgName),
+    },
+    resolve: {
+      extensions: paths.moduleFileExtensions.map((x) => `.${x}`),
+      alias: {
+        "bn.js": path.resolve(paths.appNodeModules, "bn.js"),
+      },
+    },
+    plugins: [],
+    module: {
+      rules: [babelLoader],
+    },
+    node: {},
+    // cache: {
+    //   type: "filesystem",
+    //   cacheDirectory: paths.appWebpackCache,
+    //   store: "pack",
+    //   buildDependencies: {
+    //     defaultWebpack: ["webpack/lib/"],
+    //     config: [__filename],
+    //     tsconfig: paths.appTsConfig,
+    //   },
+    // },
+  };
+};
+
+module.exports.getDefaultBaseConfig = getDefaultBaseConfig;
+
+const getDefaultUmdConfig = (pkgName) => {
+  return {
+    output: {
+      filename: `${pkgName}.umd.min.js`,
+      libraryTarget: "umd",
+    },
+    plugins: [
+      new BundleAnalyzerPlugin({
+        analyzerMode: torusConfig.analyzerMode,
+        openAnalyzer: false,
+      }),
+    ],
+  };
+};
+
+module.exports.getDefaultUmdConfig = getDefaultUmdConfig;
+
+const getDefaultCjsConfig = (pkgName) => {
+  return {
+    ...optimization,
+    output: {
+      filename: `${pkgName}.cjs.js`,
+      libraryTarget: "commonjs2",
+    },
+    plugins: [
+      new ESLintPlugin({
+        context: paths.appPath,
+        extensions: ["ts", "tsx"],
+        emitError: true,
+        emitWarning: true,
+        failOnError: true,
+      }),
+    ],
+    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],
+    node: {
+      Buffer: false,
+    },
+  };
+};
+
+module.exports.getDefaultCjsConfig = getDefaultCjsConfig;
+
+const getDefaultCjsBundledConfig = (pkgName) => {
+  return {
+    ...optimization,
+    output: {
+      filename: `${pkgName}-bundled.cjs.js`,
+      libraryTarget: "commonjs2",
+    },
+    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
+  };
+};
+
+module.exports.getDefaultCjsBundledConfig = getDefaultCjsBundledConfig;

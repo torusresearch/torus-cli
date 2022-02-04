@@ -52,11 +52,34 @@ function generateLibraryName(pkgName) {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 }
 
+// objValue is the first object (our default config)
+function customizer(objValue, srcValue, key) {
+  // merge plugins if they are not there
+  if (Array.isArray(objValue) && (key === "plugins" || key === "rules")) {
+    return [...objValue, ...(srcValue || [])];
+  }
+}
+
 module.exports = (pkgName) => {
-  const baseConfig = merge(getDefaultBaseConfig(pkgName), userBaseConfig);
-  const umdConfig = merge(getDefaultUmdConfig(pkgName), baseConfig, rest.umdConfig || {});
-  const cjsConfig = merge(getDefaultCjsConfig(pkgName), baseConfig, rest.cjsConfig || {});
-  const cjsBundledConfig = merge(getDefaultCjsBundledConfig(pkgName), baseConfig, rest.cjsBundledConfig || {});
+  // create a copy of baseConfig every time so that loaders use new instances
+  const umdConfig = merge(
+    getDefaultUmdConfig(pkgName),
+    merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer),
+    rest.umdConfig || {},
+    customizer
+  );
+  const cjsConfig = merge(
+    getDefaultCjsConfig(pkgName),
+    merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer),
+    rest.cjsConfig || {},
+    customizer
+  );
+  const cjsBundledConfig = merge(
+    getDefaultCjsBundledConfig(pkgName),
+    merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer),
+    rest.cjsBundledConfig || {},
+    customizer
+  );
 
   const finalConfigs = [];
 
@@ -64,10 +87,13 @@ module.exports = (pkgName) => {
   if (torusConfig.umd) finalConfigs.push(umdConfig);
   if (torusConfig.cjsBundled) finalConfigs.push(cjsBundledConfig);
 
+  // console.log("%O", ...finalConfigs.map(x => x.plugins));
+
   return [
     ...finalConfigs,
     ...Object.values(rest || {}).map((x) => {
-      return merge(baseConfig, x);
+      const baseConfig = merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer);
+      return merge(baseConfig, x, customizer);
     }),
   ];
 };

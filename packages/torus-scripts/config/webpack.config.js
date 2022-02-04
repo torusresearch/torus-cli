@@ -55,7 +55,7 @@ function generateLibraryName(pkgName) {
 // objValue is the first object (our default config)
 function customizer(objValue, srcValue, key) {
   // merge plugins if they are not there
-  if (Array.isArray(objValue) && key === "plugins") {
+  if (Array.isArray(objValue) && (key === "plugins" || key === "rules")) {
     return [...objValue, ...(srcValue || [])];
   }
 }

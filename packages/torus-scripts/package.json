@@ -6,14 +6,14 @@
     "torus-scripts": "./bin/torus-scripts.js"
   },
   "dependencies": {
-    "@babel/core": "^7.17.0",
+    "@babel/core": "~7.16.12",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
     "@babel/plugin-proposal-object-rest-spread": "^7.16.7",
     "@babel/plugin-syntax-bigint": "^7.8.3",
-    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/plugin-transform-runtime": "~7.16.10",
     "@babel/preset-env": "^7.16.11",
     "@babel/preset-typescript": "^7.16.7",
-    "@babel/runtime": "^7.17.0",
+    "@babel/runtime": "~7.16.7",
     "@rollup/plugin-babel": "^5.3.0",
     "@rollup/plugin-typescript": "^8.3.0",
     "babel-loader": "^8.2.3",

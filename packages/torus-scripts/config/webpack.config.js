@@ -13,6 +13,7 @@ const paths = require("./paths");
 const babelConfig = require("./babel.config");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const torusConfig = require("./torus.config");
+const webpack = require("webpack");
 
 const { appWebpackConfig, appBuild } = paths;
 const { NODE_ENV = "production" } = process.env;
@@ -143,6 +144,9 @@ const getDefaultUmdConfig = (pkgName) => {
       libraryTarget: "umd",
     },
     plugins: [
+      new webpack.optimize.LimitChunkCountPlugin({
+        maxChunks: 1,
+      }),
       new BundleAnalyzerPlugin({
         analyzerMode: torusConfig.analyzerMode,
         openAnalyzer: false,

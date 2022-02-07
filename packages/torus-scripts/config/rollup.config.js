@@ -37,7 +37,11 @@ const getDefaultConfig = (name) => {
     external: [...Object.keys(pkg.dependencies), /@babel\/runtime/],
     output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
     plugins: [
-      typescript({ ...tsconfigBuild.compilerOptions, tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig }),
+      typescript({
+        ...tsconfigBuild.compilerOptions,
+        tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig,
+        noEmitOnError: true,
+      }),
       babelPlugin(babelPluginOptions),
     ],
   };

@@ -75,6 +75,7 @@ function customizer(objValue, srcValue, key) {
   if (Array.isArray(objValue)) {
     return srcValue;
   }
+  return srcValue;
 }
 
 // We just return the user's array value

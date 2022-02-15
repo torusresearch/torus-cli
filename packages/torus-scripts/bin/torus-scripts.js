@@ -12,12 +12,12 @@ process.on("unhandledRejection", (err) => {
 const args = process.argv.slice(2);
 const spawn = require("cross-spawn");
 
-const scriptIndex = args.findIndex((x) => x === "build" || x === "test");
+const scriptIndex = args.findIndex((x) => x === "build" || x === "test" || x === "release");
 
 const script = scriptIndex === -1 ? args[0] : args[scriptIndex];
 const nodeArgs = scriptIndex > 0 ? args.slice(0, scriptIndex) : [];
 
-if (["build", "eject", "start", "test"].includes(script)) {
+if (["build", "eject", "start", "test", "release"].includes(script)) {
   const result = spawn.sync(process.execPath, nodeArgs.concat(require.resolve("../scripts/" + script)).concat(args.slice(scriptIndex + 1)), {
     stdio: "inherit",
   });

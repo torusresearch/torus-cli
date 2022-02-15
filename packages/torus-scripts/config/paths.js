@@ -9,7 +9,7 @@ const resolveApp = (relativePath) => path.resolve(appDirectory, relativePath);
 
 const buildPath = process.env.BUILD_DIR || "dist";
 
-const moduleFileExtensions = ["js", "ts", "json", "mjs"];
+const moduleFileExtensions = ["js", "ts", "json", "mjs", "jsx", "tsx"];
 
 // Resolve file paths in the same order as webpack
 const resolveModule = (resolveFn, filePath) => {

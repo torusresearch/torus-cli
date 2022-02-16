@@ -26,7 +26,7 @@ argv.forEach((val) => {
 const rollup = require("rollup");
 const webpack = require("webpack");
 const chalk = require("chalk");
-const Listr = require("listr");
+const { Listr } = require("listr2");
 const ui = require("cliui")({ width: process.stdout.columns || 80 });
 
 const generateRollupConfig = require("../config/rollup.config");

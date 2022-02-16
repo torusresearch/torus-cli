@@ -40,7 +40,7 @@ const getDefaultConfig = (name) => {
       typescript({
         ...tsconfigBuild.compilerOptions,
         tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig,
-        noEmitOnError: true,
+        noEmitOnError: process.env.NODE_ENV === "production",
       }),
       babelPlugin(babelPluginOptions),
     ],

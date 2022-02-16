@@ -170,7 +170,7 @@ const getDefaultCjsConfig = (pkgName) => {
         extensions: ["ts", "tsx"],
         emitError: true,
         emitWarning: true,
-        failOnError: true,
+        failOnError: process.env.NODE_ENV === "production",
       }),
     ],
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],

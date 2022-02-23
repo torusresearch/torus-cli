@@ -4,10 +4,31 @@
 process.env.BABEL_ENV = "development";
 process.env.NODE_ENV = "development";
 
+const ctx = { webpackWatchers: [], rollupWatchers: [] };
+
+function closeWatchers() {
+  console.log(chalk.yellow("Stopping dev server..."));
+  ctx.webpackWatchers.forEach((watcher) => {
+    watcher.close();
+  });
+  ctx.rollupWatchers.forEach((watcher) => {
+    watcher.close();
+  });
+}
+const killEvents = ["SIGINT", "SIGTERM"];
+
+killEvents.forEach(function (sig) {
+  process.on(sig, function () {
+    closeWatchers();
+    process.exit();
+  });
+});
+
 // Makes the script crash on unhandled rejections instead of silently
 // ignoring them. In the future, promise rejections that are not handled will
 // terminate the Node.js process with a non-zero exit code.
 process.on("unhandledRejection", (err) => {
+  closeWatchers();
   throw err;
 });
 
@@ -41,6 +62,11 @@ if (paths.dotenv) {
   require("dotenv").config({ path: paths.dotenv });
 }
 
+function addOutput({ webpackWatcher, rollupWatcher }) {
+  if (webpackWatcher) ctx.webpackWatchers.push(webpackWatcher);
+  if (rollupWatcher) ctx.rollupWatchers.push(rollupWatcher);
+}
+
 function getRollupTasks() {
   const config = generateRollupConfig(finalArgs.name);
   const outputOptions = Array.isArray(config.output) ? config.output : [config.output];
@@ -72,6 +98,7 @@ function getRollupTasks() {
               observer.next(`Done. Watching for changes...`);
             }
           });
+          addOutput({ rollupWatcher: watcher });
         });
       },
       options: {
@@ -124,6 +151,7 @@ function getWebpackTasks() {
               observer.next(`Build complete for ${x.output.filename}...`);
             }
           );
+          addOutput({ webpackWatcher: compiler });
         });
       },
       options: {

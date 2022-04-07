@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-react",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Eslint configuration for React libraries",
   "keywords": [
     "eslint",

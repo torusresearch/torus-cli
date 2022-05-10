@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-node",
-  "version": "0.2.1",
+  "version": "1.0.0-alpha.0",
   "description": "Eslint configuration for Node.js",
   "keywords": [
     "eslint",
@@ -8,7 +8,7 @@
     "node"
   ],
   "dependencies": {
-    "@toruslabs/eslint-config-typescript": "^0.2.1"
+    "@toruslabs/eslint-config-typescript": "^1.0.0-alpha.0"
   },
   "peerDependencies": {
     "eslint": "^8.x",

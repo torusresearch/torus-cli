@@ -44,7 +44,6 @@ module.exports = {
   appBabelConfig: resolveApp("babel.config.js"),
   appTorusConfig: resolveApp("torus.config.js"),
   appBrowserslistConfig: resolveApp(".browserslistrc"),
-  // These properties only exist before ejecting:
   ownPath: resolveOwn("."),
   ownNodeModules: resolveOwn("node_modules"), // This is empty on npm 3
 };

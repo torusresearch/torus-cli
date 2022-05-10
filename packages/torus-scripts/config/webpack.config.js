@@ -49,6 +49,27 @@ const optimization = {
   },
 };
 
+const polyfillPlugins = [
+  new webpack.ProvidePlugin({
+    Buffer: ["buffer", "Buffer"],
+  }),
+  new webpack.ProvidePlugin({
+    process: "process/browser.js",
+  }),
+];
+
+const polyfillFallback = {
+  http: require.resolve("stream-http"),
+  https: require.resolve("https-browserify"),
+  os: require.resolve("os-browserify/browser"),
+  crypto: require.resolve("crypto-browserify"),
+  assert: require.resolve("assert/"),
+  stream: require.resolve("stream-browserify"),
+  url: require.resolve("url/"),
+  fs: false,
+  path: false,
+};
+
 function generateLibraryName(pkgName) {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 }
@@ -122,16 +143,16 @@ const getDefaultBaseConfig = (pkgName) => {
       rules: [babelLoader],
     },
     node: {},
-    // cache: {
-    //   type: "filesystem",
-    //   cacheDirectory: paths.appWebpackCache,
-    //   store: "pack",
-    //   buildDependencies: {
-    //     defaultWebpack: ["webpack/lib/"],
-    //     config: [__filename],
-    //     tsconfig: paths.appTsConfig,
-    //   },
-    // },
+    cache: {
+      type: "filesystem",
+      cacheDirectory: paths.appWebpackCache,
+      store: "pack",
+      buildDependencies: {
+        defaultWebpack: ["webpack/lib/"],
+        config: [__filename],
+        tsconfig: [paths.appTsConfig, paths.appTsBuildConfig].filter((f) => fs.existsSync(f)),
+      },
+    },
   };
 };
 
@@ -151,7 +172,11 @@ const getDefaultUmdConfig = (pkgName) => {
         analyzerMode: torusConfig.analyzerMode,
         openAnalyzer: false,
       }),
+      ...polyfillPlugins,
     ],
+    resolve: {
+      fallback: polyfillFallback,
+    },
   };
 };
 
@@ -171,11 +196,13 @@ const getDefaultCjsConfig = (pkgName) => {
         emitError: true,
         emitWarning: true,
         failOnError: process.env.NODE_ENV === "production",
+        cache: true,
+        cacheLocation: path.resolve(paths.appNodeModules, ".cache/.eslintcache"),
       }),
     ],
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],
     node: {
-      Buffer: false,
+      // Buffer: false,
     },
   };
 };
@@ -190,6 +217,10 @@ const getDefaultCjsBundledConfig = (pkgName) => {
       libraryTarget: "commonjs2",
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
+    plugins: polyfillPlugins,
+    resolve: {
+      fallback: polyfillFallback,
+    },
   };
 };
 

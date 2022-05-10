@@ -5,14 +5,15 @@ process.env.BABEL_ENV = "development";
 process.env.NODE_ENV = "development";
 
 const ctx = { webpackWatchers: [], rollupWatchers: [] };
+const chalk = require("chalk");
 
 function closeWatchers() {
   console.log(chalk.yellow("Stopping dev server..."));
   ctx.webpackWatchers.forEach((watcher) => {
-    watcher.close();
+    if (watcher) watcher.close();
   });
   ctx.rollupWatchers.forEach((watcher) => {
-    watcher.close();
+    if (watcher) watcher.close();
   });
 }
 const killEvents = ["SIGINT", "SIGTERM"];
@@ -32,31 +33,39 @@ process.on("unhandledRejection", (err) => {
   throw err;
 });
 
-const argv = process.argv.slice(2);
-
-const finalArgs = {};
-argv.forEach((val) => {
-  if (val.includes("=")) {
-    const [key, value] = val.split("=");
-    finalArgs[key.slice(2)] = value;
-  } else {
-    finalArgs[val] = true;
-  }
-});
-
 const rollup = require("rollup");
 const webpack = require("webpack");
-const chalk = require("chalk");
 const { Listr } = require("listr2");
 const { Observable } = require("rxjs");
+const parseArgs = require("yargs-parser");
 
 const generateRollupConfig = require("../config/rollup.config");
 const generateWebpackConfig = require("../config/webpack.config");
 const torusConfig = require("../config/torus.config");
 const paths = require("../config/paths");
 const formatWebpackMessages = require("../helpers/formatWebpackMessages");
+const updatePackageNotification = require("../helpers/updatePackage");
+const { startHelpText } = require("../helpers/constants");
+const { deleteFolder } = require("../helpers/utils");
 
-finalArgs.name = finalArgs.name || torusConfig.name;
+const aliases = {
+  n: "name",
+  h: "help",
+};
+
+const parseCliArguments = (args) => {
+  const options = parseArgs(args, {
+    alias: aliases,
+    configuration: {
+      "parse-numbers": false,
+      "camel-case-expansion": false,
+    },
+  });
+  options.name = options.name || torusConfig.name;
+  return options;
+};
+
+const finalArgs = parseCliArguments([].slice.call(process.argv, 2));
 
 if (paths.dotenv) {
   require("dotenv").config({ path: paths.dotenv });
@@ -119,7 +128,7 @@ function getWebpackTasks() {
           observer.next(`Building ${x.output.filename}...`);
           compiler.watch(
             {
-              ignored: [/node_modules/],
+              ignored: /node_modules/,
             },
             (err, stats) => {
               let messages;
@@ -162,6 +171,8 @@ function getWebpackTasks() {
 }
 
 async function main() {
+  console.log(chalk.yellow("Cleaning dist folder..."));
+  await deleteFolder(paths.appBuild);
   const tasks = new Listr([], { concurrent: true });
   console.log(chalk.yellow("Collating for dev..."));
   if (torusConfig.esm) {
@@ -176,6 +187,13 @@ async function main() {
     // Throw to exit with code 1
     throw new Error("Build failed");
   }
+}
+
+updatePackageNotification();
+
+if (finalArgs.help) {
+  console.log(startHelpText);
+  process.exit(0);
 }
 
 main();

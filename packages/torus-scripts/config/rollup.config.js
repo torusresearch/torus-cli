@@ -41,6 +41,7 @@ const getDefaultConfig = (name) => {
         ...tsconfigBuild.compilerOptions,
         tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig,
         noEmitOnError: process.env.NODE_ENV === "production",
+        cacheDir: paths.appWebpackCache,
       }),
       babelPlugin(babelPluginOptions),
     ],

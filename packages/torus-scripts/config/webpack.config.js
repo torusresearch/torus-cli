@@ -54,7 +54,7 @@ const polyfillPlugins = [
     Buffer: ["buffer", "Buffer"],
   }),
   new webpack.ProvidePlugin({
-    process: "process/browser",
+    process: "process/browser.js",
   }),
 ];
 
@@ -147,6 +147,11 @@ const getDefaultBaseConfig = (pkgName) => {
       type: "filesystem",
       cacheDirectory: paths.appWebpackCache,
       store: "pack",
+      buildDependencies: {
+        defaultWebpack: ["webpack/lib/"],
+        config: [__filename],
+        tsconfig: [paths.appTsConfig, paths.appTsBuildConfig].filter((f) => fs.existsSync(f)),
+      },
     },
   };
 };
@@ -192,6 +197,7 @@ const getDefaultCjsConfig = (pkgName) => {
         emitWarning: true,
         failOnError: process.env.NODE_ENV === "production",
         cache: true,
+        cacheLocation: path.resolve(paths.appNodeModules, ".cache/.eslintcache"),
       }),
     ],
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],

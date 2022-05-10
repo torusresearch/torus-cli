@@ -7,16 +7,7 @@ const fs = require("fs");
 
 const paths = require("./paths");
 
-const defaultConfig = {
-  presets: ["@babel/env", "@babel/typescript"],
-  plugins: [
-    "@babel/plugin-syntax-bigint",
-    "@babel/plugin-proposal-object-rest-spread",
-    "@babel/plugin-proposal-class-properties",
-    "@babel/transform-runtime",
-  ],
-  sourceType: "unambiguous",
-};
+const defaultConfig = require("../defaults/babel.config");
 
 const userConfig = fs.existsSync(paths.appBabelConfig) ? require(paths.appBabelConfig) : {};
 

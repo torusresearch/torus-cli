@@ -88,8 +88,8 @@ function formatMessage(message) {
 
 function formatWebpackMessages(json) {
   const formattedErrors = json.errors.map(formatMessage);
-  const formattedWarnings = json.warnings.map(formatMessage);
-  const result = { errors: formattedErrors, warnings: formattedWarnings };
+  const formattedWarnings = json.warnings && json.warnings.map(formatMessage);
+  const result = { errors: formattedErrors, warnings: formattedWarnings || [] };
   if (result.errors.some(isLikelyASyntaxError)) {
     // If there are any syntax errors, show just them.
     result.errors = result.errors.filter(isLikelyASyntaxError);

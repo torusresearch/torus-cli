@@ -11,23 +11,12 @@ process.on("unhandledRejection", (err) => {
   throw err;
 });
 
-const argv = process.argv.slice(2);
-
-const finalArgs = {};
-argv.forEach((val) => {
-  if (val.includes("=")) {
-    const [key, value] = val.split("=");
-    finalArgs[key.slice(2)] = value;
-  } else {
-    finalArgs[val] = true;
-  }
-});
-
 const rollup = require("rollup");
 const webpack = require("webpack");
 const chalk = require("chalk");
 const { Listr } = require("listr2");
 const ui = require("cliui")({ width: process.stdout.columns || 80 });
+const parseArgs = require("yargs-parser");
 
 const generateRollupConfig = require("../config/rollup.config");
 const generateWebpackConfig = require("../config/webpack.config");
@@ -36,8 +25,28 @@ const paths = require("../config/paths");
 const formatWebpackStats = require("../helpers/formatWebpackStats");
 const formatWebpackMessages = require("../helpers/formatWebpackMessages");
 const formatRollupStats = require("../helpers/formatRollupStats");
+const updatePackageNotification = require("../helpers/updatePackage");
+const { buildHelpText } = require("../helpers/constants");
+const { deleteFolder } = require("../helpers/utils");
 
-finalArgs.name = finalArgs.name || torusConfig.name;
+const aliases = {
+  n: "name",
+  h: "help",
+};
+
+const parseCliArguments = (args) => {
+  const options = parseArgs(args, {
+    alias: aliases,
+    configuration: {
+      "parse-numbers": false,
+      "camel-case-expansion": false,
+    },
+  });
+  options.name = options.name || torusConfig.name;
+  return options;
+};
+
+const finalArgs = parseCliArguments([].slice.call(process.argv, 2));
 
 if (paths.dotenv) {
   require("dotenv").config({ path: paths.dotenv });
@@ -122,6 +131,8 @@ function getWebpackTasks() {
 }
 
 async function main() {
+  console.log(chalk.yellow("Cleaning dist folder..."));
+  await deleteFolder(paths.appBuild);
   const tasks = new Listr([], { concurrent: true });
   console.log(chalk.yellow("Collating builds..."));
   if (torusConfig.esm) {
@@ -160,6 +171,13 @@ async function main() {
     // Throw to exit with code 1
     throw new Error("Build failed");
   }
+}
+
+updatePackageNotification();
+
+if (finalArgs.help) {
+  console.log(buildHelpText);
+  process.exit(0);
 }
 
 main();

@@ -1,7 +1,55 @@
-const releaseIt = require("release-it");
+"use strict";
 
-function main() {
-  releaseIt();
+// Makes the script crash on unhandled rejections instead of silently
+// ignoring them. In the future, promise rejections that are not handled will
+// terminate the Node.js process with a non-zero exit code.
+process.on("unhandledRejection", (err) => {
+  throw err;
+});
+
+const releaseIt = require("release-it");
+const parseArgs = require("yargs-parser");
+const chalk = require("chalk");
+
+const updatePackageNotification = require("../helpers/updatePackage");
+
+const aliases = {
+  c: "config",
+  d: "dry-run",
+  h: "help",
+  i: "increment",
+  v: "version",
+  V: "verbose",
+};
+
+const parseCliArguments = (args) => {
+  const options = parseArgs(args, {
+    boolean: ["dry-run", "ci"],
+    alias: aliases,
+    configuration: {
+      "parse-numbers": false,
+      "camel-case-expansion": false,
+    },
+  });
+  if (options.V) {
+    options.verbose = typeof options.V === "boolean" ? options.V : options.V.length;
+    delete options.V;
+  }
+  options.increment = options._[0] || options.i;
+  return options;
+};
+
+async function main() {
+  try {
+    const options = parseCliArguments([].slice.call(process.argv, 2));
+    await releaseIt(options);
+  } catch (error) {
+    console.error(chalk.red(error.message));
+    console.error(chalk.red(error.stack));
+    // Throw to exit with code 1
+    throw new Error("Release failed");
+  }
 }
 
+updatePackageNotification();
 main();

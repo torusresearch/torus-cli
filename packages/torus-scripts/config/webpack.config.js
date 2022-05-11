@@ -26,6 +26,7 @@ const babelLoaderOptions = {
   babelrc: false,
   configFile: false,
   cacheDirectory: true,
+  cacheCompression: false,
 };
 
 if (fs.existsSync(paths.appBrowserslistConfig)) {
@@ -143,16 +144,16 @@ const getDefaultBaseConfig = (pkgName) => {
       rules: [babelLoader],
     },
     node: {},
-    cache: {
-      type: "filesystem",
-      cacheDirectory: paths.appWebpackCache,
-      store: "pack",
-      buildDependencies: {
-        defaultWebpack: ["webpack/lib/"],
-        config: [__filename],
-        tsconfig: [paths.appTsConfig, paths.appTsBuildConfig].filter((f) => fs.existsSync(f)),
-      },
-    },
+    // cache: {
+    //   type: "filesystem",
+    //   cacheDirectory: paths.appWebpackCache,
+    //   store: "pack",
+    //   buildDependencies: {
+    //     defaultWebpack: ["webpack/lib/"],
+    //     config: [paths.appPath],
+    //     tsconfig: [paths.appTsConfig, paths.appTsBuildConfig].filter((f) => fs.existsSync(f)),
+    //   },
+    // },
   };
 };
 

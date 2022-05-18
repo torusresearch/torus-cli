@@ -123,7 +123,7 @@ module.exports = (pkgName) => {
 
 module.exports.babelLoader = babelLoader;
 
-const getDefaultBaseConfig = (pkgName) => {
+const getDefaultBaseConfig = () => {
   return {
     mode: NODE_ENV,
     devtool: "source-map",
@@ -131,7 +131,10 @@ const getDefaultBaseConfig = (pkgName) => {
     target: "web",
     output: {
       path: appBuild,
-      library: generateLibraryName(pkgName),
+      library: {
+        // Giving a name to builds aggregates all exports under that name
+        // name:  generateLibraryName(pkgName)
+      },
     },
     resolve: {
       extensions: paths.moduleFileExtensions.map((x) => `.${x}`),
@@ -163,7 +166,11 @@ const getDefaultUmdConfig = (pkgName) => {
   return {
     output: {
       filename: `${pkgName}.umd.min.js`,
-      libraryTarget: "umd",
+      library: {
+        type: "umd",
+        // Giving a name to builds aggregates all exports under that name
+        name: generateLibraryName(pkgName),
+      },
     },
     plugins: [
       new webpack.optimize.LimitChunkCountPlugin({
@@ -188,7 +195,10 @@ const getDefaultCjsConfig = (pkgName) => {
     ...optimization,
     output: {
       filename: `${pkgName}.cjs.js`,
-      libraryTarget: "commonjs2",
+      library: {
+        // Giving a name to builds aggregates all exports under that name
+        type: "commonjs2",
+      },
     },
     plugins: [
       new ESLintPlugin({
@@ -215,7 +225,9 @@ const getDefaultCjsBundledConfig = (pkgName) => {
     ...optimization,
     output: {
       filename: `${pkgName}-bundled.cjs.js`,
-      libraryTarget: "commonjs2",
+      library: {
+        type: "commonjs2",
+      },
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
     plugins: polyfillPlugins,

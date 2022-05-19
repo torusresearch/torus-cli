@@ -52,6 +52,9 @@ const optimization = {
 
 const polyfillPlugins = [
   new webpack.ProvidePlugin({
+    Buffer: ["buffer", "Buffer"],
+  }),
+  new webpack.ProvidePlugin({
     process: "process/browser.js",
   }),
 ];

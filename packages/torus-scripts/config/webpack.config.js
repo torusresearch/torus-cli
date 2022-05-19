@@ -52,9 +52,6 @@ const optimization = {
 
 const polyfillPlugins = [
   new webpack.ProvidePlugin({
-    Buffer: ["buffer", "Buffer"],
-  }),
-  new webpack.ProvidePlugin({
     process: "process/browser.js",
   }),
 ];
@@ -67,6 +64,7 @@ const polyfillFallback = {
   assert: require.resolve("assert/"),
   stream: require.resolve("stream-browserify"),
   url: require.resolve("url/"),
+  buffer: require.resolve("buffer/"),
   fs: false,
   path: false,
 };

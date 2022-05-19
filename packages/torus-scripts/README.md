@@ -3,10 +3,10 @@
 Torus scripts provide you a convenient way to build, release & create a dev server for building ts libraries.
 It offers a modern build setup with no configuration
 
-The CLI Service is built on top of webpack and webpack-dev-server. It contains:
+The CLI Service is built on top of rollup, webpack and webpack-dev-server. It contains:
 
 - The core service that loads other CLI Plugins;
-- An internal webpack config that is optimized for most apps;
+- An internal webpack and rollup config that is optimized for most apps;
 - The torus-scripts binary inside the project, which comes with the basic start, build and release commands.
 
 If you are familiar with create-react-app, @toruslabs/torus-scripts is roughly the equivalent of react-scripts, although the feature set is different.

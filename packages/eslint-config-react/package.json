@@ -7,7 +7,7 @@
     "eslintconfig"
   ],
   "dependencies": {
-    "@typescript-eslint/parser": "^5.25.0",
+    "@typescript-eslint/parser": "^5.27.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-config-prettier": "^8.5.0",
@@ -32,20 +32,20 @@
     "typescript": "^4.x"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.25.0",
-    "eslint": "^8.15.0",
+    "@typescript-eslint/eslint-plugin": "^5.27.0",
+    "eslint": "^8.17.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsx-a11y": "^6.5.1",
-    "eslint-plugin-mocha": "^10.0.4",
-    "eslint-plugin-n": "^15.2.0",
+    "eslint-plugin-mocha": "^10.0.5",
+    "eslint-plugin-n": "^15.2.1",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-promise": "^6.0.0",
-    "eslint-plugin-react": "^7.29.4",
+    "eslint-plugin-react": "^7.30.0",
     "eslint-plugin-react-hooks": "^4.5.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "eslint-plugin-tsdoc": "^0.2.16",
     "prettier": "^2.6.2",
-    "typescript": "^4.6.4"
+    "typescript": "^4.7.3"
   },
   "publishConfig": {
     "access": "public"

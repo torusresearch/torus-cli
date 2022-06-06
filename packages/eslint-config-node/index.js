@@ -26,12 +26,7 @@ module.exports = {
         ignores: ["modules"],
       },
     ],
-    "n/no-missing-import": [
-      "error",
-      {
-        tryExtensions: [".js", ".json", ".node", ".ts"],
-      },
-    ],
+    "n/no-missing-import": 0,
     "import/no-extraneous-dependencies": ["error", { devDependencies: ["**/*.test.ts", "**/*.test.tsx", "**/testHelpers.ts"] }],
   },
 };

@@ -111,19 +111,15 @@ module.exports = (pkgName) => {
   if (torusConfig.umd) finalConfigs.push(umdConfig);
   if (torusConfig.cjsBundled) finalConfigs.push(cjsBundledConfig);
 
-  // console.log("%O", ...finalConfigs.map(x => x.plugins));
+  delete rest.cjsConfig;
+  delete rest.cjsBundledConfig;
+  delete rest.umdConfig;
 
-  const pendingConfigs = {};
-  Object.keys(rest || {}).forEach((x) => {
-    if (x === "umdConfig" || x === "cjsConfig" || x === "cjsBundledConfig") {
-      return;
-    }
-    pendingConfigs[x] = rest[x];
-  });
+  // console.log("%O", ...finalConfigs.map(x => x.plugins));
 
   return [
     ...finalConfigs,
-    ...Object.values(pendingConfigs || {}).map((x) => {
+    ...Object.values(rest || {}).map((x) => {
       const baseConfig = merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer);
       return merge(baseConfig, x, customizer);
     }),

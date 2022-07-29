@@ -113,9 +113,17 @@ module.exports = (pkgName) => {
 
   // console.log("%O", ...finalConfigs.map(x => x.plugins));
 
+  const pendingConfigs = {};
+  Object.keys(rest || {}).forEach((x) => {
+    if (x === "umdConfig" || x === "cjsConfig" || x === "cjsBundledConfig") {
+      return;
+    }
+    pendingConfigs[x] = rest[x];
+  });
+
   return [
     ...finalConfigs,
-    ...Object.values(rest || {}).map((x) => {
+    ...Object.values(pendingConfigs || {}).map((x) => {
       const baseConfig = merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer);
       return merge(baseConfig, x, customizer);
     }),

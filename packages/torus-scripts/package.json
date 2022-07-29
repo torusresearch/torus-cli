@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
     "torus-scripts": "./bin/torus-scripts.js"

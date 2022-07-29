@@ -111,6 +111,10 @@ module.exports = (pkgName) => {
   if (torusConfig.umd) finalConfigs.push(umdConfig);
   if (torusConfig.cjsBundled) finalConfigs.push(cjsBundledConfig);
 
+  delete rest.cjsConfig;
+  delete rest.cjsBundledConfig;
+  delete rest.umdConfig;
+
   // console.log("%O", ...finalConfigs.map(x => x.plugins));
 
   return [

@@ -8,7 +8,7 @@
     "vue"
   ],
   "dependencies": {
-    "@typescript-eslint/parser": "^5.31.0",
+    "@typescript-eslint/parser": "^5.32.0",
     "@vue/eslint-config-airbnb": "^6.0.0",
     "@vue/eslint-config-typescript": "^11.0.0",
     "eslint-config-prettier": "^8.5.0",
@@ -30,8 +30,8 @@
     "typescript": "^4.x"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.31.0",
-    "eslint": "^8.20.0",
+    "@typescript-eslint/eslint-plugin": "^5.32.0",
+    "eslint": "^8.21.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-mocha": "^10.1.0",
     "eslint-plugin-n": "^15.2.4",

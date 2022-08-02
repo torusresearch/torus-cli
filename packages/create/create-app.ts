@@ -4,14 +4,7 @@ import cpy from "cpy";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import {
-  downloadAndExtractExample,
-  downloadAndExtractRepo,
-  getRepoInfo,
-  hasExample,
-  hasRepo,
-  RepoInfo,
-} from "./helpers/examples";
+import { downloadAndExtractExample, downloadAndExtractRepo, getRepoInfo, hasExample, hasRepo, RepoInfo } from "./helpers/examples";
 import { makeDir } from "./helpers/make-dir";
 import { tryGitInit } from "./helpers/git";
 import { install } from "./helpers/install";
@@ -52,33 +45,21 @@ export async function createApp({
 
     if (repoUrl) {
       if (repoUrl.origin !== "https://github.com") {
-        console.error(
-          `Invalid URL: ${chalk.red(
-            `"${example}"`
-          )}. Only GitHub repositories are supported. Please use a GitHub URL and try again.`
-        );
+        console.error(`Invalid URL: ${chalk.red(`"${example}"`)}. Only GitHub repositories are supported. Please use a GitHub URL and try again.`);
         process.exit(1);
       }
 
       repoInfo = await getRepoInfo(repoUrl, examplePath);
 
       if (!repoInfo) {
-        console.error(
-          `Found invalid GitHub URL: ${chalk.red(
-            `"${example}"`
-          )}. Please fix the URL and try again.`
-        );
+        console.error(`Found invalid GitHub URL: ${chalk.red(`"${example}"`)}. Please fix the URL and try again.`);
         process.exit(1);
       }
 
       const found = await hasRepo(repoInfo);
 
       if (!found) {
-        console.error(
-          `Could not locate the repository for ${chalk.red(
-            `"${example}"`
-          )}. Please check that the repository exists and try again.`
-        );
+        console.error(`Could not locate the repository for ${chalk.red(`"${example}"`)}. Please check that the repository exists and try again.`);
         process.exit(1);
       }
     } else {
@@ -86,12 +67,8 @@ export async function createApp({
 
       if (!found) {
         console.error(
-          `Could not locate an example named ${chalk.red(
-            `"${example}"`
-          )}. It could be due to the following:\n`,
-          `1. Your spelling of example ${chalk.red(
-            `"${example}"`
-          )} might be incorrect.\n`,
+          `Could not locate an example named ${chalk.red(`"${example}"`)}. It could be due to the following:\n`,
+          `1. Your spelling of example ${chalk.red(`"${example}"`)} might be incorrect.\n`,
           `2. You might not be connected to the internet.`
         );
         process.exit(1);
@@ -102,12 +79,8 @@ export async function createApp({
   const root = path.resolve(appPath);
 
   if (!(await isWriteable(path.dirname(root)))) {
-    console.error(
-      "The application path is not writable, please check folder permissions and try again."
-    );
-    console.error(
-      "It is likely you do not have write permissions for this folder."
-    );
+    console.error("The application path is not writable, please check folder permissions and try again.");
+    console.error("It is likely you do not have write permissions for this folder.");
     process.exit(1);
   }
 
@@ -135,39 +108,22 @@ export async function createApp({
      */
     try {
       if (repoInfo) {
-        console.log(
-          `Downloading files from repo ${chalk.cyan(
-            example
-          )}. This might take a moment.`
-        );
+        console.log(`Downloading files from repo ${chalk.cyan(example)}. This might take a moment.`);
         console.log();
         const info = repoInfo;
-        await retry(() => downloadAndExtractRepo(root, info), {
-          retries: 3,
-        });
+        await retry(() => downloadAndExtractRepo(root, info), {});
       } else {
-        console.log(
-          `Downloading files for example ${chalk.cyan(
-            example
-          )}. This might take a moment.`
-        );
+        console.log(`Downloading files for example ${chalk.cyan(example)}. This might take a moment.`);
         console.log();
-        await retry(() => downloadAndExtractExample(root, example), {
-          retries: 3,
-        });
+        await retry(() => downloadAndExtractExample(root, example), {});
       }
     } catch (error) {
-      throw new DownloadError(
-        error instanceof Error ? error.message : "Something went wrong."
-      );
+      throw new DownloadError(error instanceof Error ? error.message : "Something went wrong.");
     }
     // Copy our default `.gitignore` if the application did not provide one
     const ignorePath = path.join(root, ".gitignore");
     if (!fs.existsSync(ignorePath)) {
-      fs.copyFileSync(
-        path.join(__dirname, "templates", template, "gitignore"),
-        ignorePath
-      );
+      fs.copyFileSync(path.join(__dirname, "templates", template, "gitignore"), ignorePath);
     }
 
     // Delete package-lock.json or yarn.lock if it exists
@@ -199,10 +155,7 @@ export async function createApp({
     /**
      * Write it to disk.
      */
-    fs.writeFileSync(
-      path.join(root, "package.json"),
-      JSON.stringify(packageJson, null, 2) + os.EOL
-    );
+    fs.writeFileSync(path.join(root, "package.json"), JSON.stringify(packageJson, null, 2) + os.EOL);
     /**
      * These flags will be passed to `install()`.
      */
@@ -281,17 +234,11 @@ export async function createApp({
   }
 
   const startScript = findStartScript(root);
-  const startCommand = `${displayedCommand} ${
-    useYarn || startScript === "start" ? startScript : `run ${startScript}`
-  }`;
+  const startCommand = `${displayedCommand} ${useYarn || startScript === "start" ? startScript : `run ${startScript}`}`;
 
   console.log(`${chalk.green("Success!")} Created ${appName} at ${appPath}`);
   if (startScript) {
-    console.log(
-      `Inside that directory, you can run ${chalk.cyan(
-        startCommand
-      )} to start development.`
-    );
+    console.log(`Inside that directory, you can run ${chalk.cyan(startCommand)} to start development.`);
     console.log();
     console.log("We suggest that you begin by typing:");
     console.log();

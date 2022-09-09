@@ -8,9 +8,9 @@
     "vue"
   ],
   "dependencies": {
-    "@typescript-eslint/parser": "^5.32.0",
-    "@vue/eslint-config-airbnb": "^6.0.0",
-    "@vue/eslint-config-typescript": "^11.0.0",
+    "@typescript-eslint/parser": "^5.36.2",
+    "@vue/eslint-config-airbnb-with-typescript": "^7.0.0",
+    "@vue/eslint-config-typescript": "^11.0.1",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-problems": "^6.0.0",
     "eslint-config-standard": "^17.0.0"
@@ -23,25 +23,25 @@
     "eslint-plugin-n": "^15.x",
     "eslint-plugin-prettier": "^4.x",
     "eslint-plugin-promise": "^6.x",
-    "eslint-plugin-simple-import-sort": "^7.x",
+    "eslint-plugin-simple-import-sort": "^8.x",
     "eslint-plugin-tsdoc": "^0.x",
     "eslint-plugin-vue": "^9.x",
     "prettier": "^2.x",
     "typescript": "^4.x"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.32.0",
-    "eslint": "^8.21.0",
+    "@typescript-eslint/eslint-plugin": "^5.36.2",
+    "eslint": "^8.23.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-mocha": "^10.1.0",
-    "eslint-plugin-n": "^15.2.4",
+    "eslint-plugin-n": "^15.2.5",
     "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-promise": "^6.0.0",
-    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "eslint-plugin-promise": "^6.0.1",
+    "eslint-plugin-simple-import-sort": "^8.0.0",
     "eslint-plugin-tsdoc": "^0.2.16",
-    "eslint-plugin-vue": "^9.3.0",
+    "eslint-plugin-vue": "^9.4.0",
     "prettier": "^2.7.1",
-    "typescript": "^4.7.4"
+    "typescript": "^4.8.3"
   },
   "publishConfig": {
     "access": "public"

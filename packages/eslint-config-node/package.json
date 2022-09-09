@@ -17,9 +17,9 @@
     "eslint-plugin-security": "^1.x"
   },
   "devDependencies": {
-    "eslint": "^8.21.0",
+    "eslint": "^8.23.0",
     "eslint-plugin-chai-expect": "^3.0.0",
-    "eslint-plugin-n": "^15.2.4",
+    "eslint-plugin-n": "^15.2.5",
     "eslint-plugin-security": "^1.5.0"
   },
   "publishConfig": {

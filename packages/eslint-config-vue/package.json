@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-vue",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Eslint config for Vue.js",
   "keywords": [
     "eslint",

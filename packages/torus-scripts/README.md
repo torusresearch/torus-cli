@@ -69,7 +69,7 @@ interface IOptions {
   cjsBundled: boolean; // Whether to generate an cjs build with troubling deps bundled. Default: false
   bundledDeps: string[]; // What deps to bundle while generating cjsBundled build. Default: false
   analyzerMode: "disabled" | "static" | "server" | "json"; // Whether to analyze the umd build. Internally uses webpack-bundle-analyzer. Default: "disabled". Refer to full options here: https://github.com/webpack-contrib/webpack-bundle-analyzer
-  browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.5%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
+  browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
 }
 ```
 

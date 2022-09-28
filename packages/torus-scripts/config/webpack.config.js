@@ -144,7 +144,7 @@ const getDefaultBaseConfig = () => {
     resolve: {
       extensions: paths.moduleFileExtensions.map((x) => `.${x}`),
       alias: {
-        "bn.js": path.resolve(paths.appNodeModules, "bn.js"),
+        "bn.js": require.resolve("bn.js"),
       },
     },
     plugins: [],

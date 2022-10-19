@@ -83,7 +83,8 @@ function getRollupTasks() {
     clearScreen: false,
   };
   return outputOptions.map((outputOption) => {
-    const filenameChunks = outputOption.file.split("/");
+    // use dir option for dynamic imports
+    const filenameChunks = outputOption.dir ? [outputOption.dir] : outputOption.file.split("/");
     const filename = filenameChunks[filenameChunks.length - 1];
     return {
       title: filename,

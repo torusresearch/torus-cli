@@ -24,5 +24,5 @@ module.exports = {
   analyzerMode: "disabled",
 
   browserslistrc:
-    pkg.browserslist && pkg.browserslist.production ? pkg.browserslist.production : pkg.browserslist || ["> 0.25%", "not dead", "not ie 11"],
+    pkg.browserslist && pkg.browserslist.production ? pkg.browserslist.production : pkg.browserslist || ["defaults", "> 0.25%", "not dead"],
 };

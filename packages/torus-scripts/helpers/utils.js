@@ -23,13 +23,8 @@ function makeRow(a, b, c) {
 
 const readJSON = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 
-exports.deleteFolder = (folderPath) => {
-  return new Promise((resolve, reject) => {
-    rimraf(folderPath, (err) => {
-      if (err) return reject(err);
-      resolve();
-    });
-  });
+exports.deleteFolder = async (folderPath) => {
+  return rimraf(folderPath);
 };
 
 exports.formatSize = formatSize;

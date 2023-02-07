@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-typescript",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Eslint configuration for TypeScript libraries",
   "keywords": [
     "eslint",

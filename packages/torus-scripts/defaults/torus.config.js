@@ -23,6 +23,5 @@ module.exports = {
 
   analyzerMode: "disabled",
 
-  browserslistrc:
-    pkg.browserslist && pkg.browserslist.production ? pkg.browserslist.production : pkg.browserslist || ["defaults", "> 0.25%", "not dead"],
+  browserslistrc: pkg.browserslist && pkg.browserslist.production ? pkg.browserslist.production : pkg.browserslist || ["supports bigint", "not dead"],
 };

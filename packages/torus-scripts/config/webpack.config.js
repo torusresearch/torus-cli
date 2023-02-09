@@ -9,7 +9,8 @@ import fs from "fs";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 import nodeExternals from "webpack-node-externals";
 import webpack from "webpack";
-
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 import paths, { moduleFileExtensions } from "./paths.js";
 import babelConfig from "./babel.config.js";
 import ESLintPlugin from "eslint-webpack-plugin";
@@ -65,7 +66,7 @@ export const resolveWebpackModule = (localPath) => {
   else if (fs.existsSync(path.resolve(paths.appNodeModules, localPath)))
     return new URL(paths.appNodeModules + "/" + localPath, import.meta.url).pathname;
 
-  throw new Error("Cannot resolve module: " + localPath + "Please install the dependency");
+  return require.resolve(localPath);
 };
 
 const polyfillFallback = {
@@ -152,7 +153,7 @@ export const getDefaultBaseConfig = () => {
     resolve: {
       extensions: moduleFileExtensions.map((x) => `.${x}`),
       alias: {
-        "bn.js": resolveWebpackModule("bn.js/lib/bn.js"),
+        "bn.js": require.resolve("bn.js/lib/bn.js"),
       },
     },
     plugins: [],

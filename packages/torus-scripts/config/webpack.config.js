@@ -8,8 +8,9 @@ import path from "path";
 import fs from "fs";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 import nodeExternals from "webpack-node-externals";
-import webpack from "webpack";
+import webpack, { IgnorePlugin } from "webpack";
 import { createRequire } from "node:module";
+
 const require = createRequire(import.meta.url);
 import paths, { moduleFileExtensions } from "./paths.js";
 import babelConfig from "./babel.config.js";
@@ -156,7 +157,7 @@ export const getDefaultBaseConfig = () => {
         "bn.js": require.resolve("bn.js/lib/bn.js"),
       },
     },
-    plugins: [],
+    plugins: [new IgnorePlugin({ resourceRegExp: /^\.\/wordlists\/(?!english)/, contextRegExp: /bip39\/src$/ })],
     module: {
       rules: [babelLoader],
     },

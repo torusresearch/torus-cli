@@ -7,11 +7,11 @@ process.on("unhandledRejection", (err) => {
   throw err;
 });
 
-const releaseIt = require("release-it");
-const parseArgs = require("yargs-parser");
-const chalk = require("chalk");
+import releaseIt from "release-it";
+import parseArgs from "yargs-parser";
+import chalk from "chalk";
 
-const updatePackageNotification = require("../helpers/updatePackage");
+import updatePackageNotification from "../helpers/updatePackage.js";
 
 const aliases = {
   c: "config",

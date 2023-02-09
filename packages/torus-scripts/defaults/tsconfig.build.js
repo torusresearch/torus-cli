@@ -1,6 +1,6 @@
-const paths = require("../config/paths");
+import paths from "../config/paths.js";
 
-module.exports = {
+export default {
   compilerOptions: {
     rootDir: "src",
     moduleResolution: "node",

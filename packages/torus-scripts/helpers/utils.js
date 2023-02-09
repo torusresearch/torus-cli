@@ -1,34 +1,42 @@
-const fs = require("fs");
-const path = require("path");
-const zlib = require("zlib");
-const rimraf = require("rimraf");
+import fs from "fs";
+import path from "path";
+import zlib from "zlib";
+import rimraf from "rimraf";
 
-function formatSize(size) {
+export function formatSize(size) {
   return (size / 1024).toFixed(2) + " KiB";
 }
 
-function getGzippedSize(asset, dir) {
-  const filepath = require.resolve(path.join(dir, asset.name));
+export function getGzippedSize(asset, dir) {
+  const filepath = new URL(path.join(dir, asset.name), import.meta.url);
   const buffer = fs.readFileSync(filepath);
   return formatSize(zlib.gzipSync(buffer).length);
 }
 
-function getGzippedBufferSize(assetBuffer) {
+export function getGzippedBufferSize(assetBuffer) {
   return formatSize(zlib.gzipSync(assetBuffer).length);
 }
 
-function makeRow(a, b, c) {
+export function makeRow(a, b, c) {
   return `  ${a}\t    ${b}\t ${c}`;
 }
 
-const readJSON = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
+export const readJSON = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 
-exports.deleteFolder = async (folderPath) => {
+export const deleteFolder = async (folderPath) => {
   return rimraf(folderPath);
 };
 
-exports.formatSize = formatSize;
-exports.getGzippedSize = getGzippedSize;
-exports.makeRow = makeRow;
-exports.getGzippedBufferSize = getGzippedBufferSize;
-exports.readJSON = readJSON;
+export const readCjsFile = async (fullPath) => {
+  if (!fs.existsSync(fullPath)) return {};
+  return import(fullPath);
+};
+
+export const readJSONFile = (fullPathUrl) => {
+  if (!fs.existsSync(fullPathUrl)) return {};
+  return JSON.parse(fs.readFileSync(fullPathUrl instanceof URL ? fullPathUrl.pathname : new URL(fullPathUrl, import.meta.url).pathname));
+};
+
+export const resolveFileUrl = (path) => {
+  return path instanceof URL ? path.pathname : new URL(path, import.meta.url).pathname;
+};

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   presets: ["@babel/env", "@babel/typescript"],
   plugins: [
     "@babel/plugin-syntax-bigint",

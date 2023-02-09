@@ -1,5 +1,7 @@
-const paths = require("../config/paths");
-const pkg = require(paths.appPackageJson);
+import paths from "../config/paths.js";
+import { readJSONFile } from "../helpers/utils.js";
+
+const pkg = readJSONFile(paths.appPackageJson);
 
 function camelCase(input) {
   return input.toLowerCase().replace(/-(.)/g, (_, group1) => group1.toUpperCase());
@@ -12,7 +14,7 @@ function generatePackageName(name) {
   return usableName;
 }
 
-module.exports = {
+export default {
   name: generatePackageName(pkg.name),
   esm: true,
   cjs: true,

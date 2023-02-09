@@ -11,23 +11,26 @@ process.on("unhandledRejection", (err) => {
   throw err;
 });
 
-const rollup = require("rollup");
-const webpack = require("webpack");
-const chalk = require("chalk");
-const { Listr } = require("listr2");
-const ui = require("cliui")({ width: process.stdout.columns || 80 });
-const parseArgs = require("yargs-parser");
+import { rollup } from "rollup";
+import webpack from "webpack";
+import chalk from "chalk";
+import { Listr } from "listr2";
+import cliui from "cliui";
+import parseArgs from "yargs-parser";
+import dotenv from "dotenv";
 
-const generateRollupConfig = require("../config/rollup.config");
-const generateWebpackConfig = require("../config/webpack.config");
-const torusConfig = require("../config/torus.config");
-const paths = require("../config/paths");
-const formatWebpackStats = require("../helpers/formatWebpackStats");
-const formatWebpackMessages = require("../helpers/formatWebpackMessages");
-const formatRollupStats = require("../helpers/formatRollupStats");
-const updatePackageNotification = require("../helpers/updatePackage");
-const { buildHelpText } = require("../helpers/constants");
-const { deleteFolder } = require("../helpers/utils");
+import generateRollupConfig from "../config/rollup.config.js";
+import generateWebpackConfig from "../config/webpack.config.js";
+import torusConfig from "../config/torus.config.js";
+import paths from "../config/paths.js";
+import formatWebpackStats from "../helpers/formatWebpackStats.js";
+import formatWebpackMessages from "../helpers/formatWebpackMessages.js";
+import formatRollupStats from "../helpers/formatRollupStats.js";
+import updatePackageNotification from "../helpers/updatePackage.js";
+import { buildHelpText } from "../helpers/constants.js";
+import { deleteFolder } from "../helpers/utils.js";
+
+const ui = cliui({ width: process.stdout.columns || 80 });
 
 const aliases = {
   n: "name",
@@ -49,7 +52,7 @@ const parseCliArguments = (args) => {
 const finalArgs = parseCliArguments([].slice.call(process.argv, 2));
 
 if (paths.dotenv) {
-  require("dotenv").config({ path: paths.dotenv });
+  dotenv.config({ path: paths.dotenv });
 }
 
 function addOutput({ ctx, filename, formattedStats, type, warnings }) {
@@ -73,7 +76,7 @@ function getRollupTasks() {
       title: filename,
       task: async (ctx) => {
         const start = process.hrtime.bigint();
-        const bundle = await rollup.rollup(config);
+        const bundle = await rollup(config);
         await bundle.generate(outputOption);
         const output = await bundle.write(outputOption);
         await bundle.close();
@@ -139,7 +142,8 @@ async function main() {
   if (torusConfig.esm) {
     tasks.add(getRollupTasks());
   }
-  tasks.add(getWebpackTasks());
+  const webpackTasks = getWebpackTasks();
+  tasks.add(webpackTasks);
   try {
     const ctx = await tasks.run();
 

@@ -9,8 +9,13 @@ process.on("unhandledRejection", (err) => {
   throw err;
 });
 
-const parseArgs = require("yargs-parser");
-const { helpText } = require("../helpers/constants");
+import parseArgs from "yargs-parser";
+import spawn from "cross-spawn";
+
+import { readJSONFile, resolveFileUrl } from "../helpers/utils.js";
+import { helpText } from "../helpers/constants.js";
+
+const pkg = readJSONFile(new URL("../package.json", import.meta.url));
 
 const aliases = {
   h: "help",
@@ -35,11 +40,9 @@ if (parsedArgs.help) {
   console.log(helpText);
   process.exit(0);
 } else if (parsedArgs.version) {
-  console.log(`v${require("../package.json").version}`);
+  console.log(`v${pkg.version}`);
   process.exit(0);
 }
-
-const spawn = require("cross-spawn");
 
 const scriptIndex = args.findIndex((x) => x === "build" || x === "start" || x === "release");
 
@@ -47,7 +50,7 @@ const script = scriptIndex === -1 ? args[0] : args[scriptIndex];
 const nodeArgs = scriptIndex > 0 ? args.slice(0, scriptIndex) : [];
 
 if (["build", "start", "release"].includes(script)) {
-  const result = spawn.sync(process.execPath, nodeArgs.concat(require.resolve("../scripts/" + script)).concat(args.slice(scriptIndex + 1)), {
+  const result = spawn.sync(process.execPath, nodeArgs.concat(resolveFileUrl("../scripts/" + script + ".js")).concat(args.slice(scriptIndex + 1)), {
     stdio: "inherit",
   });
   if (result.signal) {

@@ -2,13 +2,12 @@
 // merges the user provided config with the default config
 // and returns the merged config
 
-const merge = require("babel-merge");
-const fs = require("fs");
+import merge from "babel-merge";
 
-const paths = require("./paths");
+import paths from "./paths.js";
+import defaultConfig from "../defaults/babel.config.js";
+import { readCjsFile } from "../helpers/utils.js";
 
-const defaultConfig = require("../defaults/babel.config");
+const userConfig = await readCjsFile(paths.appBabelConfig);
 
-const userConfig = fs.existsSync(paths.appBabelConfig) ? require(paths.appBabelConfig) : {};
-
-module.exports = merge(defaultConfig, userConfig);
+export default merge(defaultConfig, userConfig.default || {});

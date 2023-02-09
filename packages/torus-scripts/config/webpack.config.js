@@ -3,23 +3,24 @@
 // and returns the merged config
 
 // By default this generates cjs, umd builds
-const merge = require("lodash.mergewith");
-const path = require("path");
-const fs = require("fs");
-const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
-const nodeExternals = require("webpack-node-externals");
+import merge from "lodash.mergewith";
+import path from "path";
+import fs from "fs";
+import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
+import nodeExternals from "webpack-node-externals";
+import webpack from "webpack";
 
-const paths = require("./paths");
-const babelConfig = require("./babel.config");
-const ESLintPlugin = require("eslint-webpack-plugin");
-const torusConfig = require("./torus.config");
-const webpack = require("webpack");
+import paths, { moduleFileExtensions } from "./paths.js";
+import babelConfig from "./babel.config.js";
+import ESLintPlugin from "eslint-webpack-plugin";
+import torusConfig from "./torus.config.js";
+import { readCjsFile, readJSONFile } from "../helpers/utils.js";
 
 const { appWebpackConfig, appBuild } = paths;
 const { NODE_ENV = "production" } = process.env;
 
-const pkg = require(paths.appPackageJson);
-const { baseConfig: userBaseConfig, ...rest } = fs.existsSync(appWebpackConfig) ? require(appWebpackConfig) : { baseConfig: {} };
+const pkg = readJSONFile(paths.appPackageJson);
+const configImported = (await readCjsFile(appWebpackConfig)).default || { baseConfig: {} };
 
 const babelLoaderOptions = {
   ...babelConfig,
@@ -35,7 +36,7 @@ if (fs.existsSync(paths.appBrowserslistConfig)) {
   babelLoaderOptions.targets = torusConfig.browserslistrc;
 }
 
-const babelLoader = {
+export const babelLoader = {
   test: /\.(ts|js)x?$/,
   exclude: /(node_modules|bower_components)/,
   use: {
@@ -59,15 +60,23 @@ const polyfillPlugins = [
   }),
 ];
 
+export const resolveWebpackModule = (localPath) => {
+  if (fs.existsSync(path.resolve(paths.ownNodeModules, localPath))) return new URL(paths.ownNodeModules + "/" + localPath, import.meta.url).pathname;
+  else if (fs.existsSync(path.resolve(paths.appNodeModules, localPath)))
+    return new URL(paths.appNodeModules + "/" + localPath, import.meta.url).pathname;
+
+  throw new Error("Cannot resolve module: " + localPath + "Please install the dependency");
+};
+
 const polyfillFallback = {
-  http: require.resolve("stream-http"),
-  https: require.resolve("https-browserify"),
-  os: require.resolve("os-browserify/browser"),
-  crypto: require.resolve("crypto-browserify"),
-  assert: require.resolve("assert/"),
-  stream: require.resolve("stream-browserify"),
-  url: require.resolve("url/"),
-  buffer: require.resolve("buffer/"),
+  http: resolveWebpackModule("stream-http/index.js"),
+  https: resolveWebpackModule("https-browserify/index.js"),
+  os: resolveWebpackModule("os-browserify/browser.js"),
+  crypto: resolveWebpackModule("crypto-browserify/index.js"),
+  assert: resolveWebpackModule("assert/build/assert.js"),
+  stream: resolveWebpackModule("stream-browserify/index.js"),
+  url: resolveWebpackModule("url/url.js"),
+  buffer: resolveWebpackModule("buffer/index.js"),
   fs: false,
   path: false,
 };
@@ -84,7 +93,8 @@ function customizer(objValue, srcValue, key) {
   }
 }
 
-module.exports = (pkgName) => {
+export default (pkgName) => {
+  const { baseConfig: userBaseConfig, ...rest } = configImported;
   // create a copy of baseConfig every time so that loaders use new instances
   const umdConfig = merge(
     getDefaultUmdConfig(pkgName),
@@ -126,9 +136,7 @@ module.exports = (pkgName) => {
   ];
 };
 
-module.exports.babelLoader = babelLoader;
-
-const getDefaultBaseConfig = () => {
+export const getDefaultBaseConfig = () => {
   return {
     mode: NODE_ENV,
     devtool: "source-map",
@@ -142,9 +150,9 @@ const getDefaultBaseConfig = () => {
       },
     },
     resolve: {
-      extensions: paths.moduleFileExtensions.map((x) => `.${x}`),
+      extensions: moduleFileExtensions.map((x) => `.${x}`),
       alias: {
-        "bn.js": require.resolve("bn.js"),
+        "bn.js": resolveWebpackModule("bn.js/lib/bn.js"),
       },
     },
     plugins: [],
@@ -165,9 +173,7 @@ const getDefaultBaseConfig = () => {
   };
 };
 
-module.exports.getDefaultBaseConfig = getDefaultBaseConfig;
-
-const getDefaultUmdConfig = (pkgName) => {
+export const getDefaultUmdConfig = (pkgName) => {
   return {
     output: {
       filename: `${pkgName}.umd.min.js`,
@@ -193,9 +199,7 @@ const getDefaultUmdConfig = (pkgName) => {
   };
 };
 
-module.exports.getDefaultUmdConfig = getDefaultUmdConfig;
-
-const getDefaultCjsConfig = (pkgName) => {
+export const getDefaultCjsConfig = (pkgName) => {
   return {
     ...optimization,
     output: {
@@ -223,9 +227,7 @@ const getDefaultCjsConfig = (pkgName) => {
   };
 };
 
-module.exports.getDefaultCjsConfig = getDefaultCjsConfig;
-
-const getDefaultCjsBundledConfig = (pkgName) => {
+export const getDefaultCjsBundledConfig = (pkgName) => {
   return {
     ...optimization,
     output: {
@@ -241,5 +243,3 @@ const getDefaultCjsBundledConfig = (pkgName) => {
     },
   };
 };
-
-module.exports.getDefaultCjsBundledConfig = getDefaultCjsBundledConfig;

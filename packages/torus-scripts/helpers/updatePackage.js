@@ -1,6 +1,9 @@
-const updater = require("update-notifier");
-const pkg = require("../package.json");
+import updater from "update-notifier";
 
-module.exports = function () {
+import { readJSONFile } from "./utils.js";
+
+const pkg = readJSONFile(new URL("../package.json", import.meta.url));
+
+export default function () {
   updater({ pkg }).notify();
-};
+}

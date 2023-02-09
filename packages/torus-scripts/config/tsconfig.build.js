@@ -2,10 +2,11 @@
 // merges the user provided config with the default config
 // and returns the merged config
 
-const paths = require("./paths");
-const fs = require("fs");
-const ts = require("typescript");
-const merge = require("lodash.mergewith");
+import fs from "fs";
+import ts from "typescript";
+import merge from "lodash.mergewith";
+
+import paths from "./paths.js";
 
 const defaultConfig = {
   compilerOptions: {
@@ -39,4 +40,4 @@ function customizer(objValue, srcValue) {
   }
 }
 
-module.exports = merge(defaultConfig, userConfig, customizer);
+export default merge(defaultConfig, userConfig, customizer);

@@ -97,4 +97,4 @@ function formatWebpackMessages(json) {
   return result;
 }
 
-module.exports = formatWebpackMessages;
+export default formatWebpackMessages;

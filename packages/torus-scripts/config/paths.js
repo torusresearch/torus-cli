@@ -1,7 +1,8 @@
 "use strict";
 
-const path = require("path");
-const fs = require("fs");
+import path from "path";
+import fs from "fs";
+import { resolveFileUrl } from "../helpers/utils.js";
 
 // This works with lerna packages too
 const appDirectory = fs.realpathSync(process.cwd());
@@ -9,7 +10,7 @@ const resolveApp = (relativePath) => path.resolve(appDirectory, relativePath);
 
 const buildPath = process.env.BUILD_DIR || "dist";
 
-const moduleFileExtensions = ["js", "ts", "json", "mjs", "jsx", "tsx"];
+export const moduleFileExtensions = ["js", "ts", "json", "mjs", "jsx", "tsx"];
 
 // Resolve file paths in the same order as webpack
 const resolveModule = (resolveFn, filePath) => {
@@ -22,10 +23,10 @@ const resolveModule = (resolveFn, filePath) => {
   return resolveFn(`${filePath}.js`);
 };
 
-const resolveOwn = (relativePath) => path.resolve(__dirname, "..", relativePath);
+const resolveOwn = (relativePath) => path.resolve(resolveFileUrl(new URL("../" + relativePath, import.meta.url)));
 
 // we're in ./node_modules/torus-scripts/config/
-module.exports = {
+export default {
   dotenv: resolveApp(".env"),
   appPath: resolveApp("."),
   appBuild: resolveApp(buildPath),
@@ -47,5 +48,3 @@ module.exports = {
   ownPath: resolveOwn("."),
   ownNodeModules: resolveOwn("node_modules"), // This is empty on npm 3
 };
-
-module.exports.moduleFileExtensions = moduleFileExtensions;

@@ -2,13 +2,12 @@
 // merges the user provided config with the default config
 // and returns the merged config
 
-const merge = require("lodash.mergewith");
-const fs = require("fs");
+import merge from "lodash.mergewith";
 
-const paths = require("./paths");
+import paths from "./paths.js";
+import defaultConfig from "../defaults/torus.config.js";
+import { readCjsFile } from "../helpers/utils.js";
 
-const defaultConfig = require("../defaults/torus.config");
+const userConfig = await readCjsFile(paths.appTorusConfig);
 
-const userConfig = fs.existsSync(paths.appTorusConfig) ? require(paths.appTorusConfig) : {};
-
-module.exports = merge(defaultConfig, userConfig);
+export default merge(defaultConfig, userConfig.default || {});

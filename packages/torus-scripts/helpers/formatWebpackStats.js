@@ -1,8 +1,8 @@
-const path = require("path");
-const chalk = require("chalk");
-const { formatSize, getGzippedSize } = require("./utils");
+import path from "path";
+import chalk from "chalk";
+import { formatSize, getGzippedSize } from "./utils.js";
 
-module.exports = function formatStats(stats, dir) {
+export default function formatStats(stats, dir) {
   const json = stats.toJson({
     hash: false,
     modules: false,
@@ -42,4 +42,4 @@ module.exports = function formatStats(stats, dir) {
     getGzippedSize(asset, dir),
     `${(json.time / 1000).toFixed(1)} sec`,
   ]);
-};
+}

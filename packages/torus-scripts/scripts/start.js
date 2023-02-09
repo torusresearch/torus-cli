@@ -5,7 +5,7 @@ process.env.BABEL_ENV = "development";
 process.env.NODE_ENV = "development";
 
 const ctx = { webpackWatchers: [], rollupWatchers: [] };
-const chalk = require("chalk");
+import chalk from "chalk";
 
 function closeWatchers() {
   console.log(chalk.yellow("Stopping dev server..."));
@@ -33,20 +33,21 @@ process.on("unhandledRejection", (err) => {
   throw err;
 });
 
-const rollup = require("rollup");
-const webpack = require("webpack");
-const { Listr } = require("listr2");
-const { Observable } = require("rxjs");
-const parseArgs = require("yargs-parser");
+import { rollup } from "rollup";
+import webpack from "webpack";
+import { Listr } from "listr2";
+import { Observable } from "rxjs";
+import parseArgs from "yargs-parser";
+import dotenv from "dotenv";
 
-const generateRollupConfig = require("../config/rollup.config");
-const generateWebpackConfig = require("../config/webpack.config");
-const torusConfig = require("../config/torus.config");
-const paths = require("../config/paths");
-const formatWebpackMessages = require("../helpers/formatWebpackMessages");
-const updatePackageNotification = require("../helpers/updatePackage");
-const { startHelpText } = require("../helpers/constants");
-const { deleteFolder } = require("../helpers/utils");
+import generateRollupConfig from "../config/rollup.config.js";
+import generateWebpackConfig from "../config/webpack.config.js";
+import torusConfig from "../config/torus.config.js";
+import paths from "../config/paths.js";
+import formatWebpackMessages from "../helpers/formatWebpackMessages.js";
+import updatePackageNotification from "../helpers/updatePackage.js";
+import { startHelpText } from "../helpers/constants.js";
+import { deleteFolder } from "../helpers/utils.js";
 
 const aliases = {
   n: "name",
@@ -68,7 +69,7 @@ const parseCliArguments = (args) => {
 const finalArgs = parseCliArguments([].slice.call(process.argv, 2));
 
 if (paths.dotenv) {
-  require("dotenv").config({ path: paths.dotenv });
+  dotenv.config({ path: paths.dotenv });
 }
 
 function addOutput({ webpackWatcher, rollupWatcher }) {
@@ -179,7 +180,8 @@ async function main() {
   if (torusConfig.esm) {
     tasks.add(getRollupTasks());
   }
-  tasks.add(getWebpackTasks());
+  const webpackTasks = getWebpackTasks();
+  tasks.add(webpackTasks);
   try {
     await tasks.run();
   } catch (error) {

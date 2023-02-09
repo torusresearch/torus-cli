@@ -1,8 +1,8 @@
-const path = require("path");
-const chalk = require("chalk");
-const { formatSize, getGzippedBufferSize } = require("./utils");
+import path from "path";
+import chalk from "chalk";
+import { formatSize, getGzippedBufferSize } from "./utils.js";
 
-module.exports = function formatStats(stats, dir, time) {
+export default function formatStats(stats, dir, time) {
   // First item in stats is the rollup file
   const chunks = stats.filter((x) => x.type === "chunk");
   const lastDir = dir.split("/").pop();
@@ -14,4 +14,4 @@ module.exports = function formatStats(stats, dir, time) {
       `${(Number(time) / 1000).toFixed(1)} sec`,
     ];
   });
-};
+}

@@ -2,19 +2,21 @@
 // merges the user provided config with the default config
 // and returns the merged config
 
-const mergewith = require("lodash.mergewith");
-const babel = require("@babel/core");
-const typescript = require("@rollup/plugin-typescript");
-const babelPlugin = require("@rollup/plugin-babel").default;
-const path = require("path");
-const fs = require("fs");
-const requireFromString = require("require-from-string");
-const tsconfigBuild = require("./tsconfig.build");
-const babelConfig = require("./babel.config");
-const torusConfig = require("./torus.config");
+import mergewith from "lodash.mergewith";
+import babel from "@babel/core";
+import typescript from "@rollup/plugin-typescript";
+import babelPlugin from "@rollup/plugin-babel";
+import path from "path";
+import fs from "fs";
+import requireFromString from "require-from-string";
 
-const paths = require("./paths");
-const pkg = require(paths.appPackageJson);
+import tsconfigBuild from "./tsconfig.build.js";
+import torusConfig from "./torus.config.js";
+import paths from "./paths.js";
+import { readJSONFile } from "../helpers/utils.js";
+import babelConfig from "./babel.config.js";
+
+const pkg = readJSONFile(paths.appPackageJson);
 
 const babelPluginOptions = {
   extensions: [".ts", ".js", ".tsx", ".jsx", ".mjs"],
@@ -80,7 +82,7 @@ function customizer(objValue, srcValue, key) {
 
 // We just return the user's array value
 
-module.exports = (name) => {
+export default (name) => {
   const userConfig = fs.existsSync(paths.appRollupConfig)
     ? requireFromString(babel.transformFileSync(paths.appRollupConfig, { presets: ["@babel/env"] }).code).default
     : {};

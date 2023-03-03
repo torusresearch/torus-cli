@@ -33,7 +33,7 @@ process.on("unhandledRejection", (err) => {
   throw err;
 });
 
-import { rollup } from "rollup";
+import { watch } from "rollup";
 import webpack from "webpack";
 import { Listr } from "listr2";
 import { Observable } from "rxjs";
@@ -91,7 +91,7 @@ function getRollupTasks() {
       title: filename,
       task: () => {
         return new Observable((observer) => {
-          const watcher = rollup.watch(config);
+          const watcher = watch(config);
           watcher.on("event", async (event) => {
             const bundle = event.result;
             if (event.code === "START") {

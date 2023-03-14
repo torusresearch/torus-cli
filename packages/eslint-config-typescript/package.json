@@ -7,10 +7,10 @@
     "eslintconfig"
   ],
   "dependencies": {
-    "@typescript-eslint/parser": "^5.51.0",
+    "@typescript-eslint/parser": "^5.55.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
-    "eslint-config-prettier": "^8.6.0",
+    "eslint-config-prettier": "^8.7.0",
     "eslint-config-problems": "^7.0.1",
     "eslint-config-standard": "^17.0.0"
   },
@@ -28,8 +28,8 @@
     "typescript": "^4.x"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.51.0",
-    "eslint": "^8.33.0",
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "eslint": "^8.36.0",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-mocha": "^10.1.0",
     "eslint-plugin-n": "^15.6.1",
@@ -37,7 +37,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-tsdoc": "^0.2.17",
-    "prettier": "^2.8.3",
+    "prettier": "^2.8.4",
     "typescript": "^4.9.5"
   },
   "publishConfig": {

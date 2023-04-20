@@ -36,7 +36,7 @@ if (fs.existsSync(paths.appBrowserslistConfig)) {
 const getDefaultConfig = (name) => {
   return {
     input: paths.appIndexFile,
-    external: [...Object.keys(pkg.dependencies), /@babel\/runtime/],
+    external: [...Object.keys(pkg.dependencies || {}), /@babel\/runtime/],
     output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
     plugins: [
       typescript({

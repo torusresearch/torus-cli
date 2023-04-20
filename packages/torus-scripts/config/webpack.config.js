@@ -222,7 +222,7 @@ export const getDefaultCjsConfig = (pkgName) => {
         cacheLocation: path.resolve(paths.appNodeModules, ".cache/.eslintcache"),
       }),
     ],
-    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i, nodeExternals()],
+    externals: [...Object.keys(pkg.dependencies || {}), /^(@babel\/runtime)/i, nodeExternals()],
     node: {
       // Buffer: false,
     },
@@ -238,7 +238,7 @@ export const getDefaultCjsBundledConfig = (pkgName) => {
         type: "commonjs2",
       },
     },
-    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
+    externals: [...Object.keys(pkg.dependencies || {}), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
     plugins: polyfillPlugins,
     resolve: {
       fallback: polyfillFallback,

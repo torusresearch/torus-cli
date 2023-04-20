@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import zlib from "zlib";
-import rimraf from "rimraf";
+import { rimraf } from "rimraf";
 
 export function formatSize(size) {
   return (size / 1024).toFixed(2) + " KiB";

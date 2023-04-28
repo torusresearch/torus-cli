@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
@@ -21,8 +21,8 @@
     "assert": "^2.0.0",
     "babel-loader": "^9.1.2",
     "babel-merge": "^3.0.0",
-    "buffer": "^6.0.3",
     "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
     "chalk": "^5.2.0",
     "cliui": "^8.0.1",
     "crypto-browserify": "^3.12.0",

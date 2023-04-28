@@ -79,7 +79,7 @@ const polyfillFallback = {
   stream: resolveWebpackModule("stream-browserify/index.js"),
   url: resolveWebpackModule("url/url.js"),
   buffer: resolveWebpackModule("buffer/index.js"),
-  zlib: resolveWebpackModule("browserify-zlib/index.js"),
+  zlib: resolveWebpackModule("browserify-zlib/lib/index.js"),
   fs: false,
   path: false,
 };

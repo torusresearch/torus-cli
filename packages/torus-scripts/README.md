@@ -68,6 +68,18 @@ interface IOptions {
   umd: boolean; // Whether to generate an umd build. Default: true
   analyzerMode: "disabled" | "static" | "server" | "json"; // Whether to analyze the umd build. Internally uses webpack-bundle-analyzer. Default: "disabled". Refer to full options here: https://github.com/webpack-contrib/webpack-bundle-analyzer
   browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
+  // This option allows you to skip polyfilling node deps by default. You can set it to true or a specific path to
+  // polyfill correctly. This change has been done to prevent unnecessary polyfilling of node deps in browser builds
+  polyfillNodeDeps: {
+    http: boolean | string,
+    https: boolean | string,
+    os: boolean | string,
+    crypto: boolean | string,
+    assert: boolean | string,
+    stream: boolean | string,
+    url: boolean | string,
+    zlib: boolean | string,
+  },
 }
 ```
 

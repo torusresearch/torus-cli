@@ -20,10 +20,17 @@ export default {
   cjs: true,
   umd: true,
 
-  cjsBundled: false,
-  bundledDeps: [],
-
   analyzerMode: "disabled",
 
   browserslistrc: pkg.browserslist && pkg.browserslist.production ? pkg.browserslist.production : pkg.browserslist || ["supports bigint", "not dead"],
+  polyfillNodeDeps: {
+    http: false,
+    https: false,
+    os: false,
+    crypto: false,
+    assert: false,
+    stream: false,
+    url: false,
+    zlib: false,
+  },
 };

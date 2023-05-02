@@ -66,8 +66,6 @@ interface IOptions {
   esm: boolean; // Whether to generate an esm build. Default: true
   cjs: boolean; // Whether to generate a cjs build. Default: true
   umd: boolean; // Whether to generate an umd build. Default: true
-  cjsBundled: boolean; // Whether to generate an cjs build with troubling deps bundled. Default: false
-  bundledDeps: string[]; // What deps to bundle while generating cjsBundled build. Default: false
   analyzerMode: "disabled" | "static" | "server" | "json"; // Whether to analyze the umd build. Internally uses webpack-bundle-analyzer. Default: "disabled". Refer to full options here: https://github.com/webpack-contrib/webpack-bundle-analyzer
   browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
 }
@@ -198,7 +196,6 @@ The build is produced in the following formats depending on the options specifie
 
 - `esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `cjs` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
-- `cjsBundled` - [optional] Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 - `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 ### torus-scripts start
@@ -219,7 +216,6 @@ The dev server build is produced in the following formats depending on the optio
 
 - `esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `cjs` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
-- `cjsBundled` - [optional] Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 - `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 you can use npm folder links to install this to any other project and

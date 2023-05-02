@@ -26,8 +26,8 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=14.17.0",
-    "npm": ">=6.x"
+    "node": ">=16.18.1",
+    "npm": ">=8.x"
   },
   "author": "Torus Labs",
   "license": "MIT",

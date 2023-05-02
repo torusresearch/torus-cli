@@ -10,13 +10,14 @@ import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 import nodeExternals from "webpack-node-externals";
 import webpack from "webpack";
 import { createRequire } from "node:module";
+import ESLintPlugin from "eslint-webpack-plugin";
 
 const require = createRequire(import.meta.url);
 import paths, { moduleFileExtensions } from "./paths.js";
 import babelConfig from "./babel.config.js";
-import ESLintPlugin from "eslint-webpack-plugin";
 import torusConfig from "./torus.config.js";
 import { readCjsFile, readJSONFile } from "../helpers/utils.js";
+import mergeWith from "lodash.mergewith";
 
 const { appWebpackConfig, appBuild } = paths;
 const { NODE_ENV = "production" } = process.env;
@@ -70,19 +71,27 @@ export const resolveWebpackModule = (localPath) => {
   return require.resolve(localPath);
 };
 
-const polyfillFallback = {
-  http: resolveWebpackModule("stream-http/index.js"),
-  https: resolveWebpackModule("https-browserify/index.js"),
-  os: resolveWebpackModule("os-browserify/browser.js"),
-  crypto: resolveWebpackModule("crypto-browserify/index.js"),
-  assert: resolveWebpackModule("assert/build/assert.js"),
-  stream: resolveWebpackModule("stream-browserify/index.js"),
-  url: resolveWebpackModule("url/url.js"),
-  buffer: resolveWebpackModule("buffer/index.js"),
-  zlib: resolveWebpackModule("browserify-zlib/lib/index.js"),
-  fs: false,
-  path: false,
-};
+const polyfillFallback = mergeWith(
+  {
+    http: resolveWebpackModule("stream-http/index.js"),
+    https: resolveWebpackModule("https-browserify/index.js"),
+    os: resolveWebpackModule("os-browserify/browser.js"),
+    crypto: resolveWebpackModule("crypto-browserify/index.js"),
+    assert: resolveWebpackModule("assert/build/assert.js"),
+    stream: resolveWebpackModule("stream-browserify/index.js"),
+    url: resolveWebpackModule("url/url.js"),
+    buffer: resolveWebpackModule("buffer/index.js"),
+    zlib: resolveWebpackModule("browserify-zlib/lib/index.js"),
+    fs: false,
+    path: false,
+  },
+  torusConfig.polyfillNodeDeps,
+  (objValue, srcValue) => {
+    if (srcValue === true) return objValue;
+    if (typeof srcValue === "string") return srcValue;
+    return undefined;
+  }
+);
 
 function generateLibraryName(pkgName) {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
@@ -111,21 +120,13 @@ export default (pkgName) => {
     rest.cjsConfig || {},
     customizer
   );
-  const cjsBundledConfig = merge(
-    getDefaultCjsBundledConfig(pkgName),
-    merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer),
-    rest.cjsBundledConfig || {},
-    customizer
-  );
 
   const finalConfigs = [];
 
   if (torusConfig.cjs) finalConfigs.push(cjsConfig);
   if (torusConfig.umd) finalConfigs.push(umdConfig);
-  if (torusConfig.cjsBundled) finalConfigs.push(cjsBundledConfig);
 
   delete rest.cjsConfig;
-  delete rest.cjsBundledConfig;
   delete rest.umdConfig;
 
   // console.log("%O", ...finalConfigs.map(x => x.plugins));
@@ -194,7 +195,7 @@ export const getDefaultUmdConfig = (pkgName) => {
         analyzerMode: torusConfig.analyzerMode,
         openAnalyzer: false,
       }),
-      ...polyfillPlugins,
+      ...polyfillPlugins, // always polyfill buffer and process
     ],
     resolve: {
       fallback: polyfillFallback,
@@ -224,25 +225,9 @@ export const getDefaultCjsConfig = (pkgName) => {
       }),
     ],
     externals: [...Object.keys(pkg.dependencies || {}), /^(@babel\/runtime)/i, nodeExternals()],
+    externalsPresets: { node: true },
     node: {
       // Buffer: false,
-    },
-  };
-};
-
-export const getDefaultCjsBundledConfig = (pkgName) => {
-  return {
-    ...optimization,
-    output: {
-      filename: `${pkgName}-bundled.cjs.js`,
-      library: {
-        type: "commonjs2",
-      },
-    },
-    externals: [...Object.keys(pkg.dependencies || {}), /^(@babel\/runtime)/i].filter((x) => !torusConfig.bundledDeps.includes(x)),
-    plugins: polyfillPlugins,
-    resolve: {
-      fallback: polyfillFallback,
     },
   };
 };

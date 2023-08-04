@@ -1,15 +1,14 @@
 {
   "private": true,
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "workspaces": [
     "packages/*"
   ],
   "repository": "git@github.com:torusresearch/torus-cli.git",
   "scripts": {
-    "bootstrap": "lerna bootstrap",
-    "publish:lerna": "npm run clean && npm run bootstrap && lerna publish",
+    "publish:lerna": "npm run clean && npm install && lerna publish",
     "just:publish:lerna": "lerna publish",
     "pack:lerna": "lerna exec -- 'npm pack'",
     "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json yarn.lock dist/ .rollup.cache/ tsconfig.build.tsbuildinfo .rts2_cache_{cjs,esm}/ toruslabs-*.tgz openlogin-*tgz .eslintcache",

@@ -131,8 +131,6 @@ export default (pkgName) => {
   delete rest.cjsConfig;
   delete rest.umdConfig;
 
-  // console.log("%O", ...finalConfigs.map(x => x.plugins));
-
   return [
     ...finalConfigs,
     ...Object.values(rest || {}).map((x) => {
@@ -195,8 +193,6 @@ export const getDefaultUmdConfig = (pkgName) => {
     },
   };
 };
-
-console.log(tsconfigBuild, "tsconfibuild");
 
 export const getDefaultCjsConfig = (pkgName) => {
   return {

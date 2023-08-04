@@ -18,7 +18,6 @@ const userConfig = userPathExists ? ts.readConfigFile(paths.appTsBuildConfig, ts
 TODO: change this when fork-ts-checker-webpack-plugin is updated to support tsconfig.json extends as an array
 // objValue is the first object (our default config)
 function customizer(objValue, srcValue, key) {
-  console.log(arguments);
   if (key === "extends") {
     const finalArray = [];
     if (Array.isArray(objValue)) {

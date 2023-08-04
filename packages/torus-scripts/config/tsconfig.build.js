@@ -61,7 +61,7 @@ const defaultConfig = getFullTsConfigFromFile("@toruslabs/config/tsconfig.build.
 const mergedConfig = merge(
   defaultConfig,
   {
-    compilerOptions: { outDir: paths.appBuildPath, declarationDir: paths.appBuildPath + "/types", rootDir: "." },
+    compilerOptions: { outDir: paths.appBuildPath, declarationDir: paths.appBuildPath + "/types", rootDir: paths.appSrc },
     include: ["src"],
   },
   userConfig,

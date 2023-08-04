@@ -220,7 +220,6 @@ export const getDefaultCjsConfig = (pkgName) => {
           context: paths.appPath,
           configFile: fs.existsSync(paths.appTsBuildConfig) ? "tsconfig.build.json" : "tsconfig.json",
           configOverwrite: tsconfigBuild,
-          build: true,
         },
       }),
     ],

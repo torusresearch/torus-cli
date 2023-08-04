@@ -3,23 +3,20 @@
 // and returns the merged config
 
 import mergewith from "lodash.mergewith";
-import babel from "@babel/core";
-import typescript from "@rollup/plugin-typescript";
 import babelPlugin from "@rollup/plugin-babel";
 import path from "path";
 import fs from "fs";
-import requireFromString from "require-from-string";
+import resolve from "@rollup/plugin-node-resolve";
 
-import tsconfigBuild from "./tsconfig.build.js";
 import torusConfig from "./torus.config.js";
-import paths from "./paths.js";
-import { readJSONFile } from "../helpers/utils.js";
+import paths, { appModuleFileExtensions } from "./paths.js";
+import { readFile, readJSONFile } from "../helpers/utils.js";
 import babelConfig from "./babel.config.js";
 
 const pkg = readJSONFile(paths.appPackageJson);
 
 const babelPluginOptions = {
-  extensions: [".ts", ".js", ".tsx", ".jsx", ".mjs"],
+  extensions: appModuleFileExtensions.map((x) => `.${x}`),
   babelHelpers: "runtime",
   babelrc: false,
   ...babelConfig,
@@ -36,14 +33,12 @@ if (fs.existsSync(paths.appBrowserslistConfig)) {
 const getDefaultConfig = (name) => {
   return {
     input: paths.appIndexFile,
-    external: [...Object.keys(pkg.dependencies || {}), /@babel\/runtime/],
+    external: [...Object.keys(pkg.dependencies || {}).map((x) => new RegExp(`${x}`)), /@babel\/runtime/],
     output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
     plugins: [
-      typescript({
-        ...tsconfigBuild.compilerOptions,
-        tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig,
-        noEmitOnError: process.env.NODE_ENV === "production",
-        cacheDir: paths.appWebpackCache,
+      // Allows node_modules resolution
+      resolve({
+        extensions: appModuleFileExtensions.map((x) => `.${x}`),
       }),
       babelPlugin(babelPluginOptions),
     ],
@@ -61,7 +56,7 @@ function customizer(objValue, srcValue, key) {
           acc[x.name] = x;
         }
         return acc;
-      }, {})
+      }, {}),
     );
   }
   if (key === "output") {
@@ -72,7 +67,7 @@ function customizer(objValue, srcValue, key) {
           acc[x.format] = x;
         }
         return acc;
-      }, {})
+      }, {}),
     );
   }
   if (Array.isArray(objValue)) {
@@ -81,10 +76,8 @@ function customizer(objValue, srcValue, key) {
 }
 
 // We just return the user's array value
+const userConfig = fs.existsSync(paths.appRollupConfig) ? await readFile(paths.appRollupConfig) : {};
 
 export default (name) => {
-  const userConfig = fs.existsSync(paths.appRollupConfig)
-    ? requireFromString(babel.transformFileSync(paths.appRollupConfig, { presets: ["@babel/env"] }).code).default
-    : {};
-  return mergewith(getDefaultConfig(name), userConfig, customizer);
+  return mergewith(getDefaultConfig(name), userConfig.default, customizer);
 };

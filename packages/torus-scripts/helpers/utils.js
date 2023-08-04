@@ -27,8 +27,10 @@ export const deleteFolder = async (folderPath) => {
   return rimraf(folderPath);
 };
 
-export const readCjsFile = async (fullPath) => {
+export const readFile = async (fullPath) => {
   if (!fs.existsSync(fullPath)) return {};
+  const ext = path.extname(fullPath);
+  if (ext === ".json") return readJSONFile(fullPath);
   return import(fullPath);
 };
 

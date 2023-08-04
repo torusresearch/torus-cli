@@ -5,33 +5,35 @@
 import fs from "fs";
 import ts from "typescript";
 import merge from "lodash.mergewith";
-
+import { createRequire } from "node:module";
 import paths from "./paths.js";
 
-const defaultConfig = {
-  compilerOptions: {
-    rootDir: "src",
-    moduleResolution: "node",
-    strict: false,
-    module: "es6",
-    target: "esnext",
-    lib: ["ES2020", "DOM"],
-    sourceMap: true,
-    esModuleInterop: true,
-    noImplicitThis: true,
-    declaration: true,
-    declarationDir: "./types",
-    outDir: paths.appBuildPath,
-    allowSyntheticDefaultImports: true,
-    skipLibCheck: true,
-    resolveJsonModule: true,
-  },
-  include: ["src"],
-};
+const require = createRequire(import.meta.url);
 
 const userPathExists = fs.existsSync(paths.appTsBuildConfig);
 
 const userConfig = userPathExists ? ts.readConfigFile(paths.appTsBuildConfig, ts.sys.readFile).config : {};
+
+/*
+TODO: change this when fork-ts-checker-webpack-plugin is updated to support tsconfig.json extends as an array
+// objValue is the first object (our default config)
+function customizer(objValue, srcValue, key) {
+  console.log(arguments);
+  if (key === "extends") {
+    const finalArray = [];
+    if (Array.isArray(objValue)) {
+      finalArray.push(...objValue);
+    } else finalArray.push(objValue);
+    if (Array.isArray(srcValue)) {
+      finalArray.push(...srcValue);
+    } else finalArray.push(srcValue);
+    return [...new Set(finalArray)];
+  }
+  if (Array.isArray(objValue)) {
+    return srcValue;
+  }
+}
+*/
 
 // objValue is the first object (our default config)
 function customizer(objValue, srcValue) {
@@ -40,4 +42,31 @@ function customizer(objValue, srcValue) {
   }
 }
 
-export default merge(defaultConfig, userConfig, customizer);
+function getFullTsConfigFromFile(filePath) {
+  const configPath = require.resolve(filePath);
+  const config = ts.readConfigFile(configPath, ts.sys.readFile).config;
+  if (typeof config.extends === "string" && config.extends) {
+    const extend = config.extends;
+    delete config.extends;
+    return merge(config, getFullTsConfigFromFile(extend), customizer);
+  } else if (Array.isArray(config.extends)) {
+    const extend = config.extends;
+    delete config.extends;
+    return merge(config, ...extend.map((x) => getFullTsConfigFromFile(x)), customizer);
+  }
+  return config;
+}
+
+const defaultConfig = getFullTsConfigFromFile("@toruslabs/config/tsconfig.build.json");
+
+const mergedConfig = merge(
+  defaultConfig,
+  {
+    compilerOptions: { outDir: paths.appBuildPath, declarationDir: paths.appBuildPath + "/types", rootDir: "." },
+    include: ["src"],
+  },
+  userConfig,
+  customizer,
+);
+
+export default mergedConfig;

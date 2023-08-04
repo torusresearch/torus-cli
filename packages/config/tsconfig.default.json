@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "module": "esnext",
+    "target": "esnext",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "noImplicitThis": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "noImplicitAny": true,
+    "strictNullChecks": false,
+    "skipLibCheck": true
+  }
+}

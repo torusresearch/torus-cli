@@ -71,15 +71,15 @@ interface IOptions {
   // This option allows you to skip polyfilling node deps by default. You can set it to true or a specific path to
   // polyfill correctly. This change has been done to prevent unnecessary polyfilling of node deps in browser builds
   polyfillNodeDeps: {
-    http: boolean | string,
-    https: boolean | string,
-    os: boolean | string,
-    crypto: boolean | string,
-    assert: boolean | string,
-    stream: boolean | string,
-    url: boolean | string,
-    zlib: boolean | string,
-  },
+    http: boolean | string;
+    https: boolean | string;
+    os: boolean | string;
+    crypto: boolean | string;
+    assert: boolean | string;
+    stream: boolean | string;
+    url: boolean | string;
+    zlib: boolean | string;
+  };
 }
 ```
 
@@ -255,3 +255,11 @@ you're recommended to add `prepack` command to build before calling release
   }
 }
 ```
+
+## Migration Notes
+
+- babel.config files must be extending babel.config.js and import the default config from @toruslabs/config
+- tsconfig files must be extending tsconfig.default.json and import the default config from @toruslabs/config
+- Add include (`["src", "test"]`), outDir, declarationDir in imported files of tsconfig.json
+- If repo also includes tests, add tsconfig.build.json and in that, `include` must contain `src` only.
+- Start by default doesn't build umd anymore. To build umd, set`umd` to true in torus.config.js

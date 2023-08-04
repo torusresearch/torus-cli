@@ -18,7 +18,6 @@
     "isolatedModules": true,
     "noImplicitAny": true,
     "strictNullChecks": false,
-    "skipLibCheck": true,
-    "incremental": true
+    "skipLibCheck": true
   }
 }

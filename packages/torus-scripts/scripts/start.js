@@ -1,9 +1,5 @@
 "use strict";
 
-// Do this as the first thing so that any code reading it knows the right env.
-process.env.BABEL_ENV = "development";
-process.env.NODE_ENV = "development";
-
 const ctx = { webpackWatchers: [], rollupWatchers: [] };
 import chalk from "chalk";
 
@@ -160,7 +156,8 @@ function getWebpackTasks() {
               }
 
               observer.next(`Build complete for ${x.output.filename}...`);
-            }
+              observer.next(`Done. Watching for changes...`);
+            },
           );
           addOutput({ webpackWatcher: compiler });
         });

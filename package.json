@@ -1,22 +1,24 @@
 {
   "private": true,
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "repository": "git@github.com:torusresearch/torus-cli.git",
   "scripts": {
-    "bootstrap": "lerna bootstrap",
-    "publish:lerna": "yarn clean && yarn bootstrap && lerna publish",
+    "publish:lerna": "npm run clean && npm install && lerna publish",
     "just:publish:lerna": "lerna publish",
-    "pack:lerna": "lerna exec -- 'yarn pack'",
+    "pack:lerna": "lerna exec -- 'npm pack'",
     "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json yarn.lock dist/ .rollup.cache/ tsconfig.build.tsbuildinfo .rts2_cache_{cjs,esm}/ toruslabs-*.tgz openlogin-*tgz .eslintcache",
     "check:styles": "prettier --check .",
     "fix:styles": "prettier --write ."
   },
   "devDependencies": {
-    "eslint": "^8.39.0",
-    "lerna": "^6.6.1",
-    "prettier": "^2.8.8",
-    "typescript": "^4.9.5"
+    "eslint": "^8.46.0",
+    "lerna": "^7.1.4",
+    "prettier": "^3.0.1",
+    "typescript": "^5.1.6"
   }
 }

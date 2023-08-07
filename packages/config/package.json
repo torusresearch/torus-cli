@@ -1,0 +1,33 @@
+{
+  "name": "@toruslabs/config",
+  "version": "1.0.0",
+  "description": "Sensible Babel, Prettier, Typescript configuration for libraries",
+  "keywords": [
+    "eslint",
+    "eslintconfig",
+    "babel",
+    "tsconfig",
+    "prettier",
+    "config"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.x",
+    "npm": ">=9.x"
+  },
+  "peerDependencies": {
+    "@babel/runtime": "^7.16"
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/torusresearch/torus-cli/issues"
+  },
+  "homepage": "https://github.com/torusresearch/torus-cli/tree/main/packages/config",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/torus-cli.git"
+  }
+}

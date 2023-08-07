@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Node16",
     "strict": true,
     "module": "esnext",
     "target": "esnext",
-    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "esModuleInterop": true,
     "noImplicitThis": true,

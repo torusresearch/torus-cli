@@ -31,9 +31,10 @@ if (fs.existsSync(paths.appBrowserslistConfig)) {
 
 // we want to create only one build set with rollup
 const getDefaultConfig = (name) => {
+  const allDeps = [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})];
   return {
     input: paths.appIndexFile,
-    external: [...Object.keys(pkg.dependencies || {}).map((x) => new RegExp(`${x}`)), /@babel\/runtime/],
+    external: [...allDeps, ...allDeps.map((x) => new RegExp(`^${x}/`)), /@babel\/runtime/],
     output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
     plugins: [
       // Allows node_modules resolution

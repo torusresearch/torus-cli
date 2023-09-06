@@ -16,9 +16,9 @@
     "fix:styles": "prettier --write ."
   },
   "devDependencies": {
-    "eslint": "^8.46.0",
-    "lerna": "^7.1.4",
-    "prettier": "^3.0.1",
-    "typescript": "^5.1.6"
+    "eslint": "^8.48.0",
+    "lerna": "^7.2.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "@babel/core": "^7.22.15",
+    "@babel/plugin-syntax-bigint": "^7.8.3",
     "@babel/plugin-transform-class-properties": "^7.22.5",
     "@babel/plugin-transform-numeric-separator": "^7.22.11",
     "@babel/plugin-transform-object-rest-spread": "^7.22.15",
-    "@babel/plugin-syntax-bigint": "^7.8.3",
     "@babel/plugin-transform-runtime": "^7.22.15",
     "@babel/preset-env": "^7.22.15",
     "@babel/preset-typescript": "^7.22.15",

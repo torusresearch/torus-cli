@@ -157,7 +157,7 @@ export const getDefaultBaseConfig = () => {
       extensions: appModuleFileExtensions.map((x) => `.${x}`),
       alias: {
         "bn.js": require.resolve("bn.js/lib/bn.js"),
-        lodash: require.resolve("lodash/index.js"),
+        // lodash: require.resolve("lodash/index.js"),
       },
     },
     plugins: [new webpack.IgnorePlugin({ resourceRegExp: /^\.\/wordlists\/(?!english)/, contextRegExp: /bip39\/src$/ })],

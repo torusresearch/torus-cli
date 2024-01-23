@@ -5,7 +5,7 @@ module.exports = {
     mocha: true,
     commonjs: true,
   },
-  extends: ["@toruslabs/eslint-config-typescript", "plugin:n/recommended", "plugin:security/recommended", "plugin:chai-expect/recommended"],
+  extends: ["@toruslabs/eslint-config-typescript", "plugin:n/recommended", "plugin:security/recommended-legacy", "plugin:chai-expect/recommended"],
   plugins: ["chai-expect", "security"],
   parserOptions: {
     ecmaVersion: 11,

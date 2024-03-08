@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-node",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Eslint configuration for Node.js",
   "keywords": [
     "eslint",
@@ -8,7 +8,7 @@
     "node"
   ],
   "dependencies": {
-    "@toruslabs/eslint-config-typescript": "^3.1.0",
+    "@toruslabs/eslint-config-typescript": "^3.2.0",
     "eslint-plugin-chai-expect": "^3.0.0",
     "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-security": "^2.1.1"

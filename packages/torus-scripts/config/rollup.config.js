@@ -35,7 +35,7 @@ const getDefaultConfig = (name) => {
   return {
     input: paths.appIndexFile,
     external: [...allDeps, ...allDeps.map((x) => new RegExp(`^${x}/`)), /@babel\/runtime/],
-    output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: true }],
+    output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: process.env.NODE_ENV === "development" }],
     plugins: [
       // Allows node_modules resolution
       resolve({

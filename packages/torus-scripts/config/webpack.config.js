@@ -143,7 +143,7 @@ export default (pkgName) => {
 export const getDefaultBaseConfig = () => {
   return {
     mode: NODE_ENV,
-    devtool: "source-map",
+    devtool: NODE_ENV === "development" ? "eval" : false,
     entry: paths.appIndexFile,
     target: "web",
     output: {
@@ -195,16 +195,9 @@ export const getDefaultUmdConfig = (pkgName) => {
 };
 
 export const getDefaultCjsConfig = (pkgName) => {
-  return {
-    ...optimization,
-    output: {
-      filename: `${pkgName}.cjs.js`,
-      library: {
-        // Giving a name to builds aggregates all exports under that name
-        type: "commonjs2",
-      },
-    },
-    plugins: [
+  const plugins = [];
+  if (NODE_ENV === "production") {
+    plugins.push(
       new ESLintPlugin({
         context: paths.appPath,
         extensions: ["ts", "tsx"],
@@ -214,15 +207,28 @@ export const getDefaultCjsConfig = (pkgName) => {
         cache: true,
         cacheLocation: path.resolve(paths.appNodeModules, ".cache/.eslintcache"),
       }),
-      new ForkTsCheckerWebpackPlugin({
-        typescript: {
-          mode: "write-dts",
-          context: paths.appPath,
-          configFile: fs.existsSync(paths.appTsBuildConfig) ? "tsconfig.build.json" : "tsconfig.json",
-          configOverwrite: tsconfigBuild,
-        },
-      }),
-    ],
+    );
+  }
+  plugins.push(
+    new ForkTsCheckerWebpackPlugin({
+      typescript: {
+        mode: "write-dts",
+        context: paths.appPath,
+        configFile: fs.existsSync(paths.appTsBuildConfig) ? "tsconfig.build.json" : "tsconfig.json",
+        configOverwrite: tsconfigBuild,
+      },
+    }),
+  );
+  return {
+    ...optimization,
+    output: {
+      filename: `${pkgName}.cjs.js`,
+      library: {
+        // Giving a name to builds aggregates all exports under that name
+        type: "commonjs2",
+      },
+    },
+    plugins,
     externals: [...Object.keys(pkg.dependencies || {}), /^(@babel\/runtime)/i, nodeExternals()],
     externalsPresets: { node: true },
     node: {

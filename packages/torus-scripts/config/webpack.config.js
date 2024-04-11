@@ -219,6 +219,7 @@ export const getDefaultCjsConfig = (pkgName) => {
       },
     }),
   );
+  const allDeps = [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})];
   return {
     ...optimization,
     output: {
@@ -229,7 +230,7 @@ export const getDefaultCjsConfig = (pkgName) => {
       },
     },
     plugins,
-    externals: [...Object.keys(pkg.dependencies || {}), /^(@babel\/runtime)/i, nodeExternals()],
+    externals: [...allDeps, /^(@babel\/runtime)/i, nodeExternals()],
     externalsPresets: { node: true },
     node: {
       // Buffer: false,

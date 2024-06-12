@@ -6,7 +6,6 @@ module.exports = {
   },
   extends: [
     "problems",
-    "standard",
     "plugin:vue/vue3-recommended",
     "eslint:recommended",
     "@vue/airbnb",

@@ -8,7 +8,6 @@ module.exports = {
     "airbnb-typescript/base",
     "problems",
     "plugin:@typescript-eslint/recommended",
-    "standard",
     "eslint:recommended",
     "plugin:prettier/recommended",
     "plugin:import/errors",

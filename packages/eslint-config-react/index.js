@@ -13,7 +13,6 @@ module.exports = {
     "plugin:react/jsx-runtime",
     "plugin:jsx-a11y/recommended",
     "plugin:react-hooks/recommended",
-    "standard",
     "eslint:recommended",
     "plugin:prettier/recommended",
     "plugin:import/errors",

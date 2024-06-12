@@ -130,7 +130,7 @@ To add other plugins
 import replace from "@rollup/plugin-replace";
 
 // This adds `replace` plugin to the existing plugins used by torus-scripts
-export default {
+export const baseConfig = {
   plugins: [
     replace({
       "process.env.INFURA_PROJECT_ID": `"${process.env.INFURA_PROJECT_ID}"`,
@@ -208,6 +208,8 @@ The build is produced in the following formats depending on the options specifie
 
 - `esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `cjs` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
+- `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
+- `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 ### torus-scripts start
@@ -228,6 +230,8 @@ The dev server build is produced in the following formats depending on the optio
 
 - `esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `cjs` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
+- `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
+- `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 you can use npm folder links to install this to any other project and

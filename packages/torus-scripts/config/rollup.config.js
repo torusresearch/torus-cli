@@ -2,7 +2,6 @@
 // merges the user provided config with the default config
 // and returns the merged config
 
-import mergewith from "lodash.mergewith";
 import babelPlugin from "@rollup/plugin-babel";
 import path from "path";
 import fs from "fs";
@@ -29,12 +28,16 @@ if (fs.existsSync(paths.appBrowserslistConfig)) {
   babelPluginOptions.targets = torusConfig.browserslistrc;
 }
 
+// We just return the user's array value
+const userConfig = fs.existsSync(paths.appRollupConfig) ? await readFile(paths.appRollupConfig) : {};
+
 // we want to create only one build set with rollup
 const getDefaultConfig = (name) => {
   const allDeps = [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})];
   const baseConfig = {
     input: paths.appIndexFile,
     external: [...allDeps, ...allDeps.map((x) => new RegExp(`^${x}/`)), /@babel\/runtime/],
+    ...(userConfig.baseConfig || {}),
   };
   const esmCombinedExport = {
     ...baseConfig,
@@ -47,6 +50,7 @@ const getDefaultConfig = (name) => {
         preferBuiltins: false,
       }),
       babelPlugin(babelPluginOptions),
+      ...(baseConfig.plugins || []),
     ],
   };
   const esmOriginalExport = {
@@ -60,6 +64,7 @@ const getDefaultConfig = (name) => {
         preferBuiltins: false,
       }),
       babelPlugin(babelPluginOptions),
+      ...(baseConfig.plugins || []),
     ],
   };
   // const cjsCombinedExport = {
@@ -74,6 +79,7 @@ const getDefaultConfig = (name) => {
   //     }),
   //     commonjs(),
   //     babelPlugin(babelPluginOptions),
+  // ...(baseConfig.plugins || []),
   //   ],
   // };
   const cjsOriginalExport = {
@@ -87,44 +93,12 @@ const getDefaultConfig = (name) => {
         preferBuiltins: false,
       }),
       babelPlugin(babelPluginOptions),
+      ...(baseConfig.plugins || []),
     ],
   };
   return [esmCombinedExport, esmOriginalExport, cjsOriginalExport];
 };
 
-// objValue is the first object (our default config)
-function customizer(objValue, srcValue, key) {
-  // merge plugins nicely knowing that name is common
-  if (key === "plugins") {
-    // concat first and remove duplicates by name (keep the first occurrence)
-    return Object.values(
-      srcValue.concat(objValue).reduce((acc, x) => {
-        if (!acc[x.name]) {
-          acc[x.name] = x;
-        }
-        return acc;
-      }, {}),
-    );
-  }
-  if (key === "output") {
-    // concat first and remove duplicates by format (keep the first occurrence)
-    return Object.values(
-      srcValue.concat(objValue).reduce((acc, x) => {
-        if (!acc[x.format]) {
-          acc[x.format] = x;
-        }
-        return acc;
-      }, {}),
-    );
-  }
-  if (Array.isArray(objValue)) {
-    return srcValue;
-  }
-}
-
-// We just return the user's array value
-const userConfig = fs.existsSync(paths.appRollupConfig) ? await readFile(paths.appRollupConfig) : {};
-
 export default (name) => {
-  return mergewith(getDefaultConfig(name), userConfig.default, customizer);
+  return getDefaultConfig(name);
 };

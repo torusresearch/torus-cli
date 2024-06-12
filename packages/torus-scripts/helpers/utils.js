@@ -17,6 +17,10 @@ export function getGzippedBufferSize(assetBuffer) {
   return formatSize(zlib.gzipSync(assetBuffer).length);
 }
 
+export function getGzippedBufferLength(assetBuffer) {
+  return zlib.gzipSync(assetBuffer).length;
+}
+
 export function makeRow(a, b, c) {
   return `  ${a}\t    ${b}\t ${c}`;
 }

@@ -2,7 +2,7 @@
 // merges the user provided config with the default config
 // and returns the merged config
 
-import merge from "babel-merge";
+import merge from "../helpers/babelMerge.js";
 
 import paths from "./paths.js";
 import defaultConfig from "@toruslabs/config/babel.config.js";

@@ -3,9 +3,7 @@ module.exports = {
   esm: true,
   cjs: true,
   umd: true,
-
   analyzerMode: "disabled",
-
   browserslistrc: ["supports bigint", "not dead"],
   polyfillNodeDeps: {
     http: false,

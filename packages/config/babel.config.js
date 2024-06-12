@@ -2,7 +2,7 @@ const currentPkg = require("./package.json");
 const runtimeVersion = currentPkg.peerDependencies["@babel/runtime"];
 
 module.exports = {
-  presets: ["@babel/env", "@babel/typescript"],
+  presets: [["@babel/env", { modules: false, bugfixes: true }], "@babel/typescript"],
   plugins: [
     "@babel/plugin-syntax-bigint",
     "@babel/plugin-transform-object-rest-spread",

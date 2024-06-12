@@ -32,18 +32,64 @@ if (fs.existsSync(paths.appBrowserslistConfig)) {
 // we want to create only one build set with rollup
 const getDefaultConfig = (name) => {
   const allDeps = [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})];
-  return {
+  const baseConfig = {
     input: paths.appIndexFile,
     external: [...allDeps, ...allDeps.map((x) => new RegExp(`^${x}/`)), /@babel\/runtime/],
-    output: [{ file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: process.env.NODE_ENV === "development" }],
+  };
+  const esmCombinedExport = {
+    ...baseConfig,
+    output: { file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: process.env.NODE_ENV === "development" },
     plugins: [
       // Allows node_modules resolution
       resolve({
         extensions: appModuleFileExtensions.map((x) => `.${x}`),
+        modulesOnly: true,
+        preferBuiltins: false,
       }),
       babelPlugin(babelPluginOptions),
     ],
   };
+  const esmOriginalExport = {
+    ...baseConfig,
+    output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.esm"), format: "es", sourcemap: process.env.NODE_ENV === "development" },
+    plugins: [
+      // Allows node_modules resolution
+      resolve({
+        extensions: appModuleFileExtensions.map((x) => `.${x}`),
+        modulesOnly: true,
+        preferBuiltins: false,
+      }),
+      babelPlugin(babelPluginOptions),
+    ],
+  };
+  // const cjsCombinedExport = {
+  //   ...baseConfig,
+  //   output: { file: path.resolve(paths.appBuild, `${name}.cjs.js`), format: "cjs", sourcemap: process.env.NODE_ENV === "development" },
+  //   plugins: [
+  //     // Allows node_modules resolution
+  //     resolve({
+  //       extensions: appModuleFileExtensions.map((x) => `.${x}`),
+  //       modulesOnly: true,
+  //       preferBuiltins: false,
+  //     }),
+  //     commonjs(),
+  //     babelPlugin(babelPluginOptions),
+  //   ],
+  // };
+  const cjsOriginalExport = {
+    ...baseConfig,
+    output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.cjs"), format: "cjs", sourcemap: process.env.NODE_ENV === "development" },
+    plugins: [
+      // Allows node_modules resolution
+      resolve({
+        extensions: appModuleFileExtensions.map((x) => `.${x}`),
+        modulesOnly: true,
+        preferBuiltins: false,
+      }),
+      babelPlugin(babelPluginOptions),
+    ],
+  };
+  return [esmCombinedExport, esmOriginalExport, cjsOriginalExport];
 };
 
 // objValue is the first object (our default config)

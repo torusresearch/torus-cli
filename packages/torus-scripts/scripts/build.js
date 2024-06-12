@@ -62,23 +62,23 @@ function addOutput({ ctx, filename, formattedStats, type, warnings }) {
 
 function getRollupTasks() {
   const config = generateRollupConfig(finalArgs.name);
-  const outputOptions = Array.isArray(config.output) ? config.output : [config.output];
+  const configOptions = Array.isArray(config) ? config : [config];
 
-  return outputOptions.map((outputOption) => {
+  return configOptions.map((configOption) => {
     // use dir option for dynamic imports
-    const filenameChunks = outputOption.dir ? [outputOption.dir] : outputOption.file.split("/");
+    const filenameChunks = configOption.output.dir ? configOption.output.dir.split("/") : configOption.output.file.split("/");
     const filename = filenameChunks[filenameChunks.length - 1];
     return {
       title: filename,
       task: async (ctx) => {
         const start = process.hrtime.bigint();
-        const bundle = await rollup(config);
-        await bundle.generate(outputOption);
-        const output = await bundle.write(outputOption);
+        const bundle = await rollup(configOption);
+        await bundle.generate(configOption.output);
+        const output = await bundle.write(configOption.output);
         await bundle.close();
         const end = process.hrtime.bigint();
         const time = ((end - start) / BigInt(1e6)).toString();
-        const formattedStats = formatRollupStats(output.output, paths.appBuild, time);
+        const formattedStats = formatRollupStats(output.output, filename, paths.appBuild, time);
 
         // time is in ms
         addOutput({ ctx, filename, formattedStats, warnings: [], type: "rollup" });

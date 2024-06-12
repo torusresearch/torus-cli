@@ -1,5 +1,5 @@
 import omit from "object.omit";
-import merge from "lodash.mergewith";
+import merge from "deepmerge";
 import { resolvePlugin, resolvePreset } from "@babel/core";
 
 function arrayMerge(source = [], overrides = []) {

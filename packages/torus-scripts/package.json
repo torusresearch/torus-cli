@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
@@ -26,8 +26,8 @@
     "chalk": "^5.3.0",
     "cliui": "^8.0.1",
     "crypto-browserify": "^3.12.0",
-    "dotenv": "^16.4.5",
     "deepmerge": "^4.3.1",
+    "dotenv": "^16.4.5",
     "eslint-webpack-plugin": "^4.2.0",
     "fork-ts-checker-webpack-plugin": "^9.0.2",
     "https-browserify": "^1.0.0",

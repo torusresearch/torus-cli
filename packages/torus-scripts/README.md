@@ -66,6 +66,8 @@ interface IOptions {
   esm: boolean; // Whether to generate an esm build. Default: true
   cjs: boolean; // Whether to generate a cjs build. Default: true
   umd: boolean; // Whether to generate an umd build. Default: true
+  libEsm: boolean; // Whether to generate an lib esm build. Default: true
+  libCjs: boolean; // Whether to generate a lib cjs build. Default: true
   analyzerMode: "disabled" | "static" | "server" | "json"; // Whether to analyze the umd build. Internally uses webpack-bundle-analyzer. Default: "disabled". Refer to full options here: https://github.com/webpack-contrib/webpack-bundle-analyzer
   browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
   // This option allows you to skip polyfilling node deps by default. You can set it to true or a specific path to

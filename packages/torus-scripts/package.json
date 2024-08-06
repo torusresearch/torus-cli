@@ -58,7 +58,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18.x",
+    "node": ">=20.10",
     "npm": ">=9.x"
   },
   "author": "Torus Labs",

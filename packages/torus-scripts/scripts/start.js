@@ -75,26 +75,26 @@ function addOutput({ webpackWatcher, rollupWatcher }) {
 
 function getRollupTasks() {
   const config = generateRollupConfig(finalArgs.name);
-  const outputOptions = Array.isArray(config.output) ? config.output : [config.output];
+  const configOptions = Array.isArray(config) ? config : [config];
   config.watch = {
     clearScreen: false,
   };
-  return outputOptions.map((outputOption) => {
+  return configOptions.map((configOption) => {
     // use dir option for dynamic imports
-    const filenameChunks = outputOption.dir ? [outputOption.dir] : outputOption.file.split("/");
+    const filenameChunks = configOption.output.dir ? configOption.output.dir.split("/") : configOption.output.file.split("/");
     const filename = filenameChunks[filenameChunks.length - 1];
     return {
       title: filename,
       task: () => {
         return new Observable((observer) => {
-          const watcher = watch(config);
+          const watcher = watch(configOption);
           watcher.on("event", async (event) => {
             const bundle = event.result;
             if (event.code === "START") {
               observer.next(`Building ${filename}...`);
             } else if (bundle && event.code === "BUNDLE_END") {
               // If result is present, write it
-              await bundle.write(outputOption);
+              await bundle.write(configOption.output);
               await bundle.close();
               observer.next(`Build complete for ${filename}...`);
             } else if (bundle && event.code === "ERROR") {
@@ -174,11 +174,10 @@ async function main() {
   await deleteFolder(paths.appBuild);
   const tasks = new Listr([], { concurrent: true });
   console.log(chalk.yellow("Collating for dev..."));
-  if (torusConfig.esm) {
-    tasks.add(getRollupTasks());
-  }
+  const rollupTasks = getRollupTasks();
+  if (rollupTasks.length > 0) tasks.add(rollupTasks);
   const webpackTasks = getWebpackTasks();
-  tasks.add(webpackTasks);
+  if (webpackTasks.length > 0) tasks.add(webpackTasks);
   try {
     await tasks.run();
   } catch (error) {

@@ -3,6 +3,8 @@ module.exports = {
   esm: true,
   cjs: true,
   umd: true,
+  libEsm: true,
+  libCjs: true,
   analyzerMode: "disabled",
   browserslistrc: ["supports bigint", "not dead"],
   polyfillNodeDeps: {

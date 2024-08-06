@@ -27,6 +27,8 @@ defaultConfig.browserslistrc =
 defaultConfig.name = generatePackageName(pkg.name);
 
 defaultConfig.umd = process.env.NODE_ENV === "production";
+defaultConfig.cjs = process.env.NODE_ENV === "production";
+defaultConfig.esm = process.env.NODE_ENV === "production";
 
 const userConfig = await readFile(paths.appTorusConfig);
 

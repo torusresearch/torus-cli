@@ -96,7 +96,11 @@ const getDefaultConfig = (name) => {
       ...(baseConfig.plugins || []),
     ],
   };
-  return [esmCombinedExport, esmOriginalExport, cjsOriginalExport];
+  const finalTasks = [];
+  if (torusConfig.esm) finalTasks.push(esmCombinedExport);
+  if (torusConfig.libEsm) finalTasks.push(esmOriginalExport);
+  if (torusConfig.libCjs) finalTasks.push(cjsOriginalExport);
+  return finalTasks;
 };
 
 export default (name) => {

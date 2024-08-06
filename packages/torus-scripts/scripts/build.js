@@ -135,11 +135,10 @@ async function main() {
   await deleteFolder(paths.appBuild);
   const tasks = new Listr([], { concurrent: true });
   console.log(chalk.yellow("Collating builds..."));
-  if (torusConfig.esm) {
-    tasks.add(getRollupTasks());
-  }
+  const rollupTasks = getRollupTasks();
+  if (rollupTasks.length > 0) tasks.add(rollupTasks);
   const webpackTasks = getWebpackTasks();
-  tasks.add(webpackTasks);
+  if (webpackTasks.length > 0) tasks.add(webpackTasks);
   try {
     const ctx = await tasks.run();
 

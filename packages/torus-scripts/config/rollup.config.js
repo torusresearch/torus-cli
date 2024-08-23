@@ -49,8 +49,8 @@ const getDefaultConfig = (name) => {
         modulesOnly: true,
         preferBuiltins: false,
       }),
-      babelPlugin(babelPluginOptions),
       ...(baseConfig.plugins || []),
+      babelPlugin(babelPluginOptions),
     ],
   };
   const esmOriginalExport = {
@@ -63,8 +63,8 @@ const getDefaultConfig = (name) => {
         modulesOnly: true,
         preferBuiltins: false,
       }),
-      babelPlugin(babelPluginOptions),
       ...(baseConfig.plugins || []),
+      babelPlugin(babelPluginOptions),
     ],
   };
   // const cjsCombinedExport = {
@@ -92,8 +92,8 @@ const getDefaultConfig = (name) => {
         modulesOnly: true,
         preferBuiltins: false,
       }),
-      babelPlugin(babelPluginOptions),
       ...(baseConfig.plugins || []),
+      babelPlugin(babelPluginOptions),
     ],
   };
   const finalTasks = [];

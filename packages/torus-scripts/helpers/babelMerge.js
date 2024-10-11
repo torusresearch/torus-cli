@@ -8,15 +8,15 @@ function arrayMerge(source = [], overrides = []) {
 
 function mergeArray(source = [], overrides = [], resolve, deepmergeOpts) {
   return [...source, ...overrides].reduce((reduction, override) => {
-    const overrideName = resolve(Array.isArray(override) ? override[0] : override).filepath;
+    const overrideName = resolve(Array.isArray(override) ? override[0] : override);
     const overrideOptions = Array.isArray(override) ? override[1] : {};
     const base = reduction.find((base) => {
-      const baseName = resolve(Array.isArray(base) ? base[0] : base).filepath;
+      const baseName = resolve(Array.isArray(base) ? base[0] : base);
       return baseName === overrideName || baseName.includes(overrideName);
     });
 
     const index = reduction.includes(base) ? reduction.indexOf(base) : reduction.length;
-    const baseName = base ? resolve(Array.isArray(base) ? base[0] : base).filepath : overrideName;
+    const baseName = base ? resolve(Array.isArray(base) ? base[0] : base) : overrideName;
     const baseOptions = Array.isArray(base) ? base[1] : {};
     const options = merge(baseOptions, overrideOptions, {
       arrayMerge,

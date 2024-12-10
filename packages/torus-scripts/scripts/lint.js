@@ -1,1 +1,7 @@
-// TODO: when we migrate to eslint 9
+import { ESLint } from "eslint";
+
+const eslintInstance = new ESLint({
+    baseConfig: require("../eslint.config.mjs"),
+});
+
+eslintInstance.lintFiles(["**/*.js", "**/*.ts"]);

@@ -1,5 +1,5 @@
-import globals from 'globals';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import globals from "globals";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 
 export default [
   eslintPluginPrettierRecommended,
@@ -8,16 +8,16 @@ export default [
       globals: {
         ...globals.node,
       },
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: "latest",
+      sourceType: "module",
     },
 
     rules: {
-      'prettier/prettier': [
-        'error',
+      "prettier/prettier": [
+        "error",
         {
-          singleQuote: true,
-          parser: 'flow',
+          singleQuote: false,
+          parser: "flow",
         },
       ],
     },

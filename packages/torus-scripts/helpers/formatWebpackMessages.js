@@ -43,11 +43,11 @@ function formatMessage(message) {
   message = message.replace(/^.*export '(.+?)' was not found in '(.+?)'.*$/gm, `Attempted import error: '$1' is not exported from '$2'.`);
   message = message.replace(
     /^.*export 'default' \(imported as '(.+?)'\) was not found in '(.+?)'.*$/gm,
-    `Attempted import error: '$2' does not contain a default export (imported as '$1').`
+    `Attempted import error: '$2' does not contain a default export (imported as '$1').`,
   );
   message = message.replace(
     /^.*export '(.+?)' \(imported as '(.+?)'\) was not found in '(.+?)'.*$/gm,
-    `Attempted import error: '$1' is not exported from '$3' (imported as '$2').`
+    `Attempted import error: '$1' is not exported from '$3' (imported as '$2').`,
   );
   lines = message.split("\n");
 

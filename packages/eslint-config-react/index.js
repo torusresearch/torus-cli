@@ -14,92 +14,104 @@ import { FlatCompat } from "@eslint/eslintrc";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all,
 });
 
 /** @type {import('@typescript-eslint/utils').TSESLint.FlatConfig.ConfigFile} */
 export default [
-    ...fixupConfigRules(compat.extends(
-        "plugin:react-hooks/recommended",
-    )),
-    reactPlugin.configs.flat.recommended,
-    reactPlugin.configs.flat['jsx-runtime'],
-    jsxA11Y.flatConfigs.recommended,
-    ...torusTypescriptConfig,
-    {
-        plugins: {
-            "react-hooks": fixupPluginRules(reactHooks),
-            "jsx-a11y": fixupPluginRules(jsxA11Y),
+  ...fixupConfigRules(compat.extends("plugin:react-hooks/recommended")),
+  reactPlugin.configs.flat.recommended,
+  reactPlugin.configs.flat["jsx-runtime"],
+  jsxA11Y.flatConfigs.recommended,
+  ...torusTypescriptConfig,
+  {
+    plugins: {
+      "react-hooks": fixupPluginRules(reactHooks),
+      "jsx-a11y": fixupPluginRules(jsxA11Y),
+    },
+
+    languageOptions: {
+      ...reactPlugin.configs.flat.recommended.languageOptions,
+      ...jsxA11Y.flatConfigs.recommended.languageOptions,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+
+      parser: tsParser,
+      ecmaVersion: 11,
+      sourceType: "module",
+
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
         },
+      },
+    },
 
-        languageOptions: {
-            ...reactPlugin.configs.flat.recommended.languageOptions,
-            ...jsxA11Y.flatConfigs.recommended.languageOptions,
-            globals: {
-                ...globals.browser,
-                ...globals.node,
-            },
-
-            parser: tsParser,
-            ecmaVersion: 11,
-            sourceType: "module",
-
-            parserOptions: {
-                ecmaFeatures: {
-                    jsx: true,
-                },
-            },
+    settings: {
+      "import/resolver": {
+        node: {
+          extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
         },
+      },
+    },
 
-        settings: {
-            "import/resolver": {
-                node: {
-                    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
-                },
-            },
+    rules: {
+      "no-restricted-exports": 0,
+      "react/require-default-props": 0,
+      "tsdoc/syntax": 1,
+
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "typeLike",
+          format: ["camelCase", "UPPER_CASE", "PascalCase"],
         },
+      ],
 
-        rules: {
-            "no-restricted-exports": 0,
-            "react/require-default-props": 0,
-            "tsdoc/syntax": 1,
+      "@typescript-eslint/member-ordering": 1,
+      "import/prefer-default-export": 0,
+      "simple-import-sort/imports": 2,
+      "simple-import-sort/exports": 2,
+      "no-dupe-class-members": 0,
+      "@typescript-eslint/no-dupe-class-members": 2,
+      "no-useless-constructor": 0,
+      "@typescript-eslint/no-useless-constructor": 2,
+      "no-unused-vars": 0,
 
-            "@typescript-eslint/naming-convention": ["error", {
-                selector: "typeLike",
-                format: ["camelCase", "UPPER_CASE", "PascalCase"],
-            }],
-
-            "@typescript-eslint/member-ordering": 1,
-            "import/prefer-default-export": 0,
-            "simple-import-sort/imports": 2,
-            "simple-import-sort/exports": 2,
-            "no-dupe-class-members": 0,
-            "@typescript-eslint/no-dupe-class-members": 2,
-            "no-useless-constructor": 0,
-            "@typescript-eslint/no-useless-constructor": 2,
-            "no-unused-vars": 0,
-
-            "@typescript-eslint/no-unused-vars": ["error", {
-                args: "after-used",
-                argsIgnorePattern: "_",
-            }],
-
-            "import/extensions": ["error", "ignorePackages", {
-                js: "never",
-                ts: "never",
-                jsx: "never",
-                tsx: "never",
-            }],
-
-            "no-console": 2,
-
-            "prettier/prettier": [2, {
-                singleQuote: false,
-                printWidth: 150,
-                semi: true,
-                trailingComma: "es5",
-            }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          args: "after-used",
+          argsIgnorePattern: "_",
         },
-    }];
+      ],
+
+      "import/extensions": [
+        "error",
+        "ignorePackages",
+        {
+          js: "never",
+          ts: "never",
+          jsx: "never",
+          tsx: "never",
+        },
+      ],
+
+      "no-console": 2,
+
+      "prettier/prettier": [
+        2,
+        {
+          singleQuote: false,
+          printWidth: 150,
+          semi: true,
+          trailingComma: "es5",
+        },
+      ],
+    },
+  },
+];

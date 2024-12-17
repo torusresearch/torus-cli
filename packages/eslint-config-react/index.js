@@ -1,6 +1,7 @@
 import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
 import reactPlugin from "eslint-plugin-react";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
+import tailwind from "eslint-plugin-tailwindcss";
 
 import reactHooks from "eslint-plugin-react-hooks";
 import jsxA11Y from "eslint-plugin-jsx-a11y";
@@ -25,6 +26,7 @@ export default [
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat["jsx-runtime"],
   jsxA11Y.flatConfigs.recommended,
+  ...tailwind.configs["flat/recommended"],
   ...torusTypescriptConfig,
   {
     plugins: {

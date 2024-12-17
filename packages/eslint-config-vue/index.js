@@ -1,4 +1,4 @@
-import globals from "globals";
+import globals, { es2024 } from "globals";
 import pluginVue from "eslint-plugin-vue";
 import vueTsEslintConfig from "@vue/eslint-config-typescript";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
@@ -20,8 +20,8 @@ export default [
         withDefaults: "readonly",
       },
 
-      ecmaVersion: 2020,
-      sourceType: "commonjs",
+      ecmaVersion: es2024,
+      sourceType: "module",
     },
 
     rules: {

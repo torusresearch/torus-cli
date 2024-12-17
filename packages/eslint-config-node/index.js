@@ -18,7 +18,7 @@ export default [
         ...globals.es2020,
       },
 
-      ecmaVersion: 11,
+      ecmaVersion: es2024,
       sourceType: "module",
     },
 

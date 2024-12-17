@@ -2,11 +2,13 @@ import globals, { es2024 } from "globals";
 import pluginVue from "eslint-plugin-vue";
 import vueTsEslintConfig from "@vue/eslint-config-typescript";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
+import tailwind from "eslint-plugin-tailwindcss";
 
 export default [
-  ...torusTypescriptConfig,
   ...pluginVue.configs["flat/recommended"],
   ...vueTsEslintConfig(),
+  ...tailwind.configs["flat/recommended"],
+  ...torusTypescriptConfig,
   {
     plugins: {},
 

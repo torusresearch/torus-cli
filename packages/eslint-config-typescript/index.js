@@ -5,7 +5,7 @@ import { fixupConfigRules } from "@eslint/compat";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import importPlugin from "eslint-plugin-import";
 import pluginPromise from "eslint-plugin-promise";
-import mochaPlugin from "eslint-plugin-mocha";
+import vitest from "@vitest/eslint-plugin";
 
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tsdoc from "eslint-plugin-tsdoc";
@@ -31,7 +31,7 @@ export default [
   eslintPluginPrettierRecommended,
   importPlugin.flatConfigs.recommended,
   pluginPromise.configs["flat/recommended"],
-  mochaPlugin.configs.flat.recommended,
+  ...vitest.configs.recommended,
   {
     plugins: {
       "simple-import-sort": simpleImportSort,

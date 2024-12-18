@@ -1,6 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import { fixupConfigRules } from "@eslint/compat";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import importPlugin from "eslint-plugin-import";
@@ -25,13 +25,14 @@ const compat = new FlatCompat({
 
 /** @type {import('@typescript-eslint/utils').TSESLint.FlatConfig.ConfigFile} */
 export default [
-  ...fixupConfigRules(compat.extends("problems")),
+  // TODO: Add back eslint-config-airbnb-typescript, eslint-config-airbnb-base when it's ready
+  ...compat.extends("eslint-config-problems"),
   js.configs.recommended,
   ...tseslint.configs.recommended,
   eslintPluginPrettierRecommended,
   importPlugin.flatConfigs.recommended,
   pluginPromise.configs["flat/recommended"],
-  ...vitest.configs.recommended,
+  vitest.configs.recommended,
   {
     plugins: {
       "simple-import-sort": simpleImportSort,
@@ -45,14 +46,15 @@ export default [
       },
 
       parser: tsParser,
-      ecmaVersion: es2024,
+      ecmaVersion: 2024,
       sourceType: "module",
     },
 
     settings: {
-      "import/resolver-next": {
+      "import/resolver": {
         typescript: createTypeScriptImportResolver({
           alwaysTryTypes: true,
+          project: "./tsconfig.json",
         }),
       },
     },
@@ -107,5 +109,28 @@ export default [
         },
       ],
     },
+
+    ignores: [
+      // See https://help.github.com/ignore-files/ for more about ignoring files.
+      // dependencies
+      "/node_modules",
+      // testing
+      "/coverage",
+      //production
+      "/build",
+      // misc
+      ".DS_Store",
+      ".env.local",
+      ".env.development.local",
+      ".env.test.local",
+      ".env.production.local",
+
+      "npm-debug.log*",
+      "yarn-debug.log*",
+      "yarn-error.log*",
+      "examples/",
+      "types/",
+      "dist/",
+    ],
   },
 ];

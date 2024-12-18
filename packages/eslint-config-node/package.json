@@ -36,5 +36,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/torusresearch/torus-cli.git"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
   }
 }

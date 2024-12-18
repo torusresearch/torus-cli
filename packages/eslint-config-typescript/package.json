@@ -12,8 +12,6 @@
     "@eslint/js": "^9.17.0",
     "@typescript-eslint/parser": "^8.18.0",
     "@vitest/eslint-plugin": "^1.1.17",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-problems": "^8.0.0",
     "eslint-import-resolver-typescript": "^3.7.0",

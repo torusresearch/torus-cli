@@ -31,7 +31,6 @@ export default [
   {
     plugins: {
       "react-hooks": fixupPluginRules(reactHooks),
-      "jsx-a11y": fixupPluginRules(jsxA11Y),
     },
 
     languageOptions: {
@@ -43,7 +42,7 @@ export default [
       },
 
       parser: tsParser,
-      ecmaVersion: es2024,
+      ecmaVersion: 2024,
       sourceType: "module",
 
       parserOptions: {
@@ -54,6 +53,9 @@ export default [
     },
 
     settings: {
+      react: {
+        version: "detect",
+      },
       "import/resolver": {
         node: {
           extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],

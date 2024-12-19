@@ -1,93 +1,121 @@
-module.exports = {
-  env: {
-    es2020: true,
-    browser: true,
-    node: true,
-  },
-  extends: [
-    "airbnb",
-    "airbnb-typescript",
-    "problems",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended",
-    "plugin:react/jsx-runtime",
-    "plugin:jsx-a11y/recommended",
-    "plugin:react-hooks/recommended",
-    "eslint:recommended",
-    "plugin:prettier/recommended",
-    "plugin:import/errors",
-    "plugin:import/warnings",
-    "plugin:import/typescript",
-    "plugin:promise/recommended",
-    "plugin:mocha/recommended",
-    "prettier",
-  ],
-  plugins: [
-    "react",
-    "react-hooks",
-    "prettier",
-    "promise",
-    "import",
-    "jsx-a11y",
-    "simple-import-sort",
-    "mocha",
-    "@typescript-eslint",
-    "eslint-plugin-tsdoc",
-  ],
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: 11,
-    ecmaFeatures: {
-      jsx: true,
+import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
+import reactPlugin from "eslint-plugin-react";
+import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
+import tailwind from "eslint-plugin-tailwindcss";
+
+import reactHooks from "eslint-plugin-react-hooks";
+import jsxA11Y from "eslint-plugin-jsx-a11y";
+import globals from "globals";
+import tsParser from "@typescript-eslint/parser";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import js from "@eslint/js";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all,
+});
+
+/** @type {import('@typescript-eslint/utils').TSESLint.FlatConfig.ConfigFile} */
+export default [
+  ...fixupConfigRules(compat.extends("plugin:react-hooks/recommended")),
+  reactPlugin.configs.flat.recommended,
+  reactPlugin.configs.flat["jsx-runtime"],
+  jsxA11Y.flatConfigs.recommended,
+  ...tailwind.configs["flat/recommended"],
+  ...torusTypescriptConfig,
+  {
+    plugins: {
+      "react-hooks": fixupPluginRules(reactHooks),
     },
-  },
-  rules: {
-    "no-restricted-exports": 0,
-    "react/require-default-props": 0,
-    "tsdoc/syntax": 1,
-    "@typescript-eslint/naming-convention": [
-      "error",
-      {
-        selector: "typeLike",
-        format: ["camelCase", "UPPER_CASE", "PascalCase"],
+
+    languageOptions: {
+      ...reactPlugin.configs.flat.recommended.languageOptions,
+      ...jsxA11Y.flatConfigs.recommended.languageOptions,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
       },
-    ],
-    "@typescript-eslint/member-ordering": 1,
-    "import/prefer-default-export": 0,
-    "simple-import-sort/imports": 2,
-    "simple-import-sort/exports": 2,
-    "no-dupe-class-members": 0,
-    "@typescript-eslint/no-dupe-class-members": 2,
-    "no-useless-constructor": 0,
-    "@typescript-eslint/no-useless-constructor": 2,
-    "no-unused-vars": 0,
-    "@typescript-eslint/no-unused-vars": ["error", { args: "after-used", argsIgnorePattern: "_" }],
-    "import/extensions": [
-      "error",
-      "ignorePackages",
-      {
-        js: "never",
-        ts: "never",
-        jsx: "never",
-        tsx: "never",
-      },
-    ],
-    "no-console": 2,
-    "prettier/prettier": [
-      2,
-      {
-        singleQuote: false,
-        printWidth: 150,
-        semi: true,
-        trailingComma: "es5",
-      },
-    ],
-  },
-  settings: {
-    "import/resolver": {
-      node: {
-        extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+
+      parser: tsParser,
+      ecmaVersion: 2024,
+      sourceType: "module",
+
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
     },
+
+    settings: {
+      react: {
+        version: "detect",
+      },
+      "import/resolver": {
+        node: {
+          extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+        },
+      },
+    },
+
+    rules: {
+      "no-restricted-exports": 0,
+      "react/require-default-props": 0,
+      "tsdoc/syntax": 1,
+
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "typeLike",
+          format: ["camelCase", "UPPER_CASE", "PascalCase"],
+        },
+      ],
+
+      "@typescript-eslint/member-ordering": 1,
+      "import/prefer-default-export": 0,
+      "simple-import-sort/imports": 2,
+      "simple-import-sort/exports": 2,
+      "no-dupe-class-members": 0,
+      "@typescript-eslint/no-dupe-class-members": 2,
+      "no-useless-constructor": 0,
+      "@typescript-eslint/no-useless-constructor": 2,
+      "no-unused-vars": 0,
+
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          args: "after-used",
+          argsIgnorePattern: "_",
+        },
+      ],
+
+      "import/extensions": [
+        "error",
+        "ignorePackages",
+        {
+          js: "never",
+          ts: "never",
+          jsx: "never",
+          tsx: "never",
+        },
+      ],
+
+      "no-console": 2,
+
+      "prettier/prettier": [
+        2,
+        {
+          singleQuote: false,
+          printWidth: 150,
+          semi: true,
+          trailingComma: "es5",
+        },
+      ],
+    },
   },
-};
+];

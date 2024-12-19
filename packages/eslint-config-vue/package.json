@@ -8,30 +8,21 @@
     "vue"
   ],
   "dependencies": {
-    "@rushstack/eslint-patch": "^1.10.4",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "@vue/eslint-config-airbnb-with-typescript": "^8.0.0",
-    "@vue/eslint-config-typescript": "^13.0.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-config-problems": "^8.0.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-mocha": "^10.5.0",
-    "eslint-plugin-n": "^17.11.1",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-promise": "^7.1.0",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-tsdoc": "^0.3.0",
-    "eslint-plugin-vue": "^9.28.0"
+    "@toruslabs/eslint-config-typescript": "^3.3.4",
+    "@vue/eslint-config-typescript": "^14.1.4",
+    "eslint-plugin-tailwindcss": "^3.17.5",
+    "eslint-plugin-vue": "^9.32.0",
+    "globals": "^15.13.0",
+    "vue-eslint-parser": "^9.4.3"
   },
   "peerDependencies": {
-    "eslint": "^8.x",
+    "eslint": "^9.x",
     "prettier": "^3.x",
     "typescript": "^5.x"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "prettier": "^3.3.3",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
     "typescript": "^5.6.3"
   },
   "publishConfig": {
@@ -51,5 +42,9 @@
     "type": "git",
     "url": "git+https://github.com/torusresearch/torus-cli.git"
   },
-  "gitHead": "5035ccbf0e5e977704cfde3833242441c940455c"
+  "gitHead": "5035ccbf0e5e977704cfde3833242441c940455c",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  }
 }

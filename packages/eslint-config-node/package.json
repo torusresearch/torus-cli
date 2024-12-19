@@ -9,15 +9,15 @@
   ],
   "dependencies": {
     "@toruslabs/eslint-config-typescript": "^3.3.4",
-    "eslint-plugin-chai-expect": "^3.1.0",
-    "eslint-plugin-n": "^17.11.1",
-    "eslint-plugin-security": "^3.0.1"
+    "eslint-plugin-n": "^17.15.0",
+    "eslint-plugin-security": "^3.0.1",
+    "globals": "^15.13.0"
   },
   "peerDependencies": {
-    "eslint": "^8.x"
+    "eslint": "^9.x"
   },
   "devDependencies": {
-    "eslint": "^8.57.0"
+    "eslint": "^9.17.0"
   },
   "publishConfig": {
     "access": "public"
@@ -35,5 +35,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/torusresearch/torus-cli.git"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
   }
 }

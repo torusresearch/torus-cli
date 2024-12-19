@@ -1,32 +1,51 @@
-module.exports = {
-  env: {
-    es2020: true,
-    node: true,
-    mocha: true,
-    commonjs: true,
-  },
-  extends: ["@toruslabs/eslint-config-typescript", "plugin:n/recommended", "plugin:security/recommended-legacy", "plugin:chai-expect/recommended"],
-  plugins: ["chai-expect", "security"],
-  parserOptions: {
-    ecmaVersion: 11,
-  },
-  rules: {
-    "import/extensions": [
-      "error",
-      "ignorePackages",
-      {
-        js: "never",
-        ts: "never",
+import nodePlugin from "eslint-plugin-n";
+import pluginSecurity from "eslint-plugin-security";
+import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
+import globals from "globals";
+
+export default [
+  ...torusTypescriptConfig,
+  nodePlugin.configs["flat/recommended-script"],
+  pluginSecurity.configs.recommended,
+  {
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.mocha,
+        ...globals.commonjs,
+        ...globals.es2020,
       },
-    ],
-    "n/no-unsupported-features/es-syntax": [
-      "error",
-      {
-        version: ">=16",
-        ignores: ["modules"],
-      },
-    ],
-    "n/no-missing-import": 0,
-    "import/no-extraneous-dependencies": ["error", { devDependencies: ["**/*.test.ts", "**/*.test.tsx", "**/testHelpers.ts"] }],
+
+      ecmaVersion: 2024,
+      sourceType: "module",
+    },
+
+    rules: {
+      "import/extensions": [
+        "error",
+        "ignorePackages",
+        {
+          js: "never",
+          ts: "never",
+        },
+      ],
+
+      "n/no-unsupported-features/es-syntax": [
+        "error",
+        {
+          version: ">=20",
+          ignores: ["modules"],
+        },
+      ],
+
+      "n/no-missing-import": 0,
+
+      "import/no-extraneous-dependencies": [
+        "error",
+        {
+          devDependencies: ["**/*.test.ts", "**/*.test.tsx", "**/testHelpers.ts"],
+        },
+      ],
+    },
   },
-};
+];

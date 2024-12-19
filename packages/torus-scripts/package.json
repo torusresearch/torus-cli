@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "6.1.6",
+  "version": "7.0.0",
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
@@ -72,7 +72,7 @@
     "url": "git+https://github.com/torusresearch/torus-cli.git"
   },
   "devDependencies": {
-    "globals": "^15.13.0",
-    "eslint-plugin-prettier": "^5.2.1"
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.13.0"
   }
 }

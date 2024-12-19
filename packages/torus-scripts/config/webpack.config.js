@@ -200,6 +200,8 @@ export const getDefaultCjsConfig = (pkgName) => {
     plugins.push(
       new ESLintPlugin({
         context: paths.appPath,
+        threads: !process.env.CI,
+        configType: 'flat',
         extensions: ["ts", "tsx"],
         emitError: true,
         emitWarning: true,

@@ -5,6 +5,7 @@ import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
 import tailwind from "eslint-plugin-tailwindcss";
 import vueParser from "vue-eslint-parser";
 
+// TODO: Add back eslint-vue when it's ready
 export default [
   ...pluginVue.configs["flat/recommended"],
   ...vueTsEslintConfig(),

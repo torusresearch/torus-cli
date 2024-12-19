@@ -20,6 +20,7 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
+// TODO: Add back eslint-config-airbnb when it's ready
 /** @type {import('@typescript-eslint/utils').TSESLint.FlatConfig.ConfigFile} */
 export default [
   ...fixupConfigRules(compat.extends("plugin:react-hooks/recommended")),

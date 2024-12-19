@@ -22,11 +22,11 @@ const compat = new FlatCompat({
   recommendedConfig: js.configs.recommended,
   allConfig: js.configs.all,
 });
-// TODO: Add back eslint-config-airbnb-typescript, eslint-config-airbnb-base when it's ready
+// TODO: Add back eslint-config-airbnb-typescript, eslint-config-airbnb-base, eslint-config-problems when it's ready
 
 /** @type {import('@typescript-eslint/utils').TSESLint.FlatConfig.ConfigFile} */
 export default [
-  ...compat.extends("eslint-config-problems"),
+  // ...compat.extends("eslint-config-problems"),
   js.configs.recommended,
   ...tseslint.configs.recommended,
   eslintPluginPrettierRecommended,

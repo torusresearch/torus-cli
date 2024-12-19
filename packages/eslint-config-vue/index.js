@@ -1,8 +1,9 @@
-import globals, { es2024 } from "globals";
+import globals from "globals";
 import pluginVue from "eslint-plugin-vue";
 import vueTsEslintConfig from "@vue/eslint-config-typescript";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
 import tailwind from "eslint-plugin-tailwindcss";
+import vueParser from "vue-eslint-parser";
 
 export default [
   ...pluginVue.configs["flat/recommended"],
@@ -22,8 +23,10 @@ export default [
         withDefaults: "readonly",
       },
 
-      ecmaVersion: es2024,
+      ecmaVersion: 2024,
       sourceType: "module",
+
+      parser: vueParser,
     },
 
     rules: {

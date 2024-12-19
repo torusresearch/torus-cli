@@ -1,4 +1,3 @@
-import chaiExpectPlugin from "eslint-plugin-chai-expect";
 import nodePlugin from "eslint-plugin-n";
 import pluginSecurity from "eslint-plugin-security";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
@@ -6,7 +5,6 @@ import globals from "globals";
 
 export default [
   ...torusTypescriptConfig,
-  chaiExpectPlugin.configs["recommended-flat"],
   nodePlugin.configs["flat/recommended-script"],
   pluginSecurity.configs.recommended,
   {

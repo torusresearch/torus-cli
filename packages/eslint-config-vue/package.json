@@ -8,7 +8,7 @@
     "vue"
   ],
   "dependencies": {
-    "@toruslabs/eslint-config-typescript": "file:toruslabs-eslint-config-typescript-3.3.4.tgz",
+    "@toruslabs/eslint-config-typescript": "^3.3.4",
     "@vue/eslint-config-typescript": "^14.1.4",
     "eslint-plugin-tailwindcss": "^3.17.5",
     "eslint-plugin-vue": "^9.32.0",

@@ -27,6 +27,10 @@ export default [
       sourceType: "module",
 
       parser: vueParser,
+      parserOptions: {
+        parser: "@typescript-eslint/parser",
+        sourceType: "module",
+      },
     },
 
     rules: {

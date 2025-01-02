@@ -49,8 +49,13 @@ export default [
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
-          args: "after-used",
-          argsIgnorePattern: "_",
+          args: "all",
+          argsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
         },
       ],
 

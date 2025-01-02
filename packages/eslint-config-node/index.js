@@ -43,7 +43,7 @@ export default [
       "import/no-extraneous-dependencies": [
         "error",
         {
-          devDependencies: ["**/*.test.ts", "**/*.test.tsx", "**/testHelpers.ts"],
+          devDependencies: ["**/*.test.ts", "**/*.test.tsx", "**/testHelpers.ts", "**/eslint.config.mjs", "**/test/configs/**"],
         },
       ],
     },

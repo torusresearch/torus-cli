@@ -129,8 +129,8 @@ export default [
       "yarn-debug.log*",
       "yarn-error.log*",
       "examples/",
-      "types/",
-      "dist/",
+      "types/*",
+      "dist/*",
     ],
   },
 ];

@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-node",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Eslint configuration for Node.js",
   "keywords": [
     "eslint",
@@ -8,7 +8,7 @@
     "node"
   ],
   "dependencies": {
-    "@toruslabs/eslint-config-typescript": "^4.0.0",
+    "@toruslabs/eslint-config-typescript": "^4.0.1",
     "eslint-plugin-n": "^17.15.1",
     "eslint-plugin-security": "^3.0.1",
     "globals": "^15.14.0"

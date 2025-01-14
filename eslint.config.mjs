@@ -17,7 +17,6 @@ export default [
         "error",
         {
           singleQuote: false,
-          parser: "flow",
         },
       ],
     },

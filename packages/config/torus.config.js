@@ -1,7 +1,5 @@
 module.exports = {
   name: "index.js",
-  esm: true,
-  cjs: true,
   umd: true,
   libEsm: true,
   libCjs: true,

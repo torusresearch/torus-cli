@@ -39,20 +39,20 @@ const getDefaultConfig = (name) => {
     external: [...allDeps, ...allDeps.map((x) => new RegExp(`^${x}/`)), /@babel\/runtime/],
     ...(userConfig.baseConfig || {}),
   };
-  const esmCombinedExport = {
-    ...baseConfig,
-    output: { file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: process.env.NODE_ENV === "development" },
-    plugins: [
-      // Allows node_modules resolution
-      resolve({
-        extensions: appModuleFileExtensions.map((x) => `.${x}`),
-        modulesOnly: true,
-        preferBuiltins: false,
-      }),
-      ...(baseConfig.plugins || []),
-      babelPlugin(babelPluginOptions),
-    ],
-  };
+  // const esmCombinedExport = {
+  //   ...baseConfig,
+  //   output: { file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: process.env.NODE_ENV === "development" },
+  //   plugins: [
+  //     // Allows node_modules resolution
+  //     resolve({
+  //       extensions: appModuleFileExtensions.map((x) => `.${x}`),
+  //       modulesOnly: true,
+  //       preferBuiltins: false,
+  //     }),
+  //     ...(baseConfig.plugins || []),
+  //     babelPlugin(babelPluginOptions),
+  //   ],
+  // };
   const esmOriginalExport = {
     ...baseConfig,
     output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.esm"), format: "es", sourcemap: process.env.NODE_ENV === "development" },
@@ -97,7 +97,7 @@ const getDefaultConfig = (name) => {
     ],
   };
   const finalTasks = [];
-  if (torusConfig.esm) finalTasks.push(esmCombinedExport);
+  // if (torusConfig.esm) finalTasks.push(esmCombinedExport);
   if (torusConfig.libEsm) finalTasks.push(esmOriginalExport);
   if (torusConfig.libCjs) finalTasks.push(cjsOriginalExport);
   return finalTasks;

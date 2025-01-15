@@ -63,9 +63,6 @@ The following options are supported
 ```ts
 interface IOptions {
   name: string; // Name of bundles in dist folder. Default: name in package.json with casing changes
-  esm: boolean; // Whether to generate an esm build. Default: true
-  cjs: boolean; // Whether to generate a cjs build. Default: true
-  umd: boolean; // Whether to generate an umd build. Default: true
   libEsm: boolean; // Whether to generate an lib esm build. Default: true
   libCjs: boolean; // Whether to generate a lib cjs build. Default: true
   analyzerMode: "disabled" | "static" | "server" | "json"; // Whether to analyze the umd build. Internally uses webpack-bundle-analyzer. Default: "disabled". Refer to full options here: https://github.com/webpack-contrib/webpack-bundle-analyzer
@@ -208,8 +205,6 @@ Options:
 
 The build is produced in the following formats depending on the options specified in `torus.config.js`
 
-- `esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `cjs` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 - `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
@@ -230,8 +225,6 @@ that comes with HMR (Hot-Module-Replacement) working out of the box.
 
 The dev server build is produced in the following formats depending on the options specified in `torus.config.js`
 
-- `esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `cjs` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 - `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)

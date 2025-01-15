@@ -7,7 +7,6 @@ import merge from "lodash.mergewith";
 import path from "path";
 import fs from "fs";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
-import nodeExternals from "webpack-node-externals";
 import webpack from "webpack";
 import { createRequire } from "node:module";
 import ESLintPlugin from "eslint-webpack-plugin";
@@ -18,13 +17,12 @@ const require = createRequire(import.meta.url);
 import paths, { appModuleFileExtensions } from "./paths.js";
 import babelConfig from "./babel.config.js";
 import torusConfig from "./torus.config.js";
-import { readFile, readJSONFile } from "../helpers/utils.js";
+import { readFile } from "../helpers/utils.js";
 import tsconfigBuild from "./tsconfig.build.js";
 
 const { appWebpackConfig, appBuild } = paths;
 const { NODE_ENV = "production" } = process.env;
 
-const pkg = readJSONFile(paths.appPackageJson);
 const configImported = (await readFile(appWebpackConfig)).default || { baseConfig: {} };
 
 const babelLoaderOptions = {
@@ -116,19 +114,11 @@ export default (pkgName) => {
     rest.umdConfig || {},
     customizer,
   );
-  const cjsConfig = merge(
-    getDefaultCjsConfig(pkgName),
-    merge(getDefaultBaseConfig(pkgName), userBaseConfig, customizer),
-    rest.cjsConfig || {},
-    customizer,
-  );
 
   const finalConfigs = [];
 
-  if (torusConfig.cjs) finalConfigs.push(cjsConfig);
   if (torusConfig.umd) finalConfigs.push(umdConfig);
 
-  delete rest.cjsConfig;
   delete rest.umdConfig;
 
   return [
@@ -169,6 +159,32 @@ export const getDefaultBaseConfig = () => {
 };
 
 export const getDefaultUmdConfig = (pkgName) => {
+  const plugins = [];
+  if (NODE_ENV === "production") {
+    plugins.push(
+      new ESLintPlugin({
+        context: paths.appPath,
+        threads: !process.env.CI,
+        configType: "flat",
+        extensions: ["ts", "tsx"],
+        emitError: true,
+        emitWarning: true,
+        failOnError: process.env.NODE_ENV === "production",
+        cache: true,
+        cacheLocation: path.resolve(paths.appNodeModules, ".cache/.eslintcache"),
+      }),
+    );
+    plugins.push(
+      new ForkTsCheckerWebpackPlugin({
+        typescript: {
+          mode: "write-dts",
+          context: paths.appPath,
+          configFile: fs.existsSync(paths.appTsBuildConfig) ? "tsconfig.build.json" : "tsconfig.json",
+          configOverwrite: tsconfigBuild,
+        },
+      }),
+    );
+  }
   return {
     output: {
       filename: `${pkgName}.umd.min.js`,
@@ -187,55 +203,10 @@ export const getDefaultUmdConfig = (pkgName) => {
         openAnalyzer: false,
       }),
       ...polyfillPlugins, // always polyfill buffer and process
+      ...plugins,
     ],
     resolve: {
       fallback: polyfillFallback,
-    },
-  };
-};
-
-export const getDefaultCjsConfig = (pkgName) => {
-  const plugins = [];
-  if (NODE_ENV === "production") {
-    plugins.push(
-      new ESLintPlugin({
-        context: paths.appPath,
-        threads: !process.env.CI,
-        configType: "flat",
-        extensions: ["ts", "tsx"],
-        emitError: true,
-        emitWarning: true,
-        failOnError: process.env.NODE_ENV === "production",
-        cache: true,
-        cacheLocation: path.resolve(paths.appNodeModules, ".cache/.eslintcache"),
-      }),
-    );
-  }
-  plugins.push(
-    new ForkTsCheckerWebpackPlugin({
-      typescript: {
-        mode: "write-dts",
-        context: paths.appPath,
-        configFile: fs.existsSync(paths.appTsBuildConfig) ? "tsconfig.build.json" : "tsconfig.json",
-        configOverwrite: tsconfigBuild,
-      },
-    }),
-  );
-  const allDeps = [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})];
-  return {
-    ...optimization,
-    output: {
-      filename: `${pkgName}.cjs.js`,
-      library: {
-        // Giving a name to builds aggregates all exports under that name
-        type: "commonjs2",
-      },
-    },
-    plugins,
-    externals: [...allDeps, /^(@babel\/runtime)/i, nodeExternals()],
-    externalsPresets: { node: true },
-    node: {
-      // Buffer: false,
     },
   };
 };

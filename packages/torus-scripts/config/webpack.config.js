@@ -2,7 +2,7 @@
 // merges the user provided config with the default config
 // and returns the merged config
 
-// By default this generates cjs, umd builds
+// By default this generates umd builds
 import merge from "lodash.mergewith";
 import path from "path";
 import fs from "fs";
@@ -45,12 +45,6 @@ export const babelLoader = {
   use: {
     loader: "babel-loader",
     options: babelLoaderOptions,
-  },
-};
-
-const optimization = {
-  optimization: {
-    minimize: false,
   },
 };
 

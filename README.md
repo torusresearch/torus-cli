@@ -12,7 +12,3 @@ Torus CLI and devtools
 | [🚀 `eslint-config-node`](/packages/eslint-config-node)             | ESLint config for Node.js projects       |
 | [🚀 `eslint-config-react`](/packages/eslint-config-react)           | ESLint config for React projects         |
 | [🚀 `eslint-config-vue`](/packages/eslint-config-vue)               | ESLint config for Vue projects           |
-
-TODO:
-
-- rollup will be used for combined cjs export too when we have eslint 9

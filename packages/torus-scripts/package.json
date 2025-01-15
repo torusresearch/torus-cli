@@ -72,7 +72,7 @@
     "url": "git+https://github.com/torusresearch/torus-cli.git"
   },
   "devDependencies": {
-    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-prettier": "^5.2.2",
     "globals": "^15.14.0"
   }
 }

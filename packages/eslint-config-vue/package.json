@@ -9,7 +9,7 @@
   ],
   "dependencies": {
     "@toruslabs/eslint-config-typescript": "^4.0.3",
-    "@vue/eslint-config-typescript": "^14.2.0",
+    "@vue/eslint-config-typescript": "^14.3.0",
     "eslint-plugin-tailwindcss": "^3.17.5",
     "eslint-plugin-vue": "^9.32.0",
     "globals": "^15.14.0",

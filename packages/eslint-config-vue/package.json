@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-vue",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "Eslint config for Vue.js",
   "keywords": [
     "eslint",
@@ -8,7 +8,7 @@
     "vue"
   ],
   "dependencies": {
-    "@toruslabs/eslint-config-typescript": "^4.0.3",
+    "@toruslabs/eslint-config-typescript": "^4.0.4",
     "@vue/eslint-config-typescript": "^14.3.0",
     "eslint-plugin-tailwindcss": "^3.17.5",
     "eslint-plugin-vue": "^9.32.0",

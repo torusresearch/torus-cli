@@ -6,6 +6,7 @@ import babelPlugin from "@rollup/plugin-babel";
 import path from "path";
 import fs from "fs";
 import resolve from "@rollup/plugin-node-resolve";
+import tsconfigPaths from "rollup-plugin-tsconfig-paths";
 
 import torusConfig from "./torus.config.js";
 import paths, { appModuleFileExtensions } from "./paths.js";
@@ -43,6 +44,7 @@ const getDefaultConfig = (name) => {
     ...baseConfig,
     output: { file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: process.env.NODE_ENV === "development" },
     plugins: [
+      tsconfigPaths(),
       // Allows node_modules resolution
       resolve({
         extensions: appModuleFileExtensions.map((x) => `.${x}`),
@@ -57,6 +59,7 @@ const getDefaultConfig = (name) => {
     ...baseConfig,
     output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.esm"), format: "es", sourcemap: process.env.NODE_ENV === "development" },
     plugins: [
+      tsconfigPaths(),
       // Allows node_modules resolution
       resolve({
         extensions: appModuleFileExtensions.map((x) => `.${x}`),
@@ -86,6 +89,7 @@ const getDefaultConfig = (name) => {
     ...baseConfig,
     output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.cjs"), format: "cjs", sourcemap: process.env.NODE_ENV === "development" },
     plugins: [
+      tsconfigPaths(),
       // Allows node_modules resolution
       resolve({
         extensions: appModuleFileExtensions.map((x) => `.${x}`),

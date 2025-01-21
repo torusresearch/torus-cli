@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "7.0.4",
+  "version": "7.0.5",
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
@@ -19,7 +19,6 @@
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-typescript": "^12.1.2",
-    "ts-patch": "^3.3.0",
     "@toruslabs/config": "^3.0.1",
     "assert": "^2.1.0",
     "babel-loader": "^9.2.1",
@@ -43,6 +42,7 @@
     "rxjs": "^7.8.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
+    "ts-patch": "^3.3.0",
     "typescript": "^5.6.3",
     "update-notifier": "^7.3.1",
     "url": "^0.11.4",

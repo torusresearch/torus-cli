@@ -6,12 +6,16 @@ import babelPlugin from "@rollup/plugin-babel";
 import path from "path";
 import fs from "fs";
 import resolve from "@rollup/plugin-node-resolve";
+import typescript from "@rollup/plugin-typescript";
+import { createRequire } from "node:module";
 
 import torusConfig from "./torus.config.js";
 import paths, { appModuleFileExtensions } from "./paths.js";
 import { readFile, readJSONFile } from "../helpers/utils.js";
 import babelConfig from "./babel.config.js";
+import tsconfigBuild from "./tsconfig.build.js";
 
+const require = createRequire(import.meta.url);
 const pkg = readJSONFile(paths.appPackageJson);
 
 const babelPluginOptions = {
@@ -86,6 +90,14 @@ const getDefaultConfig = (name) => {
     ...baseConfig,
     output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.cjs"), format: "cjs", sourcemap: process.env.NODE_ENV === "development" },
     plugins: [
+      typescript({
+        ...tsconfigBuild.compilerOptions,
+        tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig,
+        noEmitOnError: process.env.NODE_ENV === "production",
+        outDir: path.resolve(paths.appBuild, "lib.cjs"),
+        declarationDir: path.resolve(paths.appBuild, "lib.cjs/types"),
+        typescript: require("ts-patch/compiler"),
+      }),
       // Allows node_modules resolution
       resolve({
         extensions: appModuleFileExtensions.map((x) => `.${x}`),

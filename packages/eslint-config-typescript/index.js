@@ -114,7 +114,7 @@ export default [
         {
           devDependencies: [
             // ignore all eslint.config.mjs files
-            "**/*/eslint.config.mjs",
+            "**/**/eslint.config.mjs",
             // ignore all test files
             "**/*.test.ts",
             "**/*.test.tsx",
@@ -122,6 +122,8 @@ export default [
             "**/testHelpers.ts",
             // ignore all test configs
             "**/test/configs/**",
+            // ignore all storybook files
+            "**/*.stories.tsx",
           ],
         },
       ],

@@ -29,8 +29,5 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/torusresearch/torus-cli.git"
-  },
-  "dependencies": {
-    "babel-plugin-transform-object-hasown": "^1.1.0"
   }
 }

@@ -9,6 +9,7 @@ module.exports = {
     "@babel/plugin-transform-class-properties",
     ["@babel/transform-runtime", { version: runtimeVersion }],
     "@babel/plugin-transform-numeric-separator",
+    "babel-plugin-transform-object-hasown",
   ],
   sourceType: "unambiguous",
 };

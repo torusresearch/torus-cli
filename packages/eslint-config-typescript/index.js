@@ -108,6 +108,25 @@ export default [
           trailingComma: "es5",
         },
       ],
+
+      "import/no-extraneous-dependencies": [
+        "error",
+        {
+          devDependencies: [
+            // ignore all eslint.config.mjs files
+            "**/**/eslint.config.mjs",
+            // ignore all test files
+            "**/*.test.ts",
+            "**/*.test.tsx",
+            // ignore all test helpers
+            "**/testHelpers.ts",
+            // ignore all test configs
+            "**/test/configs/**",
+            // ignore all storybook files
+            "**/*.stories.tsx",
+          ],
+        },
+      ],
     },
 
     ignores: [

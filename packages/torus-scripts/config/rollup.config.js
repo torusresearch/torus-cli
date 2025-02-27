@@ -97,6 +97,7 @@ const getDefaultConfig = (name) => {
         outDir: path.resolve(paths.appBuild, "lib.cjs"),
         declarationDir: path.resolve(paths.appBuild, "lib.cjs/types"),
         typescript: require("ts-patch/compiler"),
+        sourceMap: process.env.NODE_ENV === "development",
       }),
       // Allows node_modules resolution
       resolve({

@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "7.0.5",
+  "version": "7.1.0",
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
@@ -19,7 +19,7 @@
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-typescript": "^12.1.2",
-    "@toruslabs/config": "^3.0.1",
+    "@toruslabs/config": "^3.1.0",
     "assert": "^2.1.0",
     "babel-loader": "^9.2.1",
     "browserify-zlib": "^0.2.0",

@@ -34,7 +34,6 @@ export default [
     },
 
     rules: {
-      "tsdoc/syntax": 1,
       "@typescript-eslint/member-ordering": 1,
       "import/prefer-default-export": 0,
       "simple-import-sort/imports": 2,

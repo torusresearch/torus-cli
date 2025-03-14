@@ -67,7 +67,6 @@ export default [
     rules: {
       "no-restricted-exports": 0,
       "react/require-default-props": 0,
-      "tsdoc/syntax": 1,
 
       "@typescript-eslint/naming-convention": [
         "error",

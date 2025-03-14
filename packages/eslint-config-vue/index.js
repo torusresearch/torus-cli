@@ -1,16 +1,15 @@
 import globals from "globals";
 import pluginVue from "eslint-plugin-vue";
-import vueTsEslintConfig from "@vue/eslint-config-typescript";
+import { vueTsConfigs, defineConfigWithVueTs } from "@vue/eslint-config-typescript";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
 import tailwind from "eslint-plugin-tailwindcss";
 import vueParser from "vue-eslint-parser";
 
 // TODO: Add back eslint-vue when it's ready
 export default [
-  ...pluginVue.configs["flat/recommended"],
-  ...vueTsEslintConfig(),
-  ...tailwind.configs["flat/recommended"],
   ...torusTypescriptConfig,
+  ...defineConfigWithVueTs(pluginVue.configs["flat/recommended"], vueTsConfigs),
+  ...tailwind.configs["flat/recommended"],
   {
     plugins: {},
 

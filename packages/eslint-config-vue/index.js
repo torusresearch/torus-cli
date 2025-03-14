@@ -8,7 +8,7 @@ import vueParser from "vue-eslint-parser";
 // TODO: Add back eslint-vue when it's ready
 export default [
   ...torusTypescriptConfig,
-  ...defineConfigWithVueTs(pluginVue.configs["flat/recommended"], vueTsConfigs),
+  ...defineConfigWithVueTs(pluginVue.configs["flat/recommended"], vueTsConfigs.recommended),
   ...tailwind.configs["flat/recommended"],
   {
     plugins: {},

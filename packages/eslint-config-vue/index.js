@@ -40,6 +40,7 @@ export default [
     },
 
     rules: {
+      "vue/multi-word-component-names": 0,
       "@typescript-eslint/member-ordering": 1,
       "import/prefer-default-export": 0,
       "no-dupe-class-members": 0,

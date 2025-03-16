@@ -8,9 +8,9 @@
   ],
   "dependencies": {
     "@eslint/eslintrc": "^3.3.0",
-    "@eslint/js": "^9.21.0",
-    "@vitest/eslint-plugin": "^1.1.35",
-    "eslint-config-prettier": "^10.0.2",
+    "@eslint/js": "^9.22.0",
+    "@vitest/eslint-plugin": "^1.1.37",
+    "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-promise": "^7.2.1",
@@ -22,8 +22,8 @@
     "prettier": "^3.x"
   },
   "devDependencies": {
-    "eslint": "^9.21.0",
-    "prettier": "^3.5.2"
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3"
   },
   "publishConfig": {
     "access": "public"

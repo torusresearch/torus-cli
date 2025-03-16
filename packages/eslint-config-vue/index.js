@@ -1,16 +1,21 @@
 import globals from "globals";
 import pluginVue from "eslint-plugin-vue";
-import vueTsEslintConfig from "@vue/eslint-config-typescript";
+import { vueTsConfigs, defineConfigWithVueTs } from "@vue/eslint-config-typescript";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
 import tailwind from "eslint-plugin-tailwindcss";
 import vueParser from "vue-eslint-parser";
 
+// Remove the base/setup and base/setup-for-vue configs from the pluginVue config
+// These items are already exist in pluginVue.configs["flat/recommended"]
+// This cause issue when we redefine vue() plugin
+const duplicateConfigs = ["vue/base/setup", "vue/base/setup-for-vue"];
+const pluginVueConfig = pluginVue.configs["flat/recommended"].filter((config) => !duplicateConfigs.includes(config.name));
+
 // TODO: Add back eslint-vue when it's ready
 export default [
-  ...pluginVue.configs["flat/recommended"],
-  ...vueTsEslintConfig(),
-  ...tailwind.configs["flat/recommended"],
   ...torusTypescriptConfig,
+  ...defineConfigWithVueTs(pluginVueConfig, vueTsConfigs.recommended),
+  ...tailwind.configs["flat/recommended"],
   {
     plugins: {},
 
@@ -35,11 +40,9 @@ export default [
     },
 
     rules: {
-      "tsdoc/syntax": 1,
+      "vue/multi-word-component-names": 0,
       "@typescript-eslint/member-ordering": 1,
       "import/prefer-default-export": 0,
-      "simple-import-sort/imports": 2,
-      "simple-import-sort/exports": 2,
       "no-dupe-class-members": 0,
       "@typescript-eslint/no-dupe-class-members": 2,
       "no-useless-constructor": 0,

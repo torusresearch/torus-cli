@@ -11,12 +11,14 @@ import webpack from "webpack";
 import { createRequire } from "node:module";
 import ESLintPlugin from "eslint-webpack-plugin";
 import mergeWith from "lodash.mergewith";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 
 const require = createRequire(import.meta.url);
 import paths, { appModuleFileExtensions } from "./paths.js";
 import babelConfig from "./babel.config.js";
 import torusConfig from "./torus.config.js";
 import { readFile } from "../helpers/utils.js";
+import tsconfigBuild from "./tsconfig.build.js";
 
 const { appWebpackConfig, appBuild } = paths;
 const { NODE_ENV = "production" } = process.env;
@@ -152,6 +154,21 @@ export const getDefaultBaseConfig = () => {
 
 export const getDefaultUmdConfig = (pkgName) => {
   const plugins = [];
+  if (tsconfigBuild.compilerOptions.plugins && tsconfigBuild.compilerOptions.plugins.length > 0) {
+    const isTransformPlugin = tsconfigBuild.compilerOptions.plugins.some((x) => x.transform === "typescript-transform-paths");
+    if (isTransformPlugin) {
+      plugins.push(
+        new ForkTsCheckerWebpackPlugin({
+          typescript: {
+            mode: "readonly",
+            context: paths.appPath,
+            configFile: paths.appTsBuildConfig,
+            typescriptPath: require.resolve("ts-patch/compiler"),
+          },
+        }),
+      );
+    }
+  }
   if (NODE_ENV === "production") {
     plugins.push(
       new ESLintPlugin({

@@ -38,6 +38,25 @@ const userConfig = fs.existsSync(paths.appRollupConfig) ? await readFile(paths.a
 // we want to create only one build set with rollup
 const getDefaultConfig = (name) => {
   const allDeps = [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})];
+  const tsConfigBuildPlugins = [];
+  if (tsconfigBuild.compilerOptions.plugins && tsconfigBuild.compilerOptions.plugins.length > 0) {
+    const isTransformPlugin = tsconfigBuild.compilerOptions.plugins.some((x) => x.transform === "typescript-transform-paths");
+    if (isTransformPlugin) {
+      tsConfigBuildPlugins.push(
+        typescript({
+          ...tsconfigBuild.compilerOptions,
+          tsconfig: fs.existsSync(paths.appTsBuildConfig) ? paths.appTsBuildConfig : paths.appTsConfig,
+          noEmitOnError: process.env.NODE_ENV === "production",
+          outDir: path.resolve(paths.appBuild, "lib.esm"),
+          declaration: false,
+          declarationDir: undefined,
+          typescript: require("ts-patch/compiler"),
+          sourceMap: process.env.NODE_ENV === "development",
+          emitDeclarationOnly: true,
+        }),
+      );
+    }
+  }
   const baseConfig = {
     input: paths.appIndexFile,
     external: [...allDeps, ...allDeps.map((x) => new RegExp(`^${x}/`)), /@babel\/runtime/],
@@ -61,6 +80,7 @@ const getDefaultConfig = (name) => {
     ...baseConfig,
     output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.esm"), format: "es", sourcemap: process.env.NODE_ENV === "development" },
     plugins: [
+      ...tsConfigBuildPlugins,
       // Allows node_modules resolution
       resolve({
         extensions: appModuleFileExtensions.map((x) => `.${x}`),

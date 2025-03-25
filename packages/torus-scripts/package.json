@@ -23,6 +23,7 @@
     "assert": "^2.1.0",
     "babel-loader": "^10.0.0",
     "babel-plugin-transform-object-hasown": "^1.1.0",
+    "fork-ts-checker-webpack-plugin": "^9.0.2",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "chalk": "^5.4.1",

@@ -16,8 +16,8 @@
     "fix:styles": "prettier --write ."
   },
   "devDependencies": {
-    "eslint": "^9.22.0",
-    "eslint-plugin-prettier": "^5.2.3",
+    "eslint": "^9.23.0",
+    "eslint-plugin-prettier": "^5.2.5",
     "globals": "^16.0.0",
     "lerna": "^8.2.1",
     "prettier": "^3.5.3",

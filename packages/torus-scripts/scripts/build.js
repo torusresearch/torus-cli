@@ -8,7 +8,6 @@ process.on("unhandledRejection", (err) => {
 });
 
 import { rollup } from "rollup";
-import webpack from "webpack";
 import chalk from "chalk";
 import { Listr } from "listr2";
 import cliui from "cliui";
@@ -16,11 +15,8 @@ import parseArgs from "yargs-parser";
 import dotenv from "dotenv";
 
 import generateRollupConfig from "../config/rollup.config.js";
-import generateWebpackConfig from "../config/webpack.config.js";
 import torusConfig from "../config/torus.config.js";
 import paths from "../config/paths.js";
-import formatWebpackStats from "../helpers/formatWebpackStats.js";
-import formatWebpackMessages from "../helpers/formatWebpackMessages.js";
 import formatRollupStats from "../helpers/formatRollupStats.js";
 import updatePackageNotification from "../helpers/updatePackage.js";
 import { buildHelpText } from "../helpers/constants.js";
@@ -87,49 +83,6 @@ function getRollupTasks() {
   });
 }
 
-function getWebpackTasks() {
-  const configs = generateWebpackConfig(finalArgs.name);
-  return configs.map((x) => {
-    return {
-      title: x.output.filename,
-      task: (ctx) => {
-        return new Promise((resolve, reject) => {
-          webpack(x, (err, stats) => {
-            let messages;
-            if (err) {
-              if (!err.message) {
-                return reject(err);
-              }
-
-              messages = formatWebpackMessages({
-                errors: [err.message],
-                warnings: [],
-              });
-            } else {
-              messages = formatWebpackMessages(stats.toJson({ all: false, warnings: true, errors: true }));
-            }
-
-            if (messages.errors.length) {
-              // Only keep the first error. Others are often indicative
-              // of the same problem, but confuse the reader with noise.
-              if (messages.errors.length > 1) {
-                messages.errors.length = 1;
-              }
-              return reject(new Error(messages.errors.join("\n\n")));
-            }
-
-            const formattedStats = formatWebpackStats(stats, paths.appBuild);
-
-            addOutput({ ctx, filename: x.output.filename, warnings: messages.warnings, formattedStats, type: "webpack" });
-
-            return resolve();
-          });
-        });
-      },
-    };
-  });
-}
-
 async function main() {
   console.log(chalk.yellow("Cleaning dist folder..."));
   await deleteFolder(paths.appBuild);
@@ -137,8 +90,6 @@ async function main() {
   console.log(chalk.yellow("Collating builds..."));
   const rollupTasks = getRollupTasks();
   if (rollupTasks.length > 0) tasks.add(rollupTasks);
-  const webpackTasks = getWebpackTasks();
-  if (webpackTasks.length > 0) tasks.add(webpackTasks);
   try {
     const ctx = await tasks.run();
 

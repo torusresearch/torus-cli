@@ -1,6 +1,5 @@
 module.exports = {
   name: "index.js",
-  umd: true,
   libEsm: true,
   libCjs: true,
   analyzerMode: "disabled",

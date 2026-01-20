@@ -207,7 +207,6 @@ The build is produced in the following formats depending on the options specifie
 
 - `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 ### torus-scripts start
 
@@ -227,7 +226,6 @@ The dev server build is produced in the following formats depending on the optio
 
 - `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 you can use npm folder links to install this to any other project and
 watch it live updated as you change code in your torus-scripts project
@@ -261,4 +259,3 @@ you're recommended to add `prepack` command to build before calling release
 - tsconfig files must be extending tsconfig.default.json and import the default config from @toruslabs/config
 - Add include (`["src", "test"]`), outDir, declarationDir in imported files of tsconfig.json
 - If repo also includes tests, add tsconfig.build.json and in that, `include` must contain `src` only.
-- Start by default doesn't build umd anymore. To build umd, set`umd` to true in torus.config.js

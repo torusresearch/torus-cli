@@ -13,7 +13,6 @@ const buildPath = process.env.BUILD_DIR || "dist";
 export const appModuleFileExtensions = ["js", "ts", "json", "mjs", "jsx", "tsx"];
 export const configModuleFileExtensions = ["js", "json", "mjs"];
 
-// Resolve file paths in the same order as webpack
 const resolveModule = (resolveFn, filePath, moduleFileExtensions = appModuleFileExtensions) => {
   const extension = moduleFileExtensions.find((extension) => fs.existsSync(resolveFn(`${filePath}.${extension}`)));
 
@@ -39,9 +38,7 @@ export default {
   appTsConfig: resolveApp("tsconfig.json"),
   testsSetupFile: resolveModule(resolveApp, "test/setup"),
   appNodeModules: resolveApp("node_modules"),
-  appWebpackCache: resolveApp("node_modules/.cache"),
   appTsBuildInfoFile: resolveApp("node_modules/.cache/tsconfig.tsbuildinfo"),
-  appWebpackConfig: resolveModule(resolveApp, "webpack.config", configModuleFileExtensions),
   appRollupConfig: resolveModule(resolveApp, "rollup.config", configModuleFileExtensions),
   appBabelConfig: resolveModule(resolveApp, "babel.config", configModuleFileExtensions),
   appTorusConfig: resolveModule(resolveApp, "torus.config", configModuleFileExtensions),

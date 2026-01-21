@@ -37,7 +37,7 @@
   },
   "engines": {
     "node": ">=24",
-    "npm": ">=10.x"
+    "npm": ">=11.x"
   },
   "author": "Torus Labs",
   "license": "MIT",

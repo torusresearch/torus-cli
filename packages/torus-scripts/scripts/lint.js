@@ -42,7 +42,7 @@ async function main() {
 
   const eslint = new ESLint({
     fix: finalArgs.fix || false,
-    cache: finalArgs.cache || false,
+    cache: finalArgs.cache || true,
     cwd: paths.appPath,
   });
 

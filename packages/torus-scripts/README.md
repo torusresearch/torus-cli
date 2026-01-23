@@ -65,19 +65,9 @@ interface IOptions {
   name: string; // Name of bundles in dist folder. Default: name in package.json with casing changes
   libEsm: boolean; // Whether to generate an lib esm build. Default: true
   libCjs: boolean; // Whether to generate a lib cjs build. Default: true
+  lintBeforeBuild: boolean; // Whether to run lint before build. Default: true
   browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
-  // This option allows you to skip polyfilling node deps by default. You can set it to true or a specific path to
-  // polyfill correctly. This change has been done to prevent unnecessary polyfilling of node deps in browser builds
-  polyfillNodeDeps: {
-    http: boolean | string;
-    https: boolean | string;
-    os: boolean | string;
-    crypto: boolean | string;
-    assert: boolean | string;
-    stream: boolean | string;
-    url: boolean | string;
-    zlib: boolean | string;
-  };
+  analyzerMode: "disabled" | "enabled"; // Bundle analyzer mode. Default: "disabled". When enabled, outputs bundle analysis to console
 }
 ```
 

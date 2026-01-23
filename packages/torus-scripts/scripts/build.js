@@ -21,6 +21,7 @@ import formatRollupStats from "../helpers/formatRollupStats.js";
 import updatePackageNotification from "../helpers/updatePackage.js";
 import { buildHelpText } from "../helpers/constants.js";
 import { deleteFolder } from "../helpers/utils.js";
+import { runLint } from "./lint.js";
 
 const ui = cliui({ width: process.stdout.columns || 80 });
 
@@ -84,6 +85,16 @@ function getRollupTasks() {
 }
 
 async function main() {
+  // Run lint before build if enabled
+  if (torusConfig.lintBeforeBuild !== false) {
+    try {
+      await runLint();
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exit(1);
+    }
+  }
+
   console.log(chalk.yellow("Cleaning dist folder..."));
   await deleteFolder(paths.appBuild);
   const tasks = new Listr([], { concurrent: true });

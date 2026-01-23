@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "7.1.6",
+  "version": "8.0.0",
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
@@ -19,7 +19,7 @@
     "@rollup/plugin-babel": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
-    "@toruslabs/config": "^3.1.0",
+    "@toruslabs/config": "^4.0.0",
     "babel-plugin-transform-object-hasown": "^1.1.0",
     "chalk": "^5.6.2",
     "cliui": "^9.0.1",

@@ -1,13 +1,10 @@
 "use strict";
 
-const ctx = { webpackWatchers: [], rollupWatchers: [] };
+const ctx = { rollupWatchers: [] };
 import chalk from "chalk";
 
 function closeWatchers() {
   console.log(chalk.yellow("Stopping dev server..."));
-  ctx.webpackWatchers.forEach((watcher) => {
-    if (watcher) watcher.close();
-  });
   ctx.rollupWatchers.forEach((watcher) => {
     if (watcher) watcher.close();
   });
@@ -30,17 +27,14 @@ process.on("unhandledRejection", (err) => {
 });
 
 import { watch } from "rollup";
-import webpack from "webpack";
 import { Listr } from "listr2";
 import { Observable } from "rxjs";
 import parseArgs from "yargs-parser";
 import dotenv from "dotenv";
 
 import generateRollupConfig from "../config/rollup.config.js";
-import generateWebpackConfig from "../config/webpack.config.js";
 import torusConfig from "../config/torus.config.js";
 import paths from "../config/paths.js";
-import formatWebpackMessages from "../helpers/formatWebpackMessages.js";
 import updatePackageNotification from "../helpers/updatePackage.js";
 import { startHelpText } from "../helpers/constants.js";
 import { deleteFolder } from "../helpers/utils.js";
@@ -68,8 +62,7 @@ if (paths.dotenv) {
   dotenv.config({ path: paths.dotenv });
 }
 
-function addOutput({ webpackWatcher, rollupWatcher }) {
-  if (webpackWatcher) ctx.webpackWatchers.push(webpackWatcher);
+function addOutput({ rollupWatcher }) {
   if (rollupWatcher) ctx.rollupWatchers.push(rollupWatcher);
 }
 
@@ -115,60 +108,6 @@ function getRollupTasks() {
   });
 }
 
-function getWebpackTasks() {
-  const configs = generateWebpackConfig(finalArgs.name);
-  return configs.map((x) => {
-    return {
-      title: x.output.filename,
-      task: () => {
-        return new Observable((observer) => {
-          const compiler = webpack(x);
-          observer.next(`Building ${x.output.filename}...`);
-          compiler.watch(
-            {
-              ignored: /node_modules/,
-            },
-            (err, stats) => {
-              let messages;
-              if (err) {
-                if (!err.message) {
-                  observer.next(chalk.red("Build failed"));
-                  console.error(err);
-                }
-
-                messages = formatWebpackMessages({
-                  errors: [err.message],
-                  warnings: [],
-                });
-              } else {
-                messages = formatWebpackMessages(stats.toJson({ all: false, warnings: false, errors: true }));
-              }
-
-              if (messages.errors.length) {
-                // Only keep the first error. Others are often indicative
-                // of the same problem, but confuse the reader with noise.
-                if (messages.errors.length > 1) {
-                  messages.errors.length = 1;
-                }
-                observer.next(chalk.red("Build failed"));
-                console.error(new Error(messages.errors.join("\n\n")));
-                return;
-              }
-
-              observer.next(`Build complete for ${x.output.filename}...`);
-              observer.next(`Done. Watching for changes...`);
-            },
-          );
-          addOutput({ webpackWatcher: compiler });
-        });
-      },
-      options: {
-        persistentOutput: false,
-      },
-    };
-  });
-}
-
 async function main() {
   console.log(chalk.yellow("Cleaning dist folder..."));
   await deleteFolder(paths.appBuild);
@@ -176,8 +115,6 @@ async function main() {
   console.log(chalk.yellow("Collating for dev..."));
   const rollupTasks = getRollupTasks();
   if (rollupTasks.length > 0) tasks.add(rollupTasks);
-  const webpackTasks = getWebpackTasks();
-  if (webpackTasks.length > 0) tasks.add(webpackTasks);
   try {
     await tasks.run();
   } catch (error) {

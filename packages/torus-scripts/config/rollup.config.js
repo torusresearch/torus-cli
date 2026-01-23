@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import resolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
+import analyze from "rollup-plugin-analyzer";
 import { createRequire } from "node:module";
 
 import torusConfig from "./torus.config.js";
@@ -62,20 +63,9 @@ const getDefaultConfig = (name) => {
     external: [...allDeps, ...allDeps.map((x) => new RegExp(`^${x}/`)), /@babel\/runtime/],
     ...(userConfig.baseConfig || {}),
   };
-  // const esmCombinedExport = {
-  //   ...baseConfig,
-  //   output: { file: path.resolve(paths.appBuild, `${name}.esm.js`), format: "es", sourcemap: process.env.NODE_ENV === "development" },
-  //   plugins: [
-  //     // Allows node_modules resolution
-  //     resolve({
-  //       extensions: appModuleFileExtensions.map((x) => `.${x}`),
-  //       modulesOnly: true,
-  //       preferBuiltins: false,
-  //     }),
-  //     ...(baseConfig.plugins || []),
-  //     babelPlugin(babelPluginOptions),
-  //   ],
-  // };
+
+  const analyzerPlugins = torusConfig.analyzerMode && torusConfig.analyzerMode !== "disabled" ? [analyze()] : [];
+
   const esmOriginalExport = {
     ...baseConfig,
     output: { preserveModules: true, dir: path.resolve(paths.appBuild, "lib.esm"), format: "es", sourcemap: process.env.NODE_ENV === "development" },
@@ -89,6 +79,7 @@ const getDefaultConfig = (name) => {
       }),
       ...(baseConfig.plugins || []),
       babelPlugin(babelPluginOptions),
+      ...analyzerPlugins,
     ],
   };
   // const cjsCombinedExport = {

@@ -44,13 +44,13 @@ if (parsedArgs.help) {
   process.exit(0);
 }
 
-const scriptIndex = args.findIndex((x) => x === "build" || x === "start" || x === "release");
+const scriptIndex = args.findIndex((x) => x === "build" || x === "start" || x === "release" || x === "lint");
 
 const script = scriptIndex === -1 ? args[0] : args[scriptIndex];
 const nodeArgs = scriptIndex > 0 ? args.slice(0, scriptIndex) : [];
 const nodeEnv = ["build", "release"].includes(script) ? "production" : "development";
 
-if (["build", "start", "release"].includes(script)) {
+if (["build", "start", "release", "lint"].includes(script)) {
   const result = spawn.sync(process.execPath, nodeArgs.concat(resolveFileUrl("../scripts/" + script + ".js")).concat(args.slice(scriptIndex + 1)), {
     stdio: "inherit",
     env: {

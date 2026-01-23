@@ -7,20 +7,18 @@
     "eslintconfig"
   ],
   "dependencies": {
-    "@eslint/compat": "^1.2.8",
-    "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.25.0",
-    "@typescript-eslint/parser": "^8.30.1",
-    "@vitest/eslint-plugin": "^1.1.43",
-    "eslint-config-prettier": "^10.1.2",
-    "eslint-import-resolver-typescript": "^4.3.2",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-prettier": "^5.2.6",
+    "@eslint/js": "^9.39.2",
+    "@typescript-eslint/parser": "^8.53.1",
+    "@vitest/eslint-plugin": "^1.6.6",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-tsdoc": "^0.4.0",
-    "globals": "^16.0.0",
-    "typescript-eslint": "^8.30.1"
+    "eslint-plugin-tsdoc": "^0.5.0",
+    "globals": "^17.0.0",
+    "typescript-eslint": "^8.53.1"
   },
   "peerDependencies": {
     "eslint": "^9.x",
@@ -28,16 +26,16 @@
     "typescript": "^5.x"
   },
   "devDependencies": {
-    "eslint": "^9.25.0",
-    "prettier": "^3.5.3",
-    "typescript": "^5.8.3"
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.0",
+    "typescript": "^5.9.3"
   },
   "publishConfig": {
     "access": "public"
   },
   "engines": {
-    "node": ">=20.x",
-    "npm": ">=9.x"
+    "node": ">=22",
+    "npm": ">=10.x"
   },
   "author": "Torus Labs",
   "license": "MIT",

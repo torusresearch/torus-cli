@@ -14,26 +14,6 @@ const userPathExists = fs.existsSync(paths.appTsBuildConfig);
 
 const userConfig = userPathExists ? ts.readConfigFile(paths.appTsBuildConfig, ts.sys.readFile).config : {};
 
-/*
-TODO: change this when fork-ts-checker-webpack-plugin is updated to support tsconfig.json extends as an array
-// objValue is the first object (our default config)
-function customizer(objValue, srcValue, key) {
-  if (key === "extends") {
-    const finalArray = [];
-    if (Array.isArray(objValue)) {
-      finalArray.push(...objValue);
-    } else finalArray.push(objValue);
-    if (Array.isArray(srcValue)) {
-      finalArray.push(...srcValue);
-    } else finalArray.push(srcValue);
-    return [...new Set(finalArray)];
-  }
-  if (Array.isArray(objValue)) {
-    return srcValue;
-  }
-}
-*/
-
 // objValue is the first object (our default config)
 function customizer(objValue, srcValue) {
   if (Array.isArray(objValue)) {

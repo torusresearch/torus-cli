@@ -22,3 +22,11 @@ export const buildHelpText = `torus-scripts v${pkg.version}
   -h --help              Print this help
   -n --name              Name of the project
 For more details, please see https://github.com/torusresearch/torus-cli/tree/main/packages/torus-scripts`;
+
+export const lintHelpText = `torus-scripts v${pkg.version}
+  Usage: torus-scripts lint [options] [files...]
+  Use e.g. "torus-scripts lint" directly".
+  -h --help              Print this help
+  -f --fix               Automatically fix problems
+  -c --cache             Only check changed files
+For more details, please see https://github.com/torusresearch/torus-cli/tree/main/packages/torus-scripts`;

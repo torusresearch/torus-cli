@@ -3,10 +3,10 @@
 Torus scripts provide you a convenient way to build, release & create a dev server for building ts libraries.
 It offers a modern build setup with no configuration
 
-The CLI Service is built on top of rollup, webpack and webpack-dev-server. It contains:
+The CLI Service is built on top of rollup. It contains:
 
 - The core service that loads other CLI Plugins;
-- An internal webpack and rollup config that is optimized for most apps;
+- An internal rollup config that is optimized for most apps;
 - The torus-scripts binary inside the project, which comes with the basic start, build and release commands.
 
 If you are familiar with create-react-app, @toruslabs/torus-scripts is roughly the equivalent of react-scripts, although the feature set is different.
@@ -65,20 +65,9 @@ interface IOptions {
   name: string; // Name of bundles in dist folder. Default: name in package.json with casing changes
   libEsm: boolean; // Whether to generate an lib esm build. Default: true
   libCjs: boolean; // Whether to generate a lib cjs build. Default: true
-  analyzerMode: "disabled" | "static" | "server" | "json"; // Whether to analyze the umd build. Internally uses webpack-bundle-analyzer. Default: "disabled". Refer to full options here: https://github.com/webpack-contrib/webpack-bundle-analyzer
+  lintBeforeBuild: boolean; // Whether to run lint before build. Default: true
   browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
-  // This option allows you to skip polyfilling node deps by default. You can set it to true or a specific path to
-  // polyfill correctly. This change has been done to prevent unnecessary polyfilling of node deps in browser builds
-  polyfillNodeDeps: {
-    http: boolean | string;
-    https: boolean | string;
-    os: boolean | string;
-    crypto: boolean | string;
-    assert: boolean | string;
-    stream: boolean | string;
-    url: boolean | string;
-    zlib: boolean | string;
-  };
+  analyzerMode: "disabled" | "enabled"; // Bundle analyzer mode. Default: "disabled". When enabled, outputs bundle analysis to console
 }
 ```
 
@@ -139,57 +128,6 @@ export const baseConfig = {
 };
 ```
 
-<b> webpack </b>
-The webpack config is generated as follows:
-
-1. `webpack.config.js` file at package root
-2. [Default](./config/webpack.config.js)
-
-Both 1 & 2 are merged using `lodash.mergewith` and the generated config is used.
-So, it's okay to specify partial config in webpack.config.js
-you can also specify newer build types in this case by adding a new key in the exports
-
-eg:
-
-To create a new build type
-
-```js
-const pkg = require("./package.json");
-
-const pkgName = "fetchNodeDetails";
-
-// Adding this creates a new build type in the dist/ folder
-exports.nodeConfig = {
-  optimization: {
-    minimize: false,
-  },
-  output: {
-    filename: `${pkgName}-node.js`,
-    libraryTarget: "commonjs2",
-  },
-  externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-  target: "node",
-};
-```
-
-To add plugins or other config to all build types
-
-```js
-const path = require("path");
-const { EnvironmentPlugin } = require("webpack");
-
-exports.baseConfig = {
-  resolve: {
-    alias: {
-      "bn.js": path.resolve(__dirname, "node_modules/bn.js"),
-      lodash: path.resolve(__dirname, "node_modules/lodash"),
-      "js-sha3": path.resolve(__dirname, "node_modules/js-sha3"),
-    },
-  },
-  plugins: [new EnvironmentPlugin(["INFURA_PROJECT_ID"])],
-};
-```
-
 ### torus-scripts build
 
 ```
@@ -207,7 +145,6 @@ The build is produced in the following formats depending on the options specifie
 
 - `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 ### torus-scripts start
 
@@ -220,14 +157,13 @@ Options:
 
 ```
 
-`torus-scripts start` command starts a dev server (based on rollup & webpack-dev-server)
+`torus-scripts start` command starts a dev server (based on rollup)
 that comes with HMR (Hot-Module-Replacement) working out of the box.
 
 The dev server build is produced in the following formats depending on the options specified in `torus.config.js`
 
 - `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
 - `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `umd` - Built using webpack. (partial webpack config can be specified in `webpack.config.js` at project root)
 
 you can use npm folder links to install this to any other project and
 watch it live updated as you change code in your torus-scripts project
@@ -261,4 +197,3 @@ you're recommended to add `prepack` command to build before calling release
 - tsconfig files must be extending tsconfig.default.json and import the default config from @toruslabs/config
 - Add include (`["src", "test"]`), outDir, declarationDir in imported files of tsconfig.json
 - If repo also includes tests, add tsconfig.build.json and in that, `include` must contain `src` only.
-- Start by default doesn't build umd anymore. To build umd, set`umd` to true in torus.config.js

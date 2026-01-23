@@ -5,7 +5,7 @@
     "strict": true,
     "module": "esnext",
     "target": "esnext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "esModuleInterop": true,
     "noImplicitThis": true,

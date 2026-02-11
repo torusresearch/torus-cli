@@ -26,6 +26,10 @@
 
 # and responsibility to publish libraries under the MetaMask name.
 
+# Fallback for all other files
+
+*                               @torusresearch/Admins
+
 .github/CODEOWNERS @torusresearch/Admins
 
 packages/ @torusresearch/Web3Auth-Product
@@ -37,7 +41,3 @@ demo/ @torusresearch/Web3Auth-Product
 examples/ @torusresearch/Web3Auth-Product
 
 test/ @torusresearch/Web3Auth-Product
-
-# Fallback for all other files
-
-*                               @torusresearch/Admins

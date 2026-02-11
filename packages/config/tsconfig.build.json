@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  // To Add outDir, declarationDir after importing
+  // To Add outDir, declarationDir after importing 22
   "extends": ["@toruslabs/config/tsconfig.default.json"],
   "compilerOptions": {}
 }

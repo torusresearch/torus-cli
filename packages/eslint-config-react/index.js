@@ -1,6 +1,6 @@
 import reactPlugin from "eslint-plugin-react";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
-import tailwind from "eslint-plugin-tailwindcss";
+import tailwindcss from "@poupe/eslint-plugin-tailwindcss";
 
 import reactHooks from "eslint-plugin-react-hooks";
 import jsxA11Y from "eslint-plugin-jsx-a11y";
@@ -14,7 +14,6 @@ export default [
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat["jsx-runtime"],
   jsxA11Y.flatConfigs.recommended,
-  ...tailwind.configs["flat/recommended"],
   ...torusTypescriptConfig,
   {
     languageOptions: {
@@ -99,6 +98,15 @@ export default [
           trailingComma: "es5",
         },
       ],
+    },
+  },
+  {
+    files: ["**/*.{vue,ts,tsx,js,jsx}"],
+    plugins: {
+      tailwindcss,
+    },
+    rules: {
+      ...tailwindcss.configs.recommended.rules,
     },
   },
 ];

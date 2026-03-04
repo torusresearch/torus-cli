@@ -2,8 +2,8 @@ import globals from "globals";
 import pluginVue from "eslint-plugin-vue";
 import { vueTsConfigs, defineConfigWithVueTs } from "@vue/eslint-config-typescript";
 import torusTypescriptConfig from "@toruslabs/eslint-config-typescript";
-import tailwind from "eslint-plugin-tailwindcss";
 import vueParser from "vue-eslint-parser";
+import tailwindcss from "@poupe/eslint-plugin-tailwindcss";
 import vueI18n from "@intlify/eslint-plugin-vue-i18n";
 
 // Remove the base/setup and base/setup-for-vue configs from the pluginVue config
@@ -16,8 +16,7 @@ const pluginVueConfig = pluginVue.configs["flat/recommended"].filter((config) =>
 export default [
   ...torusTypescriptConfig,
   ...defineConfigWithVueTs(pluginVueConfig, vueTsConfigs.recommended),
-  ...tailwind.configs["flat/recommended"],
-  ...vueI18n.configs.recommended,
+  ...vueI18n.configs["flat/recommended"],
   {
     plugins: {},
 
@@ -77,6 +76,15 @@ export default [
           trailingComma: "es5",
         },
       ],
+    },
+  },
+  {
+    files: ["**/*.{vue,ts,tsx,js,jsx}"],
+    plugins: {
+      tailwindcss,
+    },
+    rules: {
+      ...tailwindcss.configs.recommended.rules,
     },
   },
 ];

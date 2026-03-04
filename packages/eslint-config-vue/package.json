@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/eslint-config-vue",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Eslint config for Vue.js",
   "keywords": [
     "eslint",
@@ -10,7 +10,7 @@
   "dependencies": {
     "@intlify/eslint-plugin-vue-i18n": "^4.3.0",
     "@poupe/eslint-plugin-tailwindcss": "^0.2.4",
-    "@toruslabs/eslint-config-typescript": "^5.0.0",
+    "@toruslabs/eslint-config-typescript": "^5.0.1",
     "@vue/eslint-config-typescript": "^14.7.0",
     "eslint-plugin-vue": "^10.8.0",
     "globals": "^17.4.0",

@@ -18,9 +18,9 @@
   "devDependencies": {
     "eslint": "^9.39.2",
     "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.0.0",
-    "lerna": "^9.0.3",
-    "prettier": "^3.8.0",
+    "globals": "^17.4.0",
+    "lerna": "^9.0.5",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3"
   },
   "type": "module"

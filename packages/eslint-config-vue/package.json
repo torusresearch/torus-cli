@@ -11,12 +11,11 @@
     "@intlify/eslint-plugin-vue-i18n": "^4.3.0",
     "@poupe/eslint-plugin-tailwindcss": "^0.2.4",
     "@toruslabs/eslint-config-typescript": "^5.0.0",
-    "@vue/eslint-config-typescript": "^14.6.0",
-    "eslint-plugin-vue": "^10.7.0",
-    "globals": "^17.0.0",
+    "@vue/eslint-config-typescript": "^14.7.0",
+    "eslint-plugin-vue": "^10.8.0",
+    "globals": "^17.4.0",
     "jsonc-eslint-parser": "^3.1.0",
-    "vue-eslint-parser": "^10.2.0",
-    "yaml-eslint-parser": "^1.3.2"
+    "vue-eslint-parser": "^10.4.0"
   },
   "peerDependencies": {
     "eslint": "^9.x",
@@ -25,7 +24,7 @@
   },
   "devDependencies": {
     "eslint": "^9.39.2",
-    "prettier": "^3.8.0",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3"
   },
   "publishConfig": {

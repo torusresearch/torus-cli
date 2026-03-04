@@ -9,9 +9,9 @@
   ],
   "dependencies": {
     "@toruslabs/eslint-config-typescript": "^5.0.0",
-    "eslint-plugin-n": "^17.23.2",
-    "eslint-plugin-security": "^3.0.1",
-    "globals": "^17.0.0"
+    "eslint-plugin-n": "^17.24.0",
+    "eslint-plugin-security": "^4.0.0",
+    "globals": "^17.4.0"
   },
   "peerDependencies": {
     "eslint": "^9.x"

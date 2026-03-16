@@ -9,7 +9,7 @@
   ],
   "dependencies": {
     "@intlify/eslint-plugin-vue-i18n": "^4.3.0",
-    "@poupe/eslint-plugin-tailwindcss": "^0.2.4",
+    "@poupe/eslint-plugin-tailwindcss": "^0.2.7",
     "@toruslabs/eslint-config-typescript": "^5.0.1",
     "@vue/eslint-config-typescript": "^14.7.0",
     "eslint-plugin-vue": "^10.8.0",

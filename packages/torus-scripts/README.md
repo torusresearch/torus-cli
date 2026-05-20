@@ -68,6 +68,7 @@ interface IOptions {
   lintBeforeBuild: boolean; // Whether to run lint before build. Default: true
   browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
   analyzerMode: "disabled" | "enabled"; // Bundle analyzer mode. Default: "disabled". When enabled, outputs bundle analysis to console
+  minify: boolean; // Whether to minify the output with @rollup/plugin-terser. Default: false
 }
 ```
 

@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import resolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
+import terser from "@rollup/plugin-terser";
 import analyze from "rollup-plugin-analyzer";
 import { createRequire } from "node:module";
 
@@ -65,6 +66,7 @@ const getDefaultConfig = (name) => {
   };
 
   const analyzerPlugins = torusConfig.analyzerMode && torusConfig.analyzerMode !== "disabled" ? [analyze()] : [];
+  const minifyPlugins = torusConfig.minify ? [terser()] : [];
 
   const esmOriginalExport = {
     ...baseConfig,
@@ -80,6 +82,7 @@ const getDefaultConfig = (name) => {
       ...(baseConfig.plugins || []),
       babelPlugin(babelPluginOptions),
       ...analyzerPlugins,
+      ...minifyPlugins,
     ],
   };
   // const cjsCombinedExport = {
@@ -118,6 +121,7 @@ const getDefaultConfig = (name) => {
       }),
       ...(baseConfig.plugins || []),
       babelPlugin(babelPluginOptions),
+      ...minifyPlugins,
     ],
   };
   const finalTasks = [];

@@ -19,6 +19,7 @@ Before changing scripts, ran a Node assertion against the required root build sc
 - `npm exec -- vp run -r build --fail-if-no-match` — passed; built `@toruslabs/torus-scripts`.
 - `npm exec -- changeset status` — passed; reports major bumps for `@toruslabs/config` and `@toruslabs/torus-scripts`.
 - `npm exec -- changeset status --since=main` — passed after staging the changeset; reports the same major bumps.
+- Reviewer P1 correction: set `privatePackages.version` to `false` and removed the unsupported `privatePackages.publish` option. No focused Task 8 test exists. The installed `@changesets/config` 4.0.1 schema allows `privatePackages.version` as a boolean and does not define `publish`; `npm exec -- changeset status` and `npm exec -- changeset status --since=main` both passed after the correction and report major bumps for `@toruslabs/config` and `@toruslabs/torus-scripts`.
 - `npm pack --workspaces --dry-run --json` — passed. The five legacy ESLint packages remain in the pack results. `@toruslabs/torus-scripts` includes generated `dist` output.
 - `npm ls lerna release-it rollup --all` — passed. No Lerna or release-it packages remain in the tree. Rollup remains transitively under `@toruslabs/torus-scripts` and its Rollup plugins, as required for the existing scripts.
 - `npm run check` — failed on formatting issues in 22 workspace files; none were changed to keep scope limited.

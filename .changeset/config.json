@@ -3,8 +3,7 @@
   "baseBranch": "main",
   "access": "public",
   "privatePackages": {
-    "version": true,
-    "publish": true
+    "version": false
   },
   "updateInternalDependencies": "patch",
   "fixed": [],

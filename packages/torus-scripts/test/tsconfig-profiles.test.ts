@@ -54,4 +54,24 @@ describe("TypeScript profiles", () => {
       expect(tsResolvedPath).toBe(nodeResolvedPath);
     }
   });
+
+  it("keeps profile and legacy package subpaths exported and resolvable", () => {
+    const fixtureRequire = createRequire(pathToFileURL(path.join(fixtureDirectory, "resolve.cjs")));
+    const configPackage = ts.readConfigFile(path.join(configPackageDirectory, "package.json"), ts.sys.readFile).config;
+    const subpaths = [
+      "tsconfig.library.json",
+      "tsconfig.node.json",
+      "tsconfig.default.json",
+      "tsconfig.build.json",
+      "torus.config.js",
+      "babel.config.js",
+      "babel-test.config.js",
+    ];
+
+    for (const subpath of subpaths) {
+      const packageSubpath = `./${subpath}`;
+      expect(configPackage.exports).toHaveProperty(packageSubpath, packageSubpath);
+      expect(fixtureRequire.resolve(`@toruslabs/config/${subpath}`)).toBe(path.join(configPackageDirectory, subpath));
+    }
+  });
 });

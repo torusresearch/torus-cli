@@ -18,6 +18,11 @@
     "npm": ">=12"
   },
   "exports": {
+    "./tsconfig.default.json": "./tsconfig.default.json",
+    "./tsconfig.build.json": "./tsconfig.build.json",
+    "./torus.config.js": "./torus.config.js",
+    "./babel.config.js": "./babel.config.js",
+    "./babel-test.config.js": "./babel-test.config.js",
     "./tsconfig.library.json": "./tsconfig.library.json",
     "./tsconfig.node.json": "./tsconfig.node.json"
   },

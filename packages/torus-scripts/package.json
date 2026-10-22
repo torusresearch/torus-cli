@@ -11,6 +11,18 @@
     "./library": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
+    },
+    "./react": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./vue": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./node": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     }
   },
   "dependencies": {

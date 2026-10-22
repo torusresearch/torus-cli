@@ -1,0 +1,25 @@
+{
+  "name": "node-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "source": "./src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "dependencies": {
+    "nanoid": "^5.1.0"
+  },
+  "devDependencies": {
+    "vite-plus": "^1.3.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

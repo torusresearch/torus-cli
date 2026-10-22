@@ -1,5 +1,28 @@
 # torus-scripts
 
+## Vite Plus config presets
+
+The `@toruslabs/torus-scripts/library` export provides `libraryPreset` for
+ESM library builds. The opt-in `react`, `vue`, and `node` exports provide small
+config fragments for Vite Plus Pack. They do not install framework plugins or
+replace consumer Vite config.
+
+React projects can use `reactPreset()` from `@toruslabs/torus-scripts/react`.
+It selects the automatic JSX runtime. Add `@vitejs/plugin-react` in the
+consumer config when you need its transforms or Fast Refresh. Vue projects can
+use `vuePreset()` from `@toruslabs/torus-scripts/vue`; add
+`@vitejs/plugin-vue` in the consumer config to transform Vue single-file
+components.
+
+Node packages can use `nodePreset({ entry: "src/index.ts" })` from
+`@toruslabs/torus-scripts/node`. It targets Node and keeps dependencies,
+including builtins and native packages, external. Use `tsc` or a
+Nest-specific build when you need decorator metadata. This preset does not
+claim Nest support.
+
+These fragments do not add CSS injection, `use client`, custom browser targets,
+asset handling, or SSR transforms. Set those options in the consumer config.
+
 Torus scripts provide you a convenient way to build, release & create a dev server for building ts libraries.
 It offers a modern build setup with no configuration
 

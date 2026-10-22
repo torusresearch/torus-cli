@@ -2,15 +2,17 @@
   "name": "plain-sdk",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "source": "./src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
   "dependencies": {
     "nanoid": "^5.1.0"
   }

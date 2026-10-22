@@ -6,13 +6,13 @@
 - Added the `torus-scripts-upgrade <path>` CLI. It reports detected legacy configuration and unsupported behavior. It returns code 1 when the scan finds unsupported behavior, and code 2 for usage or inspection errors.
 - The scan uses `node:fs/promises` and `node:path`. It reads file names, package manifests, and Rollup config text. It never imports or executes a user config. It does not call `vp migrate` or write to the target project.
 - The scan detects `torus.config.js`, Rollup config JS/MJS, `.browserslistrc`, Babel config files, `tsconfig.build.json`, `lerna.json`/Lerna scripts or dependencies, and release-it scripts or dependencies.
-- The Rollup scan warns about custom plugins, transforms, polyfills or runtime replacements, multi-entry builds, and custom asset handling. The scan warns about nested workspaces.
+- The Rollup scan warns about custom plugins, transforms, polyfills or runtime replacements, multi-entry builds, and custom asset handling. The bounded package manifest scan warns when a nested package declares its own `workspaces`.
 - The report gives next steps to run `vp migrate` at the workspace root, review rewritten files, select a library/Node/React/Vue profile, and configure Changesets at repository root.
 
 ## Tests and checks
 
 - Wrote the tests before the implementation. The initial `vp test` failure confirmed the diagnostic module did not exist. The environment first selected the parent checkout when run from the worktree without changing the shell directory. The command was rerun with the worktree as its current directory; that run showed the expected missing-module failure.
-- `npm exec -- vp test packages/torus-scripts/test/migrate.test.ts --run` — passed, 4 tests. Coverage includes all requested file/script detections, explicit unsupported warnings, unchanged file bytes, and proof that a config side effect did not run.
+- `npm exec -- vp test packages/torus-scripts/test/migrate.test.ts --run` — passed, 5 tests. Coverage includes legacy file/script detections, nested workspace warnings, explicit unsupported warnings, unchanged file bytes, and proof that a config side effect did not run.
 - The test packs the package with `npm pack`, extracts the tarball, and executes the packed binary on two temporary npm fixtures. The plain fixture returned 0. The custom Rollup fixture returned 1 and printed `Custom Rollup plugins need a separate review.`
 - Direct execution of the built CLI on temporary fixtures printed:
 

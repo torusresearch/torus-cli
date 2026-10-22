@@ -121,7 +121,11 @@ export async function inspectProject(root: string): Promise<InspectionResult> {
       scripts?: Record<string, unknown>;
       dependencies?: Record<string, unknown>;
       devDependencies?: Record<string, unknown>;
+      workspaces?: unknown;
     };
+    if (manifestPath !== path.join(projectRoot, "package.json") && manifest.workspaces !== undefined) {
+      unsupported.add("Nested workspace migration needs a separate review.");
+    }
     const dependencies = { ...manifest.dependencies, ...manifest.devDependencies };
     const scripts = manifest.scripts ?? {};
 

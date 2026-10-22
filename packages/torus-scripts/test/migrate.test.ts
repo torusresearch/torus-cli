@@ -78,6 +78,22 @@ describe("read-only migration inspection", () => {
     }
   });
 
+  it("warns when a nested package manifest declares workspaces", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-workspaces-"));
+
+    try {
+      await writeFixture(root, {
+        "packages/nested/package.json": JSON.stringify({ workspaces: ["children/*"] }) + "\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).toContain("Nested workspace migration needs a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("warns about custom Rollup behavior without loading user config", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-rollup-"));
     const marker = path.join(root, "config-was-executed");

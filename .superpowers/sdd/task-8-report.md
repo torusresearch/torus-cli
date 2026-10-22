@@ -22,7 +22,7 @@ Before changing scripts, ran a Node assertion against the required root build sc
 - Reviewer P1 correction: set `privatePackages.version` to `false` and removed the unsupported `privatePackages.publish` option. No focused Task 8 test exists. The installed `@changesets/config` 4.0.1 schema allows `privatePackages.version` as a boolean and does not define `publish`; `npm exec -- changeset status` and `npm exec -- changeset status --since=main` both passed after the correction and report major bumps for `@toruslabs/config` and `@toruslabs/torus-scripts`.
 - `npm pack --workspaces --dry-run --json` — passed. The five legacy ESLint packages remain in the pack results. `@toruslabs/torus-scripts` includes generated `dist` output.
 - `npm ls lerna release-it rollup --all` — passed. No Lerna or release-it packages remain in the tree. Rollup remains transitively under `@toruslabs/torus-scripts` and its Rollup plugins, as required for the existing scripts.
-- `npm run check` — failed on formatting issues in 22 workspace files; none were changed to keep scope limited.
+- `npm run check` — failed on formatting issues in 22 files: `eslint.config.mjs`, five legacy ESLint config `index.js` files, `packages/torus-scripts/bin/torus-scripts.js`, six legacy `config` files, five helper/build/start files, `test/contracts.test.mjs`, the Node fixture source, and two test files. This confirms the current check fails on those files, but does not establish when each formatting difference was introduced. I did not reformat these files because they are outside Task 8 scope.
 - `npm test` — passed. Five test files and 30 tests passed.
 - `git diff --check` — passed.
 

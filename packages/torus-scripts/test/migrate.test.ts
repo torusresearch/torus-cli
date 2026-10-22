@@ -94,6 +94,73 @@ describe("read-only migration inspection", () => {
     }
   });
 
+  it("rejects missing and non-directory roots", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-invalid-root-"));
+    const filePath = path.join(root, "not-a-directory");
+
+    try {
+      await writeFile(filePath, "file\n");
+
+      await expect(inspectProject(path.join(root, "missing"))).rejects.toThrow();
+      await expect(inspectProject(filePath)).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not warn about empty or commented plugin arrays", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-empty-plugins-"));
+
+    try {
+      await writeFixture(root, {
+        "rollup.config.js": "export default { plugins: [] }; // plugins: [notAPlugin()]\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).not.toContain("Custom Rollup plugins need a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("warns about non-empty plugin arrays", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-nonempty-plugins-"));
+
+    try {
+      await writeFixture(root, {
+        "rollup.config.js": "export default { plugins: [customPlugin()] };\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).toContain("Custom Rollup plugins need a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("detects nested Rollup config files by relative path", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-nested-rollup-"));
+
+    try {
+      await writeFixture(root, {
+        "packages/one/rollup.config.js": "export default { plugins: [customPlugin()] };\n",
+        "packages/two/rollup.config.mjs": "export default { plugins: [customPlugin()] };\n",
+        "packages/three/rollup.config.cjs": "module.exports = { plugins: [customPlugin()] };\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toEqual(
+        expect.arrayContaining(["packages/one/rollup.config.js", "packages/two/rollup.config.mjs", "packages/three/rollup.config.cjs"])
+      );
+      expect(result.unsupported).toContain("Custom Rollup plugins need a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("warns about custom Rollup behavior without loading user config", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-rollup-"));
     const marker = path.join(root, "config-was-executed");
@@ -149,6 +216,7 @@ describe("read-only migration inspection", () => {
     const packDirectory = path.join(root, "pack");
     const plainFixture = path.join(root, "plain");
     const unsupportedFixture = path.join(root, "unsupported");
+    const missingFixture = path.join(root, "missing");
 
     try {
       await Promise.all([
@@ -185,8 +253,14 @@ describe("read-only migration inspection", () => {
         cwd: unsupportedFixture,
         encoding: "utf8",
       });
-      expect(unsupportedResult.status, `${unsupportedResult.stdout}\n${unsupportedResult.stderr}`).not.toBe(0);
+      expect(unsupportedResult.status, `${unsupportedResult.stdout}\n${unsupportedResult.stderr}`).toBe(1);
       expect(unsupportedResult.stdout + unsupportedResult.stderr).toContain("Custom Rollup plugins");
+
+      const missingResult = spawnSync(packagedCli, [missingFixture], {
+        cwd: root,
+        encoding: "utf8",
+      });
+      expect(missingResult.status, `${missingResult.stdout}\n${missingResult.stderr}`).toBe(2);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

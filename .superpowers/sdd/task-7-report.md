@@ -2,28 +2,31 @@
 
 ## Summary
 
-- Added `inspectProject(root)` and `formatReport(result)` in `packages/torus-scripts/src/migrate/`.
-- Added the `torus-scripts-upgrade <path>` CLI. It reports detected legacy configuration and unsupported behavior. It returns code 1 when the scan finds unsupported behavior, and code 2 for usage or inspection errors.
-- The scan uses `node:fs/promises` and `node:path`. It reads file names, package manifests, and Rollup config text. It never imports or executes a user config. It does not call `vp migrate` or write to the target project.
-- The scan detects `torus.config.js`, Rollup config JS/MJS, `.browserslistrc`, Babel config files, `tsconfig.build.json`, `lerna.json`/Lerna scripts or dependencies, and release-it scripts or dependencies.
-- The Rollup scan warns about custom plugins, transforms, polyfills or runtime replacements, multi-entry builds, and custom asset handling. The bounded package manifest scan warns when a nested package declares its own `workspaces`.
-- The report gives next steps to run `vp migrate` at the workspace root, review rewritten files, select a library/Node/React/Vue profile, and configure Changesets at repository root.
+- Kept the nested-workspace warning from `b299582`.
+- The inspector rejects a missing root or a root that is not a directory. The CLI reports inspection errors with exit code 2.
+- Empty plugin arrays and comments do not cause a warning. Non-empty plugin arrays do.
+- A bounded directory walker scans for `rollup.config.js`, `rollup.config.mjs`, and `rollup.config.cjs`. It lists each detected config by relative path and reports custom behavior.
+- The inspector reads config text. It does not import or execute user configs, and it does not change project files.
+- The report lists detected files and actionable next steps.
 
-## Tests and checks
+## Evidence and checks
 
-- Wrote the tests before the implementation. The initial `vp test` failure confirmed the diagnostic module did not exist. The environment first selected the parent checkout when run from the worktree without changing the shell directory. The command was rerun with the worktree as its current directory; that run showed the expected missing-module failure.
-- `npm exec -- vp test packages/torus-scripts/test/migrate.test.ts --run` — passed, 5 tests. Coverage includes legacy file/script detections, nested workspace warnings, explicit unsupported warnings, unchanged file bytes, and proof that a config side effect did not run.
-- The test packs the package with `npm pack`, extracts the tarball, and executes the packed binary on two temporary npm fixtures. The plain fixture returned 0. The custom Rollup fixture returned 1 and printed `Custom Rollup plugins need a separate review.`
-- Direct execution of the built CLI on temporary fixtures printed:
-
-  - Plain fixture: `Found - No legacy configuration detected.`, `Unsupported - No known unsupported behavior detected.`, plus all four next steps; exit code 0.
-  - Custom Rollup fixture: `Found - rollup.config.js`, `Unsupported - Custom Rollup plugins need a separate review.`, plus all four next steps; exit code 1.
-- `npm exec -- vp pack --dts` in `packages/torus-scripts` — passed. The first `vp build` attempt failed because this package is a library and has no `index.html`; the supported Pack command then built all entries.
+- Confirmed the worktree is `/Users/chai/source/torus/torus-cli.worktrees/vite-plus-upgrade`, branch `feat/vite-plus-upgrade`, starting at `b299582`.
+- Added tests first. The first target-branch run failed on the expected missing-root, plugin-array, nested-config, and CLI-code behaviors.
+- `npm exec -- vp test packages/torus-scripts/test/migrate.test.ts --run` — passed; 9 tests. Tests cover root validation, empty/commented and non-empty plugin arrays, nested JS/MJS/CJS config paths, nested workspace warning, no config execution or file writes, and CLI exit codes 0, 1, and 2.
+- `npm exec -- vp pack --dts` from `packages/torus-scripts` — passed. The test packs the package and runs its CLI on temporary projects.
 - `npm exec -- vp lint packages/torus-scripts/src/migrate packages/torus-scripts/test/migrate.test.ts` — passed.
-- `npm exec -- vp fmt --check packages/torus-scripts/src/migrate packages/torus-scripts/test/migrate.test.ts packages/torus-scripts/package.json packages/torus-scripts/vite.config.ts` — passed.
-- `git diff --check` — passed.
-- npm emitted existing `devdir` and `always-auth` config warnings.
+- `npm exec -- vp fmt --check packages/torus-scripts/src/migrate packages/torus-scripts/test/migrate.test.ts packages/torus-scripts/package.json packages/torus-scripts/vite.config.ts .superpowers/sdd/task-7-report.md` — passed.
+- `npm pack --dry-run` from `packages/torus-scripts` — passed; the package includes its CLI and migration modules.
+- npm printed existing `devdir` and `always-auth` config warnings.
 
-## Safety note
+## Next actions
 
-No user config was executed during implementation or validation. The Rollup test config contains a side effect that would write a marker file if imported; the marker was absent after inspection. The packed CLI also uses the read-only source code path.
+1. Run `torus-scripts-upgrade <path>` on the project root.
+2. Review all detected files and unsupported warnings.
+3. Run `vp migrate` at the workspace root. Review rewritten files before acceptance.
+4. Select the correct profile for each package. Configure Changesets at the repository root.
+
+## Safety
+
+The Rollup test config has a file-write side effect. The test confirms inspection does not create its marker. The CLI only scans files and package manifests.

@@ -45,10 +45,18 @@ async function exists(filePath: string): Promise<boolean> {
   }
 }
 
-async function inspectRollupConfig(filePath: string, unsupported: Set<string>): Promise<void> {
-  const source = await readFile(filePath, "utf8");
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\/|(^|[^:])\/\/.*$/gm, "$1");
+}
 
-  if (/\bplugins\s*[:(]/.test(source) || /\b(?:plugin[A-Z_a-z0-9]*|custom[A-Z_a-z0-9]*)\s*\(/.test(source)) {
+function hasNonEmptyPlugins(source: string): boolean {
+  return /\bplugins\s*:\s*(?!\[\s*\])\[[\s\S]*?\S[\s\S]*?\]/.test(source);
+}
+
+async function inspectRollupConfig(filePath: string, unsupported: Set<string>): Promise<void> {
+  const source = stripComments(await readFile(filePath, "utf8"));
+
+  if (hasNonEmptyPlugins(source) || /\b(?:plugin[A-Z_a-z0-9]*|custom[A-Z_a-z0-9]*)\s*\(/.test(source)) {
     unsupported.add("Custom Rollup plugins need a separate review.");
   }
   if (/\b(?:transform|transformCode|renderChunk|load)\s*\(/.test(source)) {
@@ -72,6 +80,30 @@ async function hasNestedWorkspaces(root: string, manifests: string[]): Promise<b
     if (manifest.workspaces) return true;
   }
   return false;
+}
+
+async function findRollupConfigs(root: string): Promise<string[]> {
+  const configs: string[] = [];
+  const queue = [root];
+  let visited = 0;
+
+  while (queue.length > 0 && visited < 10000) {
+    visited += 1;
+    const directory = queue.shift();
+    if (!directory) continue;
+
+    const entries = await readdir(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === ".vite") continue;
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory() && !(await exists(path.join(absolutePath, "node_modules"))) && visited + queue.length < 10000) {
+        queue.push(absolutePath);
+      } else if (entry.isFile() && /^rollup\.config\.(?:js|mjs|cjs)$/.test(entry.name)) {
+        configs.push(absolutePath);
+      }
+    }
+  }
+  return configs;
 }
 
 async function findManifests(root: string): Promise<string[]> {
@@ -104,6 +136,9 @@ async function findManifests(root: string): Promise<string[]> {
 
 export async function inspectProject(root: string): Promise<InspectionResult> {
   const projectRoot = path.resolve(root);
+  const rootStats = await stat(projectRoot);
+  if (!rootStats.isDirectory()) throw new Error(`Inspection root is not a directory: ${projectRoot}`);
+
   const found = new Set<string>();
   const unsupported = new Set<string>();
 
@@ -113,6 +148,12 @@ export async function inspectProject(root: string): Promise<InspectionResult> {
     found.add(fileName);
     if (fileName === "lerna.json") found.add("Lerna");
     if (fileName.startsWith("rollup.config.")) await inspectRollupConfig(filePath, unsupported);
+  }
+
+  const rollupConfigs = await findRollupConfigs(projectRoot);
+  for (const configPath of rollupConfigs) {
+    found.add(path.relative(projectRoot, configPath));
+    await inspectRollupConfig(configPath, unsupported);
   }
 
   const manifests = await findManifests(projectRoot);

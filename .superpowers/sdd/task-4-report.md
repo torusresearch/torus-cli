@@ -46,3 +46,26 @@ npm notice run 'vp' test packages/torus-scripts/test/contracts.test.mjs --run
    Start at  21:33:06
    Duration  3.42s (tests 99%)
 ```
+
+### Follow-up: exit promise timing
+
+Created the watcher exit promise immediately after `spawn`, before attaching build listeners or awaiting build events. This lets cleanup await an exit that occurs before the test reaches its `finally` block.
+
+Command: `npm exec -- vp test packages/torus-scripts/test/contracts.test.mjs --run`
+
+Exact output:
+
+```text
+npm warn Unknown env config "devdir". This will error in a future major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown user config "always-auth". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm notice run npx
+npm notice run 'vp' test packages/torus-scripts/test/contracts.test.mjs --run
+
+ RUN  v5.0.5 /Users/chai/source/torus/torus-cli.worktrees/vite-plus-upgrade
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  21:38:42
+   Duration  3.20s (tests 100%)
+```

@@ -170,6 +170,7 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
       cwd: fixtureDirectory,
       stdio: ["ignore", "pipe", "pipe"],
     });
+    const watchExit = new Promise((resolve) => watchProcess.once("exit", resolve));
     const waitForBuild = trackPackBuilds(watchProcess);
     try {
       await waitForBuild(1);
@@ -178,7 +179,6 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
       await nextBuild;
       await waitForFileContent(path.join(buildDirectory, "index.d.mts"), 'watchProof?: "rebuilt"');
     } finally {
-      const watchExit = new Promise((resolve) => watchProcess.once("exit", resolve));
       watchProcess.kill("SIGTERM");
       await watchExit;
       await writeFile(sourcePath, originalSource);

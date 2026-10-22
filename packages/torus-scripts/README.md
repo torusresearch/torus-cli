@@ -33,9 +33,9 @@ semicolons, ES5 trailing commas, import sorting, and the existing unsorted packa
 Use these fragments in a Vite+ root `vite.config.ts`:
 
 ```ts
+import { defineConfig } from "vite-plus";
 import { formatPreset } from "@toruslabs/torus-scripts/fmt";
 import { lintPreset } from "@toruslabs/torus-scripts/lint";
-import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   lint: lintPreset(),
@@ -47,8 +47,9 @@ Keep the `lint` and `fmt` blocks at the repository root. `vp check` reads root
 settings across workspaces; package-level presets do not replace those settings.
 
 Oxlint enables native `no-unused-vars` checks for JavaScript and TypeScript.
-Oxfmt `sortImports` is enabled. Its sorting behavior differs from legacy
-`simple-import-sort`, so consumers must choose the ordering that fits their codebase.
+The native Oxlint `sort-imports` rule differs from legacy
+`simple-import-sort` and fails current repository files, so lint does not enable
+it. Oxfmt `sortImports` is enabled; it also has different grouping behavior.
 
 Oxlint does not reproduce every ESLint plugin rule. Consumers must choose their
 own coverage for Vue i18n rules, Tailwind class rules, TSDoc syntax checks, and

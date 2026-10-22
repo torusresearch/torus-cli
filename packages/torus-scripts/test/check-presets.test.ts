@@ -45,15 +45,20 @@ describe("lint and format presets", () => {
     expect(packageJson.exports["./fmt"].import).toBe("./dist/index.mjs");
   });
 
-  it("rejects unused variables in JavaScript and TypeScript", async () => {
+  it("rejects unused imports and variables in JavaScript and TypeScript", async () => {
     const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
     const jsFixture = path.join(fixturesDirectory, "unused.js");
     const tsFixture = path.join(fixturesDirectory, "unused.ts");
+    const unusedImportFixture = path.join(fixturesDirectory, "unused-import.js");
 
     try {
-      await Promise.all([writeFile(jsFixture, "const unusedValue = 1;\n"), writeFile(tsFixture, "const unusedValue: number = 1;\n")]);
+      await Promise.all([
+        writeFile(jsFixture, "const unusedValue = 1;\n"),
+        writeFile(tsFixture, "const unusedValue: number = 1;\n"),
+        writeFile(unusedImportFixture, 'import { readFile } from "node:fs/promises";\n'),
+      ]);
 
-      for (const fixture of [jsFixture, tsFixture]) {
+      for (const fixture of [jsFixture, tsFixture, unusedImportFixture]) {
         const result = spawnSync(vp, ["lint", fixture], {
           cwd: repositoryDirectory,
           encoding: "utf8",
@@ -67,6 +72,24 @@ describe("lint and format presets", () => {
         encoding: "utf8",
       });
       expect(checkResult.status, checkResult.stdout + checkResult.stderr).not.toBe(0);
+      expect(checkResult.stdout + checkResult.stderr).toContain("no-unused-vars");
+    } finally {
+      await rm(fixturesDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it("confirms native sort-imports detects an unsorted JS fixture", async () => {
+    const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
+    const fixture = path.join(fixturesDirectory, "unsorted-imports.js");
+
+    try {
+      await writeFile(fixture, 'import { zeta } from "zeta";\nimport { alpha } from "alpha";\nvoid [zeta, alpha];\n');
+      const result = spawnSync(vp, ["lint", fixture, "--deny", "sort-imports"], {
+        cwd: repositoryDirectory,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).not.toBe(0);
+      expect(result.stdout + result.stderr).toContain("sort-imports");
     } finally {
       await rm(fixturesDirectory, { recursive: true, force: true });
     }
@@ -87,7 +110,8 @@ describe("lint and format presets", () => {
           cwd: repositoryDirectory,
           encoding: "utf8",
         });
-        expect(result.status, `${result.stdout}\n${result.stderr}`).not.toBe(0);
+        expect(result.status, `${fixture}: ${result.stdout}\n${result.stderr}`).not.toBe(0);
+        expect(result.stdout + result.stderr, fixture).toContain("Format issues found");
       }
     } finally {
       await rm(fixturesDirectory, { recursive: true, force: true });

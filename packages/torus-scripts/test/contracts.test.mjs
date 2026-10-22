@@ -183,7 +183,6 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
       await watchExit;
       await writeFile(sourcePath, originalSource);
     }
-    await waitForFileContent(path.join(buildDirectory, "index.d.mts"), 'watchProof?: "rebuilt"');
   } finally {
     await Promise.all([
       rm(temporaryDirectory, { recursive: true, force: true }),

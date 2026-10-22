@@ -33,9 +33,9 @@ semicolons, ES5 trailing commas, import sorting, and the existing unsorted packa
 Use these fragments in a Vite+ root `vite.config.ts`:
 
 ```ts
-import { defineConfig } from "vite-plus";
 import { formatPreset } from "@toruslabs/torus-scripts/fmt";
 import { lintPreset } from "@toruslabs/torus-scripts/lint";
+import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   lint: lintPreset(),

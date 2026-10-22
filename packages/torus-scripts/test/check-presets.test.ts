@@ -95,6 +95,23 @@ describe("lint and format presets", () => {
     }
   });
 
+  it("rejects a formatter violation through vp check", async () => {
+    const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
+    const fixture = path.join(fixturesDirectory, "unformatted.js");
+
+    try {
+      await writeFile(fixture, "const value={answer:42}\nvoid value\n");
+      const result = spawnSync(vp, ["check", fixture], {
+        cwd: repositoryDirectory,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).not.toBe(0);
+      expect(result.stdout + result.stderr).toContain("Formatting issues found");
+    } finally {
+      await rm(fixturesDirectory, { recursive: true, force: true });
+    }
+  });
+
   it("uses vp fmt --check for format and import-sort failures", async () => {
     const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
     const unformattedFixture = path.join(fixturesDirectory, "unformatted.js");

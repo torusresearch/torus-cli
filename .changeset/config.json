@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "baseBranch": "main",
+  "access": "public",
+  "privatePackages": {
+    "version": true,
+    "publish": true
+  },
+  "updateInternalDependencies": "patch",
+  "fixed": [],
+  "linked": [],
+  "ignore": [
+    "@toruslabs/eslint-config-javascript",
+    "@toruslabs/eslint-config-node",
+    "@toruslabs/eslint-config-react",
+    "@toruslabs/eslint-config-typescript",
+    "@toruslabs/eslint-config-vue"
+  ]
+}

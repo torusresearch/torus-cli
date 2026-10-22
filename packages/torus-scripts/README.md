@@ -226,28 +226,9 @@ The dev server build is produced in the following formats depending on the optio
 you can use npm folder links to install this to any other project and
 watch it live updated as you change code in your torus-scripts project
 
-### torus-scripts release
+### Release packages
 
-```
-Usage: torus-scripts release [options]
-Use e.g. "torus-scripts release" directly".
-
-```
-
-`torus-scripts release` command internally uses [release-it](https://github.com/release-it/release-it) for release management
-All options from `release-it` are supported by default
-
-you're recommended to add `prepack` command to build before calling release
-
-```json
-{
-  "scripts": {
-    "build": "torus-scripts build",
-    "prepack": "npm run build",
-    "release": "torus-scripts release"
-  }
-}
-```
+Release management is a root-workspace task. Run `npm run changeset` to add a release note, then use `npm run version-packages` to apply versions and update changelogs. After review and approval, publish with `npm run release-packages`. Do not run release commands from this package.
 
 ## Migration Notes
 

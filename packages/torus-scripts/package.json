@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Scripts for Torus libraries to manage bundling, lint etc",
   "bin": {
-    "torus-scripts": "./bin/torus-scripts.js"
+    "torus-scripts": "./bin/torus-scripts.js",
+    "torus-scripts-upgrade": "./dist/migrate/cli.mjs"
   },
   "files": [
     "bin",

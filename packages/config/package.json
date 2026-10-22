@@ -17,6 +17,10 @@
     "node": ">=24.15.0",
     "npm": ">=12"
   },
+  "exports": {
+    "./tsconfig.library.json": "./tsconfig.library.json",
+    "./tsconfig.node.json": "./tsconfig.node.json"
+  },
   "peerDependencies": {
     "@babel/runtime": "^7.16"
   },

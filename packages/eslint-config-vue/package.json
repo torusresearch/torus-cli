@@ -32,8 +32,8 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=22",
-    "npm": ">=10.x"
+    "node": ">=24.15.0",
+    "npm": ">=12"
   },
   "author": "Torus Labs",
   "license": "MIT",

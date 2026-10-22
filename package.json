@@ -1,7 +1,9 @@
 {
   "private": true,
+  "packageManager": "npm@12.2.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24.15.0",
+    "npm": ">=12"
   },
   "workspaces": [
     "packages/*"
@@ -21,12 +23,27 @@
     "globals": "^17.6.0",
     "lerna": "^9.0.7",
     "prettier": "^3.8.3",
-    "typescript": "^5.9.3"
+    "typescript": "5.9.3",
+    "vite-plus": "1.3.0",
+    "@changesets/cli": "3.0.3",
+    "@lavamoat/harden": "0.8.1"
   },
   "overrides": {
     "release-it": {
       "undici": "6.24.0"
     }
   },
-  "type": "module"
+  "type": "module",
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.17.0",
+      "onFail": "error"
+    }
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true,
+    "nx@22.6.3": true,
+    "unrs-resolver@1.11.1": true
+  }
 }

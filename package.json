@@ -10,7 +10,7 @@
   ],
   "repository": "git@github.com:torusresearch/torus-cli.git",
   "scripts": {
-    "publish:lerna": "npm run clean && npm install && lerna publish",
+    "publish:lerna": "npm run clean && lerna publish",
     "just:publish:lerna": "lerna publish",
     "pack:lerna": "lerna exec -- 'npm pack'",
     "clean": "lerna clean --yes && lerna exec -- npx rimraf package-lock.json yarn.lock dist/ .rollup.cache/ tsconfig.build.tsbuildinfo .rts2_cache_{cjs,esm}/ toruslabs-*.tgz openlogin-*.tgz .eslintcache",
@@ -41,9 +41,5 @@
       "onFail": "error"
     }
   },
-  "allowScripts": {
-    "fsevents@2.3.3": true,
-    "nx@22.6.3": true,
-    "unrs-resolver@1.11.1": true
-  }
+  "allowScripts": {}
 }

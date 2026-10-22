@@ -6,7 +6,10 @@
   "bin": {
     "torus-scripts": "./bin/torus-scripts.js"
   },
-  "files": ["bin", "dist"],
+  "files": [
+    "bin",
+    "dist"
+  ],
   "exports": {
     "./library": {
       "types": "./dist/index.d.mts",
@@ -21,6 +24,14 @@
       "import": "./dist/index.mjs"
     },
     "./node": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./lint": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./fmt": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     }

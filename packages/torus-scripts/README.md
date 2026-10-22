@@ -23,6 +23,39 @@ claim Nest support.
 These fragments do not add CSS injection, `use client`, custom browser targets,
 asset handling, or SSR transforms. Set those options in the consumer config.
 
+## Lint and format presets
+
+`@toruslabs/torus-scripts/lint` exports `lintPreset()`. It returns an Oxlint
+configuration for JavaScript and TypeScript files. `@toruslabs/torus-scripts/fmt`
+exports `formatPreset()`. It returns Oxfmt options for 150 columns, double quotes,
+semicolons, ES5 trailing commas, import sorting, and the existing unsorted package manifest.
+
+Use these fragments in a Vite+ root `vite.config.ts`:
+
+```ts
+import { formatPreset } from "@toruslabs/torus-scripts/fmt";
+import { lintPreset } from "@toruslabs/torus-scripts/lint";
+import { defineConfig } from "vite-plus";
+
+export default defineConfig({
+  lint: lintPreset(),
+  fmt: formatPreset(),
+});
+```
+
+Keep the `lint` and `fmt` blocks at the repository root. `vp check` reads root
+settings across workspaces; package-level presets do not replace those settings.
+
+Oxlint enables native `no-unused-vars` checks for JavaScript and TypeScript.
+Oxfmt `sortImports` is enabled. Its sorting behavior differs from legacy
+`simple-import-sort`, so consumers must choose the ordering that fits their codebase.
+
+Oxlint does not reproduce every ESLint plugin rule. Consumers must choose their
+own coverage for Vue i18n rules, Tailwind class rules, TSDoc syntax checks, and
+typed NestJS rules. Typed NestJS rules need type-aware linting and a working
+TypeScript project; this preset leaves type-aware lint and type checking
+disabled.
+
 Torus scripts provide you a convenient way to build, release & create a dev server for building ts libraries.
 It offers a modern build setup with no configuration
 

@@ -25,24 +25,45 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
   );
 
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "plain-sdk-contract-"));
+  const buildDirectory = path.join(fixtureDirectory, "dist");
   try {
+    execFileSync("npm", ["exec", "--", "vp", "pack"], {
+      cwd: fixtureDirectory,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
     execFileSync(
       "npm",
       ["pack", "--json", "--pack-destination", temporaryDirectory],
       { cwd: fixtureDirectory, encoding: "utf8", stdio: "pipe" },
     );
 
-    const packageFiles = execFileSync(
+    const tarballPath = path.join(temporaryDirectory, "plain-sdk-1.0.0.tgz");
+    const packedJavaScript = execFileSync(
       "tar",
-      ["-tzf", path.join(temporaryDirectory, "plain-sdk-1.0.0.tgz")],
+      ["-xOf", tarballPath, "package/dist/index.js"],
       { encoding: "utf8" },
-    )
-      .trim()
-      .split("\n");
+    );
+    const packedDeclarations = execFileSync(
+      "tar",
+      ["-xOf", tarballPath, "package/dist/index.d.ts"],
+      { encoding: "utf8" },
+    );
 
-    assert.ok(packageFiles.includes("package/dist/index.js"), "packed SDK must expose dist/index.js");
-    assert.ok(packageFiles.includes("package/dist/index.d.ts"), "packed SDK must expose dist/index.d.ts");
+    assert.match(
+      packedJavaScript,
+      /export\s*\{[^}]*\bcreatePlainSdkId\b[^}]*\}/s,
+      "packed SDK must export createPlainSdkId",
+    );
+    assert.match(
+      packedDeclarations,
+      /export\s+type\s+PlainSdkOptions\b/,
+      "packed SDK declarations must export PlainSdkOptions",
+    );
   } finally {
-    await rm(temporaryDirectory, { recursive: true, force: true });
+    await Promise.all([
+      rm(temporaryDirectory, { recursive: true, force: true }),
+      rm(buildDirectory, { recursive: true, force: true }),
+    ]);
   }
 });

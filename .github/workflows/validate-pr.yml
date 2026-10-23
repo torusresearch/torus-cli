@@ -30,10 +30,10 @@ jobs:
         run: npx --no-install harden check --package-manager npm
       - name: Check source
         run: npm run check
-      - name: Check TypeScript projects
-        run: npm run typecheck
       - name: Build packages
         run: npm run build
+      - name: Check TypeScript projects
+        run: npm run typecheck
       - name: Run tests
         run: npm run test
       - name: Check release notes

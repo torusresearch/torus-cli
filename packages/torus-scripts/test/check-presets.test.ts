@@ -176,6 +176,7 @@ describe("lint and format presets", () => {
     expect(workflow).toContain("npm run typecheck");
     expect(workflow).toContain("npm run test");
     expect(workflow).toContain("npm run build");
+    expect(workflow.indexOf("npm run build")).toBeLessThan(workflow.indexOf("npm run typecheck"));
     expect(workflow).toContain("npm pack --workspaces --dry-run");
     expect(workflow).toContain("-- packages/");
     expect(workflow).not.toContain("changeset publish");

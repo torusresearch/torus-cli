@@ -1,32 +1,43 @@
 {
   "private": true,
+  "packageManager": "npm@12.2.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24.15.0",
+    "npm": ">=12"
   },
   "workspaces": [
     "packages/*"
   ],
   "repository": "git@github.com:torusresearch/torus-cli.git",
   "scripts": {
-    "publish:lerna": "npm run clean && npm install && lerna publish",
-    "just:publish:lerna": "lerna publish",
-    "pack:lerna": "lerna exec -- 'npm pack'",
-    "clean": "lerna clean --yes && lerna exec -- npx rimraf package-lock.json yarn.lock dist/ .rollup.cache/ tsconfig.build.tsbuildinfo .rts2_cache_{cjs,esm}/ toruslabs-*.tgz openlogin-*.tgz .eslintcache",
-    "check:styles": "prettier --check .",
-    "fix:styles": "prettier --write ."
+    "build": "vp run -r build --fail-if-no-match",
+    "check": "vp check",
+    "typecheck": "tsc --noEmit -p packages/torus-scripts/tsconfig.json && tsc --noEmit -p packages/oxlint-config-typescript/tsconfig.json && tsc --noEmit -p packages/oxlint-config-react/tsconfig.json && tsc --noEmit -p packages/oxlint-config-vue/tsconfig.json && tsc --noEmit -p packages/oxlint-config-node/tsconfig.json",
+    "test": "vp test",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release-packages": "changeset publish",
+    "check:styles": "vp fmt --check .",
+    "fix:styles": "vp fmt --write ."
   },
   "devDependencies": {
-    "eslint": "^9.39.2",
-    "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.6.0",
-    "lerna": "^9.0.7",
-    "prettier": "^3.8.3",
-    "typescript": "^5.9.3"
+    "@changesets/cli": "3.0.3",
+    "@lavamoat/harden": "0.8.1",
+    "@types/node": "24.13.6",
+    "@vizejs/vite-plugin": "^0.485.0",
+    "oxlint-plugin-vize": "^0.485.0",
+    "oxlint-tailwindcss": "^1.14.0",
+    "typescript": "7.0.2",
+    "vite-plus": "1.4.0",
+    "vize": "^0.485.0"
   },
-  "overrides": {
-    "release-it": {
-      "undici": "6.24.0"
+  "type": "module",
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.17.0",
+      "onFail": "error"
     }
   },
-  "type": "module"
+  "allowScripts": {}
 }

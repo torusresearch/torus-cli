@@ -1,0 +1,13 @@
+{
+  "name": "matrix-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs"
+    }
+  }
+}

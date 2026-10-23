@@ -23,7 +23,8 @@
 
 ## File Structure and Ownership
 
-- `packages/torus-scripts/src/presets/{library,node,react,vue,lint,fmt}.ts`: independent preset builders; application configuration stays in the consumer.
+- `packages/torus-scripts/src/presets/{library,node,react,vue,fmt}.ts`: build and format preset builders; application configuration stays in the consumer.
+- `packages/oxlint-config-{typescript,react,vue,node}`: separate lint packages. TypeScript owns shared rules; React, Vue, and Node extend it. Do not create a JavaScript lint package or keep the shared lint base in `torus-scripts`.
 - `packages/torus-scripts/src/migrate/{inspect,report,cli}.ts`: read-only migration inspection and reporting; no silent source rewrite.
 - `packages/torus-scripts/src/index.ts`: small public exports. `packages/torus-scripts/package.json`: explicit export map, peer dependencies, published files, and executable entry.
 - `packages/torus-scripts/vite.config.ts`: its own `vp pack`/`vp test` setup. `packages/torus-scripts/test/*.test.ts`: behavior tests and executable fixtures.
@@ -112,16 +113,17 @@
 - [ ] **Step 3: Run tests and fixture builds.** Run `npm exec -- vp test packages/torus-scripts/test/presets.test.ts --run` and `npm exec -- vp pack` in each fixture that has a pack config. Confirm the Node fixture runs with Node 24 and 26; do not claim Nest support from this plain fixture.
 - [ ] **Step 4: Commit:** `git add packages/torus-scripts && git commit -m "feat: add opt-in framework and Node presets"`.
 
-## Task 6: Replace Shared Lint and Format Presets
+## Task 6: Replace Shared Lint with TypeScript-Based Packages
 
-**Files:** Create `packages/torus-scripts/src/presets/{lint,fmt}.ts`; modify `packages/torus-scripts/package.json`, root `vite.config.ts`; create `packages/torus-scripts/test/check-presets.test.ts`; update `packages/torus-scripts/README.md`.
+**Files:** Create `packages/oxlint-config-{typescript,react,vue,node}/{package.json,index.ts}` and package tests; modify `packages/torus-scripts/src/presets/{lint,vue-lint}.ts`, `packages/torus-scripts/src/index.ts`, `packages/torus-scripts/package.json`, root `vite.config.ts`, `packages/torus-scripts/test/check-presets.test.ts`, `packages/torus-scripts/README.md`, the lockfile, and the rule audit. Keep `packages/torus-scripts/src/presets/fmt.ts` and `/fmt` for Oxfmt.
 
-**Interfaces:** `lintPreset(): object` and `formatPreset(): object`; public subpaths `/lint` and `/fmt`. Repository root owns `lint` and `fmt` blocks; package configs do not assume package-local `vp check` overrides them.
+**Interfaces:** `@toruslabs/oxlint-config-typescript` owns shared rules and exports `typescriptLintPreset(): OxlintConfig`; `@toruslabs/oxlint-config-react`, `-vue`, and `-node` export `reactLintPreset()`, `vueLintPreset()`, and `nodeLintPreset()`. Each derived package depends on the TypeScript package, like the old package graph. No JavaScript package, shared `torus-scripts` lint base, or `/lint` export remains. Keep `tailwindLintPreset({ entryPoint })` as an independent opt-in fragment for React and Vue consumers, not as a shared base. Root `vite.config.ts` owns the final `lint` and `fmt` blocks.
 
-- [ ] **Step 1: Inventory legacy rule behavior** in `packages/eslint-config-{javascript,typescript,react,vue,node}`. Write a test for supported baseline checks, including unused imports/variables, sorted imports if a supported rule exists, and JS/TS source coverage. List unmatched Vue i18n, Tailwind, TSDoc, and typed Nest rules explicitly in the README as consumer decisions.
-- [ ] **Step 2: Run failing `vp check` fixture checks** with deliberate lint and format violations; confirm exit code is nonzero. Run type-check separately until the latest TypeScript configuration works, then enable `lint.options.typeAware` and `typeCheck` only after a passing type-check baseline.
-- [ ] **Step 3: Add root lint/format configuration** and exported reusable fragments using documented Vite+ `lint` and `fmt` blocks. Test `npm exec -- vp check`, `npm exec -- vp fmt --check` (verify exact flag against installed CLI), and `npm exec -- vp lint`. Prefer native rules; use Vite+ JS plugins only for a verified essential rule without a native equivalent.
-- [ ] **Step 4: Commit:** `git add packages/torus-scripts vite.config.ts && git commit -m "feat: expose Oxlint and Oxfmt presets"`.
+- [ ] **Step 1: Test the TypeScript base first.** Add failing tests for JS and TS unused variables and imports. Assert that the TypeScript preset excludes React, Vue, Node, and Tailwind plugins. Compare supported rules with the old TypeScript config and record gaps. Implement shared native rules inside `packages/oxlint-config-typescript` and rerun the focused tests.
+- [ ] **Step 2: Test each derived package first.** Add failing tests for React and JSX rules, Vue Vize rules, and Node rules. Assert that each imports the TypeScript preset and adds only its own plugins and rules. Add the four packages and their export maps. Keep Vize as a Vue-only optional peer and Tailwind v4 as an independent opt-in fragment for React or Vue consumers; preserve the Vue and Tailwind diagnostic fixtures.
+- [ ] **Step 3: Remove the superseded lint exports.** Move the lint and Vue code out of `torus-scripts`; remove `/lint` and `/vue-lint` exports and their old tests. Update the root to import `typescriptLintPreset()` and keep `formatPreset()`. Update README and audit to state known rule gaps, and update Changesets and `package-lock.json` using npm.
+- [ ] **Step 4: Verify.** Run `npm ci`, `npm run check`, `npm run build`, `npm run test`, `npm exec -- changeset status`, and `npm pack --workspaces --dry-run --json`. Confirm root `vp lint` uses the TypeScript package. Check format failures with `vp fmt --check`; do not claim export sorting or full ESLint parity.
+- [ ] **Step 5: Commit:** `git add packages/oxlint-config-* packages/torus-scripts vite.config.ts package-lock.json docs .changeset && git commit -m "feat: split Oxlint presets into TypeScript-based packages"`.
 
 ## Task 7: Add a Read-only Migration Diagnostic
 

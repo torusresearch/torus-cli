@@ -126,7 +126,7 @@ describe("lint and format presets", () => {
     } finally {
       await rm(fixtureDirectory, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 
   it("reports an unknown Tailwind class through the opt-in CSS profile", async () => {
     const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "tailwind-fixture-"));

@@ -1,200 +1,52 @@
-# torus-scripts
+# @toruslabs/torus-scripts
 
-Torus scripts provide you a convenient way to build, release & create a dev server for building ts libraries.
-It offers a modern build setup with no configuration
+Vite+ config fragments for libraries, React, Vue, and Node packages. The presets do not install framework build plugins.
 
-The CLI Service is built on top of rollup. It contains:
+## Install
 
-- The core service that loads other CLI Plugins;
-- An internal rollup config that is optimized for most apps;
-- The torus-scripts binary inside the project, which comes with the basic start, build and release commands.
+Install `@toruslabs/torus-scripts` and `vite-plus` in your project. Add optional lint plugins only where needed.
 
-If you are familiar with create-react-app, @toruslabs/torus-scripts is roughly the equivalent of react-scripts, although the feature set is different.
+## Build presets
 
-## Installation
+- `@toruslabs/torus-scripts/library`: `libraryPreset()` for ESM library builds.
+- `@toruslabs/torus-scripts/react`: `reactPreset()` selects the automatic JSX runtime. Add `@vitejs/plugin-react` for Fast Refresh or its transforms.
+- `@toruslabs/torus-scripts/vue`: `vuePreset()` is a small Vue fragment. Add `@vitejs/plugin-vue` to transform Vue files.
+- `@toruslabs/torus-scripts/node`: `nodePreset({ entry: "src/index.ts" })` targets Node and keeps dependencies external. Use a separate build for decorator metadata.
 
-To install the package, use one of the following commands
+These fragments do not set CSS injection, browser targets, assets, SSR transforms, or `use client`. Set these options in your project.
 
-```sh
-npm install --save-dev @toruslabs/torus-scripts
-# OR
-yarn add -D @toruslabs/torus-scripts
-```
+## Lint and format
 
-You can check if you have the right version using
+`lintPreset()` returns a shared Oxlint config. `formatPreset()` returns Oxfmt settings: 150 columns, double quotes, semicolons, ES5 trailing commas, and import sorting. Export sorting is not available.
 
-```sh
-npx torus-scripts --version
-```
-
-## Usage
-
-You can create scripts inside package.json as follows
-
-```json
-{
-  "scripts": {
-    "start": "torus-scripts start",
-    "build": "torus-scripts build"
-  }
-}
-```
-
-You can invoke these scripts using either npm or Yarn:
-
-```sh
-npm run build
-# OR
-yarn build
-```
-
-If you have npx available (should be bundled with an up-to-date version of npm), you can also invoke the binary directly with:
-
-```sh
-npx torus-scripts build
-```
-
-### torus.config.js
-
-`torus.config.js` is an optional config file that will be automatically loaded by `torus-scripts` service if it's present in your project root (next to `package.json`).
-
-The following options are supported
+Put the settings in your root `vite.config.ts`:
 
 ```ts
-interface IOptions {
-  name: string; // Name of bundles in dist folder. Default: name in package.json with casing changes
-  libEsm: boolean; // Whether to generate an lib esm build. Default: true
-  libCjs: boolean; // Whether to generate a lib cjs build. Default: true
-  lintBeforeBuild: boolean; // Whether to run lint before build. Default: true
-  browserslistrc: string | string[]; // The browserlist to target. Default: ["> 0.25%", "not dead", "not ie 11"]. Full list: https://github.com/browserslist/browserslist
-  analyzerMode: "disabled" | "enabled"; // Bundle analyzer mode. Default: "disabled". When enabled, outputs bundle analysis to console
-  minify: boolean; // Whether to minify the output with @rollup/plugin-terser. Default: false
-}
+import { formatPreset } from "@toruslabs/torus-scripts/fmt";
+import { lintPreset } from "@toruslabs/torus-scripts/lint";
+import { defineConfig } from "vite-plus";
+
+export default defineConfig({ lint: lintPreset(), fmt: formatPreset() });
 ```
 
-### Config precedence
+`vp lint` and `vp check` read this root config, not `.oxlintrc.json`. The shared preset enables native Oxlint plugins. It does not run ESLint.
 
-<b> browserslist </b>
-The order of preference for browserslist config is as follows:
+For Vue files, install `oxlint-plugin-vize` and import `vueLintPreset()` from `@toruslabs/torus-scripts/vue-lint` in the root `lint` block. This enables Vize's happy-path Vue rules and the native Vue plugin. Vite+ can skip Vue files without scripts. For template-only Vue files, install `@vizejs/vite-plugin` and use its native Vite+ lint task through `vp run`. Test this task in each Vue project. Oxlint JS plugin output can give a script location instead of the template location.
 
-1. `.browserslistrc` file at package root
-2. `browserslistrc` key in `torus.config.js`
-3. `browserslist.production` key in `package.json`
-4. `browserslist` key in `package.json`
-5. [Default](./defaults/torus.config.js)
+For Tailwind v4, install `oxlint-tailwindcss`. Use `tailwindLintPreset({ entryPoint: "src/styles.css" })`, with a project CSS file containing `@import "tailwindcss"`. It checks classes in JS, TS, JSX, and TSX. It does not check classes in Vue templates or CSS directives. Set the path in each project.
 
-<b> typescript </b>
-The tsconfig is generated as follows:
+To use Vue and Tailwind together, merge plugin lists, rule maps, and settings from both fragments in the root config. A plain object spread replaces nested settings and rules.
 
-1. `tsconfig.build.json` file at package root
-2. [Default](./defaults/tsconfig.build.js)
+Oxlint does not replace every old rule. In particular, external Vue i18n files, Tailwind CSS directives, import resolution policies, TypeScript naming and member ordering, Node security checks, and export ordering need separate verified checks. Read the [rule audit](../../docs/superpowers/eslint-to-oxlint-rule-audit.md) for details. Do not assume equal rule behavior from similar names.
 
-Both 1 & 2 are merged using `lodash.mergewith` and the generated config is used.
-So, it's okay to specify partial config in tsconfig.build.json
+## Consumer proof and limits
 
-<b> babel </b>
-The babel config is generated as follows:
+Local Vite+ fixtures built a plain ESM SDK with declarations, a plain React TSX library, a Vue TypeScript helper, and a Node ESM library with external `node:` and `nanoid` imports. The plain SDK also passed an install and import from its packed archive. The React output did not retain a `use client` directive; set and verify it in your project when required. The Vue fixture does not compile a `.vue` file or external CSS. These checks do not prove CJS, Nest, Metro, SSR, or real downstream projects. Those cases need their own consumer build.
 
-1. `babel.config.js` file at package root
-2. [Default](./defaults/babel.config.js)
+## Upgrade from the old CLI
 
-Both 1 & 2 are merged using `babel-merge` and the generated config is used.
-So, it's okay to specify partial config in babel.config.js
+Run `torus-scripts-upgrade` to inspect an old project without changing files. Run `vp migrate` at the workspace root and review the changes. Replace `torus-scripts build` with `vp pack`, use `vp check` for lint and format checks, and use `vp run -r build` for workspace builds.
 
-<b> rollup </b>
-The rollup config is generated as follows:
+Vite+ builds ESM by default. Set exports and declaration outputs for each project. Add framework transforms, CSS, SSR, and assets in project config. Use a separate tool for Node decorator metadata or Metro transforms.
 
-1. `rollup.config.js` file at package root
-2. [Default](./config/rollup.config.js)
-
-Both 1 & 2 are merged using `lodash.mergewith` and the generated config is used.
-So, it's okay to specify partial config in rollup.config.js
-you can also specify newer build types in this case using outputs
-
-eg:
-
-To add other plugins
-
-```js
-import replace from "@rollup/plugin-replace";
-
-// This adds `replace` plugin to the existing plugins used by torus-scripts
-export const baseConfig = {
-  plugins: [
-    replace({
-      "process.env.INFURA_PROJECT_ID": `"${process.env.INFURA_PROJECT_ID}"`,
-      preventAssignment: true,
-    }),
-  ],
-};
-```
-
-### torus-scripts build
-
-```
-Usage: torus-scripts build [options]
-Use e.g. "torus-scripts build" directly".
-Options:
-  -h --help              Print this help
-  -n --name              Name of the project
-
-```
-
-`torus-scripts build` produces a production-ready bundle in `dist/` directory
-
-The build is produced in the following formats depending on the options specified in `torus.config.js`
-
-- `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-
-### torus-scripts start
-
-```
-Usage: torus-scripts start [options]
-Use e.g. "torus-scripts start" directly".
-Options:
-  -h --help              Print this help
-  -n --name              Name of the project
-
-```
-
-`torus-scripts start` command starts a dev server (based on rollup)
-that comes with HMR (Hot-Module-Replacement) working out of the box.
-
-The dev server build is produced in the following formats depending on the options specified in `torus.config.js`
-
-- `lib.esm` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-- `lib.cjs` - Built using rollup. (partial rollup config can be specified in `rollup.config.js` at project root)
-
-you can use npm folder links to install this to any other project and
-watch it live updated as you change code in your torus-scripts project
-
-### torus-scripts release
-
-```
-Usage: torus-scripts release [options]
-Use e.g. "torus-scripts release" directly".
-
-```
-
-`torus-scripts release` command internally uses [release-it](https://github.com/release-it/release-it) for release management
-All options from `release-it` are supported by default
-
-you're recommended to add `prepack` command to build before calling release
-
-```json
-{
-  "scripts": {
-    "build": "torus-scripts build",
-    "prepack": "npm run build",
-    "release": "torus-scripts release"
-  }
-}
-```
-
-## Migration Notes
-
-- babel.config files must be extending babel.config.js and import the default config from @toruslabs/config
-- tsconfig files must be extending tsconfig.default.json and import the default config from @toruslabs/config
-- Add include (`["src", "test"]`), outDir, declarationDir in imported files of tsconfig.json
-- If repo also includes tests, add tsconfig.build.json and in that, `include` must contain `src` only.
+The old `torus-scripts` executable, Rollup scripts, ESLint packages, and Prettier settings no longer ship. Use root Changesets commands (`npm run changeset`, `npm run version-packages`, `npm run release-packages`) for release work.

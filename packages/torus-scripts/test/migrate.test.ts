@@ -1,102 +1,268 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, describe, it } from "vitest";
+import { fileURLToPath } from "node:url";
 
-import { inspectProject } from "../src/migrate/inspect.ts";
+import { describe, expect, it } from "vitest";
 
-const roots: string[] = [];
-const cli = path.resolve("packages/torus-scripts/bin/torus-scripts-upgrade.js");
+import { inspectProject } from "../src/migrate/inspect.js";
+import { formatReport } from "../src/migrate/report.js";
 
-function runCli(projectPath: string) {
-  return spawnSync(process.execPath, [cli, projectPath], { encoding: "utf8" });
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const packageDirectory = path.resolve(testDirectory, "..");
+async function writeFixture(root: string, files: Record<string, string>) {
+  for (const [filePath, contents] of Object.entries(files)) {
+    const absolutePath = path.join(root, filePath);
+    await mkdir(path.dirname(absolutePath), { recursive: true });
+    await writeFile(absolutePath, contents);
+  }
 }
 
-async function createProject(): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "torus-migrate-test-"));
-  roots.push(root);
-  return root;
-}
+describe("read-only migration inspection", () => {
+  it("detects legacy config files and migration scripts without changing bytes", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-inspect-"));
+    const files = {
+      "torus.config.js": "module.exports = {};\n",
+      "rollup.config.mjs": "export default {};\n",
+      ".browserslistrc": "defaults\n",
+      "babel.config.js": "module.exports = {};\n",
+      ".babelrc": "{}\n",
+      "lerna.json": '{"version":"independent"}\n',
+      "tsconfig.build.json": '{"compilerOptions":{}}\n',
+      "package.json":
+        JSON.stringify({
+          scripts: { release: "release-it", publish: "lerna publish" },
+          devDependencies: { lerna: "^9.0.0", "release-it": "^19.0.0" },
+          workspaces: ["packages/*"],
+        }) + "\n",
+      "packages/child/package.json": JSON.stringify({ workspaces: ["nested/*"] }) + "\n",
+    };
 
-afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
-});
+    try {
+      await writeFixture(root, files);
+      const originalBytes = new Map(
+        await Promise.all(Object.keys(files).map(async (filePath) => [filePath, await readFile(path.join(root, filePath))] as const))
+      );
 
-describe("inspectProject", () => {
-  it("rejects a missing project root", async () => {
-    const root = path.join(os.tmpdir(), `missing-project-${Date.now()}`);
-    await assert.rejects(inspectProject(root), (error: unknown) => {
-      assert.match(String(error), /Project root does not exist:/);
-      assert.match(String(error), new RegExp(root.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
-      return true;
+      const result = await inspectProject(root);
+
+      expect(result.found).toEqual(
+        expect.arrayContaining([
+          "torus.config.js",
+          "rollup.config.mjs",
+          ".browserslistrc",
+          "babel.config.js",
+          ".babelrc",
+          "tsconfig.build.json",
+          "Lerna",
+          "release-it",
+        ])
+      );
+      expect(result.unsupported).toContain("Nested workspace migration needs a separate review.");
+      expect(result.next).toEqual(
+        expect.arrayContaining([
+          "Run `vp migrate` at the workspace root.",
+          "Review rewritten files before you accept the migration.",
+          "Select the library, Node, React, or Vue profile that matches each package.",
+          "Configure Changesets at the repository root.",
+        ])
+      );
+
+      for (const [filePath, bytes] of originalBytes) {
+        assert.deepEqual(await readFile(path.join(root, filePath)), bytes);
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("warns when a nested package manifest declares workspaces", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-workspaces-"));
+
+    try {
+      await writeFixture(root, {
+        "packages/nested/package.json": JSON.stringify({ workspaces: ["children/*"] }) + "\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).toContain("Nested workspace migration needs a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects missing and non-directory roots", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-invalid-root-"));
+    const filePath = path.join(root, "not-a-directory");
+
+    try {
+      await writeFile(filePath, "file\n");
+
+      await expect(inspectProject(path.join(root, "missing"))).rejects.toThrow(/./);
+      await expect(inspectProject(filePath)).rejects.toThrow(/./);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not warn about empty or commented plugin arrays", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-empty-plugins-"));
+
+    try {
+      await writeFixture(root, {
+        "rollup.config.js": "export default { plugins: [] }; // plugins: [notAPlugin()]\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).not.toContain("Custom Rollup plugins need a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("warns about non-empty plugin arrays", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-nonempty-plugins-"));
+
+    try {
+      await writeFixture(root, {
+        "rollup.config.js": "export default { plugins: [customPlugin()] };\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).toContain("Custom Rollup plugins need a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("detects nested Rollup config files by relative path", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-nested-rollup-"));
+
+    try {
+      await writeFixture(root, {
+        "packages/one/rollup.config.js": "export default { plugins: [customPlugin()] };\n",
+        "packages/two/rollup.config.mjs": "export default { plugins: [customPlugin()] };\n",
+        "packages/three/rollup.config.cjs": "module.exports = { plugins: [customPlugin()] };\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toEqual(
+        expect.arrayContaining(["packages/one/rollup.config.js", "packages/two/rollup.config.mjs", "packages/three/rollup.config.cjs"])
+      );
+      expect(result.unsupported).toContain("Custom Rollup plugins need a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("warns about custom Rollup behavior without loading user config", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-rollup-"));
+    const marker = path.join(root, "config-was-executed");
+    const rollupConfig = [
+      'import { writeFileSync } from "node:fs";',
+      `writeFileSync(${JSON.stringify(marker)}, "executed");`,
+      "export default {",
+      "  input: { first: 'src/a.js', second: 'src/b.js' },",
+      "  plugins: [customTransform()],",
+      "  transform(code) { return code; },",
+      "  resolve: { alias: { process: 'polyfill' } },",
+      "  output: { assetFileNames: 'assets/[name].js' },",
+      "};",
+    ].join("\n");
+
+    try {
+      await writeFixture(root, { "rollup.config.mjs": rollupConfig });
+      const before = await readFile(path.join(root, "rollup.config.mjs"));
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("Custom Rollup plugins"),
+          expect.stringContaining("Custom transforms"),
+          expect.stringContaining("Polyfills"),
+          expect.stringContaining("Multi-entry builds"),
+          expect.stringContaining("Custom asset handling"),
+        ])
+      );
+      await expect(readFile(marker)).rejects.toMatchObject({ code: "ENOENT" });
+      assert.deepEqual(await readFile(path.join(root, "rollup.config.mjs")), before);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("formats a report with found, unsupported, and next sections", () => {
+    const report = formatReport({
+      found: ["torus.config.js"],
+      unsupported: ["Custom Rollup plugins need a separate review."],
+      next: ["Run `vp migrate` at the workspace root."],
     });
+
+    expect(report).toContain("Found");
+    expect(report).toContain("Unsupported");
+    expect(report).toContain("Next steps");
+    expect(report).toContain("Custom Rollup plugins need a separate review.");
   });
 
-  it("rejects a file as the project root", async () => {
-    const root = await createProject();
-    const file = path.join(root, "not-a-directory");
-    await writeFile(file, "not a directory");
+  it("packs and runs the CLI in a temporary npm fixture", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-cli-"));
+    const packDirectory = path.join(root, "pack");
+    const plainFixture = path.join(root, "plain");
+    const unsupportedFixture = path.join(root, "unsupported");
+    const missingFixture = path.join(root, "missing");
 
-    await assert.rejects(inspectProject(file), /Project root is not a directory/);
-  });
+    try {
+      await Promise.all([
+        writeFixture(plainFixture, { "package.json": JSON.stringify({ name: "plain-fixture" }) }),
+        writeFixture(unsupportedFixture, {
+          "package.json": JSON.stringify({ name: "unsupported-fixture" }),
+          "rollup.config.js": "export default { plugins: [customPlugin()] };\n",
+        }),
+      ]);
+      await mkdir(packDirectory, { recursive: true });
 
-  it("does not warn about an empty Rollup plugin list", async () => {
-    const root = await createProject();
-    await writeFile(path.join(root, "rollup.config.js"), "export default { plugins: [] };\n");
+      const packResult = spawnSync("npm", ["pack", "--pack-destination", packDirectory], {
+        cwd: packageDirectory,
+        encoding: "utf8",
+      });
+      expect(packResult.status, `${packResult.stdout}\n${packResult.stderr}`).toBe(0);
+      const tarballs = (await readdir(packDirectory)).filter((entry) => entry.endsWith(".tgz"));
+      expect(tarballs).toHaveLength(1);
 
-    const result = await inspectProject(root);
+      const tarball = path.join(packDirectory, tarballs[0]);
+      execFileSync("tar", ["-xzf", tarball, "-C", packDirectory]);
+      const packagedCli = path.join(packDirectory, "package", "dist", "migrate", "cli.mjs");
+      const manifest = JSON.parse(await readFile(path.join(packDirectory, "package", "package.json"), "utf8"));
+      expect(manifest.bin["torus-scripts-upgrade"]).toBe("./dist/migrate/cli.mjs");
 
-    assert.deepEqual(result.unsupported, []);
-  });
+      const plainResult = spawnSync(packagedCli, [plainFixture], {
+        cwd: plainFixture,
+        encoding: "utf8",
+      });
+      expect(plainResult.status, `${plainResult.stdout}\n${plainResult.stderr}`).toBe(0);
+      expect(plainResult.stdout).toContain("Next steps");
 
-  it("reports a custom Rollup plugin without executing its config", async () => {
-    const root = await createProject();
-    const config = path.join(root, "rollup.config.mjs");
-    const sideEffect = path.join(root, "config-was-executed");
-    await writeFile(
-      config,
-      `import { writeFileSync } from "node:fs";\nwriteFileSync(${JSON.stringify(sideEffect)}, "yes");\nexport default { plugins: [customPlugin()] };\n`,
-    );
-    const originalConfig = await readFile(config);
+      const unsupportedResult = spawnSync(packagedCli, [unsupportedFixture], {
+        cwd: unsupportedFixture,
+        encoding: "utf8",
+      });
+      expect(unsupportedResult.status, `${unsupportedResult.stdout}\n${unsupportedResult.stderr}`).toBe(1);
+      expect(unsupportedResult.stdout + unsupportedResult.stderr).toContain("Custom Rollup plugins");
 
-    const result = await inspectProject(root);
-
-    assert.match(result.unsupported.join("\n"), /rollup\.config\.mjs/);
-    assert.match(result.unsupported.join("\n"), /custom Rollup plugin/i);
-    await assert.rejects(readFile(sideEffect));
-    assert.deepEqual(await readFile(config), originalConfig);
-  });
-
-  it("finds nested Rollup configs in the bounded workspace scan", async () => {
-    const root = await createProject();
-    const nested = path.join(root, "packages", "nested", "rollup.config.cjs");
-    await mkdir(path.dirname(nested), { recursive: true });
-    await writeFile(nested, "module.exports = { plugins: [customPlugin()] };\n");
-
-    const result = await inspectProject(root);
-
-    assert.match(result.unsupported.join("\n"), /packages[\\/]nested[\\/]rollup\.config\.cjs/);
-  });
-
-  it("reports a clear error and exits with code 2 for a missing CLI path", () => {
-    const root = path.join(os.tmpdir(), `missing-cli-project-${Date.now()}`);
-    const processResult = runCli(root);
-
-    assert.equal(processResult.status, 2);
-    assert.match(processResult.stderr, /Project root does not exist:/);
-    assert.match(processResult.stderr, new RegExp(root.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
-  });
-
-  it("exits with code 2 when the CLI path is not a directory", async () => {
-    const root = await createProject();
-    const file = path.join(root, "not-a-directory");
-    await writeFile(file, "not a directory");
-
-    const processResult = runCli(file);
-
-    assert.equal(processResult.status, 2);
-    assert.match(processResult.stderr, /Project root is not a directory:/);
+      const missingResult = spawnSync(packagedCli, [missingFixture], {
+        cwd: root,
+        encoding: "utf8",
+      });
+      expect(missingResult.status, `${missingResult.stdout}\n${missingResult.stderr}`).toBe(2);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

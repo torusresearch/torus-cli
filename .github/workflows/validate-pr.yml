@@ -1,0 +1,49 @@
+name: Validate pull request
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["24.15.0", "26"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install npm 12
+        run: npm install --global npm@12.2.0
+      - name: Install dependencies
+        run: npm ci
+      - name: Check dependency hardening
+        run: npx --no-install harden check --package-manager npm
+      - name: Check source
+        run: npm run check
+      - name: Build packages
+        run: npm run build
+      - name: Run tests
+        run: npm run test
+      - name: Check release notes
+        run: npm exec -- changeset status
+      - name: Check changed package release notes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if git diff --name-only "origin/${BASE_REF}...HEAD" -- packages/config packages/torus-scripts | rg -q .; then
+            npm exec -- changeset status --since="origin/${BASE_REF}"
+          fi
+      - name: Preview package archives
+        run: npm pack --workspaces --dry-run --json

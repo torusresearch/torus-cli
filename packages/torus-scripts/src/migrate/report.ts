@@ -1,17 +1,20 @@
-import type { InspectionResult } from "./inspect.ts";
+import type { InspectionResult } from "./inspect.js";
+
+function section(title: string, items: string[], emptyText: string): string[] {
+  return [title, ...(items.length === 0 ? [`- ${emptyText}`] : items.map((item) => `- ${item}`))];
+}
 
 export function formatReport(result: InspectionResult): string {
-  const sections = [
-    "Migration inspection",
+  return [
+    "Torus migration diagnostic",
     "",
-    "Detected:",
-    ...(result.found.length ? result.found.map((item) => `- ${item}`) : ["- None"]),
+    ...section("Found", result.found, "No legacy configuration detected."),
     "",
-    "Unsupported:",
-    ...(result.unsupported.length ? result.unsupported.map((item) => `- ${item}`) : ["- None"]),
+    ...section("Unsupported", result.unsupported, "No known unsupported behavior detected."),
     "",
-    "Next steps:",
-    ...result.next.map((item) => `- ${item}`),
-  ];
-  return sections.join("\n");
+    ...section("Next steps", result.next, "Review the migration result."),
+    "",
+    "This read-only diagnostic does not execute user configuration or change files.",
+    "",
+  ].join("\n");
 }

@@ -1,9 +1,9 @@
 import { defineConfig } from "vite-plus";
 
+import { typescriptLintPreset } from "./packages/oxlint-config-typescript/index.js";
 import { formatPreset } from "./packages/torus-scripts/src/presets/fmt.js";
-import { lintPreset } from "./packages/torus-scripts/src/presets/lint.js";
 
 export default defineConfig({
-  lint: lintPreset(),
+  lint: typescriptLintPreset(),
   fmt: formatPreset(),
 });

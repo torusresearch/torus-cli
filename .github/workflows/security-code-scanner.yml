@@ -11,23 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  codeql:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@5c8ea125689a2c5ae2672d1d914ac4bcd95d1b4b # v3
-        with:
-          languages: javascript-typescript
-          queries: security-extended
-      - name: Analyze code
-        uses: github/codeql-action/analyze@5c8ea125689a2c5ae2672d1d914ac4bcd95d1b4b # v3
-        with:
-          category: /language:javascript-typescript
-
+  # GitHub CodeQL default setup already scans JavaScript and TypeScript on PRs.
   semgrep:
     runs-on: ubuntu-latest
     permissions:
@@ -38,6 +22,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Semgrep OSS
-        run: python -m pip install semgrep==1.136.0
+        run: python -m pip install 'setuptools<81' semgrep==1.136.0
       - name: Scan JavaScript and TypeScript
-        run: semgrep scan --error --config p/javascript --config p/typescript packages
+        run: semgrep scan --error --config p/javascript --config p/typescript --exclude '**/node_modules/**' --exclude '**/dist/**' --exclude '**/build/**' --exclude '**/coverage/**' .

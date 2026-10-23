@@ -1,78 +1,102 @@
-import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const configPackageDirectory = path.resolve(testDirectory, "../../config");
 const fixtureDirectory = path.resolve(testDirectory, "fixtures/plain-sdk");
+const tsc = path.resolve(testDirectory, "../../../node_modules/.bin/tsc");
 
-function readProfile(profileName: string) {
-  const configPath = path.join(configPackageDirectory, profileName);
-  const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-
-  assert.equal(configFile.error, undefined);
-  return ts.parseJsonConfigFileContent(configFile.config, ts.sys, configPackageDirectory, undefined, configPath);
+function readProfile(profileName: string): { compilerOptions: Record<string, unknown> } {
+  return JSON.parse(execFileSync(tsc, ["--project", path.join(configPackageDirectory, profileName), "--showConfig"], { encoding: "utf8" }));
 }
 
 describe("TypeScript profiles", () => {
   it("uses bundler resolution for the library profile", () => {
     const profile = readProfile("tsconfig.library.json");
 
-    expect(profile.options.moduleResolution).toBe(ts.ModuleResolutionKind.Bundler);
+    expect(profile.compilerOptions.moduleResolution).toBe("bundler");
+  });
+
+  it("omits DOM libraries from the shared library profile and its non-browser fixture", () => {
+    expect(readProfile("tsconfig.library.json").compilerOptions.lib).toEqual(["es2024"]);
+    const fixture = JSON.parse(execFileSync(tsc, ["--project", path.join(fixtureDirectory, "tsconfig.json"), "--showConfig"], { encoding: "utf8" }));
+    expect(fixture.compilerOptions.lib).toEqual(["es2024"]);
+  });
+
+  it("keeps DOM libraries explicit in browser consumer fixtures", () => {
+    for (const name of ["react", "vue"]) {
+      const config = JSON.parse(readFileSync(path.join(testDirectory, "fixtures/consumer-matrix", name, "tsconfig.json"), "utf8"));
+      expect(config.compilerOptions.lib).toEqual(["ES2024", "DOM", "DOM.Iterable"]);
+    }
   });
 
   it("uses NodeNext resolution without DOM libraries for the Node profile", () => {
     const profile = readProfile("tsconfig.node.json");
 
-    expect(profile.options.moduleResolution).toBe(ts.ModuleResolutionKind.NodeNext);
-    expect(profile.options.module).toBe(ts.ModuleKind.NodeNext);
-    expect(profile.options.lib).toEqual(["lib.es2024.d.ts"]);
+    expect(profile.compilerOptions.moduleResolution).toBe("nodenext");
+    expect(profile.compilerOptions.module).toBe("nodenext");
+    expect(profile.compilerOptions.lib).toEqual(["es2024"]);
   });
 
   it("keeps strict null checks enabled in both profiles", () => {
-    expect(readProfile("tsconfig.library.json").options.strictNullChecks).toBe(true);
-    expect(readProfile("tsconfig.node.json").options.strictNullChecks).toBe(true);
+    expect(readProfile("tsconfig.library.json").compilerOptions.strictNullChecks).toBe(true);
+    expect(readProfile("tsconfig.node.json").compilerOptions.strictNullChecks).toBe(true);
   });
 
-  it("resolves both profiles through Node and TypeScript from the fixture", () => {
+  it("resolves both profiles through Node and the library profile from the fixture", () => {
     const fixtureRequire = createRequire(pathToFileURL(path.join(fixtureDirectory, "resolve.cjs")));
 
     for (const profileName of ["tsconfig.library.json", "tsconfig.node.json"]) {
-      const profilePath = `@toruslabs/config/${profileName}`;
-      const nodeResolvedPath = fixtureRequire.resolve(profilePath);
-      const tsResolvedPath = ts.resolveModuleName(
-        profilePath,
-        path.join(fixtureDirectory, "tsconfig.json"),
-        { moduleResolution: ts.ModuleResolutionKind.NodeNext, resolveJsonModule: true },
-        ts.sys
-      ).resolvedModule?.resolvedFileName;
+      expect(fixtureRequire.resolve(`@toruslabs/config/${profileName}`)).toBe(path.join(configPackageDirectory, profileName));
+    }
+    const resolvedConfig = JSON.parse(
+      execFileSync(tsc, ["--project", path.join(fixtureDirectory, "tsconfig.json"), "--showConfig"], { encoding: "utf8" })
+    );
+    expect(resolvedConfig.compilerOptions.moduleResolution).toBe("bundler");
+    expect(resolvedConfig.compilerOptions.strictNullChecks).toBe(true);
+  });
 
-      expect(nodeResolvedPath).toBe(path.join(configPackageDirectory, profileName));
-      expect(tsResolvedPath).toBe(nodeResolvedPath);
+  it("includes all exported profiles in the package archive, not source-only files", () => {
+    const temporary = mkdtempSync(path.join(os.tmpdir(), "torus-config-archive-"));
+    try {
+      const result = JSON.parse(
+        execFileSync("npm", ["pack", "--json", "--pack-destination", temporary], {
+          cwd: configPackageDirectory,
+          encoding: "utf8",
+        })
+      );
+      const archive = (Array.isArray(result) ? result[0] : Object.values(result)[0]) as { files: { path: string }[] };
+      const files = archive.files.map((file) => file.path);
+      for (const name of ["tsconfig.base.json", "tsconfig.library.json", "tsconfig.node.json"]) {
+        expect(files).toContain(name);
+      }
+      expect(files).not.toContain("tsconfig.json");
+      expect(files).not.toContain("tsconfig.default.json");
+      expect(files).not.toContain("tsconfig.build.json");
+    } finally {
+      rmSync(temporary, { recursive: true, force: true });
     }
   });
 
-  it("keeps profile and legacy package subpaths exported and resolvable", () => {
+  it("exports only supported profiles and excludes legacy configuration", () => {
     const fixtureRequire = createRequire(pathToFileURL(path.join(fixtureDirectory, "resolve.cjs")));
-    const configPackage = ts.readConfigFile(path.join(configPackageDirectory, "package.json"), ts.sys.readFile).config;
-    const subpaths = [
-      "tsconfig.library.json",
-      "tsconfig.node.json",
-      "tsconfig.default.json",
-      "tsconfig.build.json",
-      "torus.config.js",
-      "babel.config.js",
-      "babel-test.config.js",
-    ];
+    const configPackage = JSON.parse(readFileSync(path.join(configPackageDirectory, "package.json"), "utf8"));
+    const supported = ["tsconfig.base.json", "tsconfig.library.json", "tsconfig.node.json"];
+    expect(configPackage.exports).toEqual(Object.fromEntries(supported.map((subpath) => [`./${subpath}`, `./${subpath}`])));
 
-    for (const subpath of subpaths) {
-      const packageSubpath = `./${subpath}`;
-      expect(configPackage.exports).toHaveProperty(packageSubpath, packageSubpath);
+    for (const subpath of supported) {
       expect(fixtureRequire.resolve(`@toruslabs/config/${subpath}`)).toBe(path.join(configPackageDirectory, subpath));
+    }
+    for (const subpath of ["tsconfig.default.json", "tsconfig.build.json", "torus.config.js", "babel.config.js", "babel-test.config.js"]) {
+      expect(() => fixtureRequire.resolve(`@toruslabs/config/${subpath}`)).toThrowError(
+        expect.objectContaining({ code: "ERR_PACKAGE_PATH_NOT_EXPORTED" })
+      );
     }
   });
 });

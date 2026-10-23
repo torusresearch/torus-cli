@@ -2,7 +2,7 @@
   "name": "@toruslabs/torus-scripts",
   "version": "8.1.0",
   "type": "module",
-  "description": "Scripts for Torus libraries to manage bundling, lint etc",
+  "description": "Vite+ build and format presets with a read-only migration diagnostic",
   "bin": {
     "torus-scripts-upgrade": "./dist/migrate/cli.mjs"
   },
@@ -29,31 +29,13 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
-    "./lint": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
-    },
     "./fmt": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
-    },
-    "./vue-lint": {
-      "types": "./dist/vue-lint.d.mts",
-      "import": "./dist/vue-lint.mjs"
     }
   },
   "peerDependencies": {
-    "oxlint-plugin-vize": "^0.485.0",
-    "oxlint-tailwindcss": "^1.14.0",
     "vite-plus": "^1.0.0"
-  },
-  "peerDependenciesMeta": {
-    "oxlint-plugin-vize": {
-      "optional": true
-    },
-    "oxlint-tailwindcss": {
-      "optional": true
-    }
   },
   "publishConfig": {
     "access": "public"

@@ -36,8 +36,10 @@ jobs:
         run: npm run typecheck
       - name: Run tests
         run: npm run test
+      - name: Fetch Changesets base
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
       - name: Check release notes
-        run: npm exec -- changeset status
+        run: npm exec -- changeset status --since=origin/main
       - name: Check changed package release notes
         if: github.event_name == 'pull_request'
         env:

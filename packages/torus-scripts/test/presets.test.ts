@@ -1,8 +1,10 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { mergeConfig } from "vite";
 import { describe, expect, it } from "vitest";
+
 import { nodePreset } from "../src/presets/node.js";
 import { reactPreset } from "../src/presets/react.js";
 import { vuePreset } from "../src/presets/vue.js";
@@ -48,10 +50,7 @@ describe("Node preset", () => {
 
   it("uses no Vite browser transforms when a consumer merges its plugins", () => {
     const consumerPlugin = { name: "consumer-plugin" };
-    const config = mergeConfig(
-      { plugins: [consumerPlugin] },
-      nodePreset({ entry: "src/index.ts" }),
-    );
+    const config = mergeConfig({ plugins: [consumerPlugin] }, nodePreset({ entry: "src/index.ts" }));
 
     expect(config.plugins).toContain(consumerPlugin);
     expect(config.plugins).not.toContainEqual(expect.objectContaining({ name: "vite:css" }));
@@ -62,9 +61,7 @@ describe("Node preset", () => {
 describe("public preset exports", () => {
   it("exports framework and Node profile subpaths", async () => {
     const packageDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-    const packageJson = JSON.parse(
-      await readFile(path.join(packageDirectory, "package.json"), "utf8"),
-    );
+    const packageJson = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
 
     for (const profile of ["react", "vue", "node"]) {
       expect(packageJson.exports).toHaveProperty(`./${profile}`);

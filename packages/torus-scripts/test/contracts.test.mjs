@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
 import { test } from "vitest";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -28,9 +29,10 @@ function trackPackBuilds(child) {
   const collect = (chunk) => {
     output += chunk.toString();
     completedBuilds = (output.match(/✔ (?:Rebuilt|Build complete)/g) ?? []).length;
-    for (const waiter of [...waiters]) {
+    for (let index = waiters.length - 1; index >= 0; index--) {
+      const waiter = waiters[index];
       if (completedBuilds >= waiter.count) {
-        waiters.splice(waiters.indexOf(waiter), 1);
+        waiters.splice(index, 1);
         clearTimeout(waiter.timeout);
         waiter.resolve();
       }
@@ -45,10 +47,7 @@ function trackPackBuilds(child) {
       const waiter = {
         count,
         resolve,
-        timeout: setTimeout(
-          () => reject(new Error(`Timed out after ${completedBuilds} pack builds: ${output}`)),
-          timeoutMs,
-        ),
+        timeout: setTimeout(() => reject(new Error(`Timed out after ${completedBuilds} pack builds: ${output}`)), timeoutMs),
       };
       waiters.push(waiter);
     });
@@ -60,15 +59,20 @@ function trackPackBuilds(child) {
 // "use client", NodeNext, and Metro remain opt-in consumer checks. This fixture
 // does not claim that those optional cases pass.
 test("library export packs a plain ESM SDK value and declaration", async () => {
-  const torusScriptsPackage = JSON.parse(
-    await readFile(path.join(packageDirectory, "package.json"), "utf8"),
-  );
+  const torusScriptsPackage = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
 
   assert.deepEqual(torusScriptsPackage.exports?.["./library"], {
     types: "./dist/index.d.mts",
     import: "./dist/index.mjs",
   });
-  assert.deepEqual(torusScriptsPackage.files, ["bin", "dist"]);
+  assert.deepEqual(torusScriptsPackage.files, ["dist"]);
+  assert.deepEqual(Object.keys(torusScriptsPackage.bin), ["torus-scripts-upgrade"]);
+  for (const subpath of ["library", "react", "vue", "node", "lint", "fmt", "vue-lint"]) {
+    const { import: entry } = torusScriptsPackage.exports[`./${subpath}`];
+    assert.equal(typeof entry, "string");
+    const exported = await import(pathToFileURL(path.join(packageDirectory, entry)));
+    assert.ok(Object.keys(exported).length > 0, `${subpath} must export a preset`);
+  }
 
   const { libraryPreset } = await import(path.join(packageDirectory, "src", "presets", "library.ts"));
   assert.deepEqual(libraryPreset({ entry: "src/index.ts" }), {
@@ -93,7 +97,7 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
         format: ["esm", "cjs"],
         sourcemap: false,
       },
-    },
+    }
   );
 
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "plain-sdk-contract-"));
@@ -104,40 +108,16 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
       encoding: "utf8",
       stdio: "pipe",
     });
-    execFileSync(
-      "npm",
-      ["pack", "--json", "--pack-destination", temporaryDirectory],
-      { cwd: fixtureDirectory, encoding: "utf8", stdio: "pipe" },
-    );
+    execFileSync("npm", ["pack", "--json", "--pack-destination", temporaryDirectory], { cwd: fixtureDirectory, encoding: "utf8", stdio: "pipe" });
 
     const tarballPath = path.join(temporaryDirectory, "plain-sdk-1.0.0.tgz");
-    const packedJavaScript = execFileSync(
-      "tar",
-      ["-xOf", tarballPath, "package/dist/index.mjs"],
-      { encoding: "utf8" },
-    );
-    const packedDeclarations = execFileSync(
-      "tar",
-      ["-xOf", tarballPath, "package/dist/index.d.mts"],
-      { encoding: "utf8" },
-    );
+    const packedJavaScript = execFileSync("tar", ["-xOf", tarballPath, "package/dist/index.mjs"], { encoding: "utf8" });
+    const packedDeclarations = execFileSync("tar", ["-xOf", tarballPath, "package/dist/index.d.mts"], { encoding: "utf8" });
 
-    assert.match(
-      packedJavaScript,
-      /export\s*\{[^}]*\bcreatePlainSdkId\b[^}]*\}/s,
-      "packed SDK must export createPlainSdkId",
-    );
-    assert.match(
-      packedJavaScript,
-      /from ["']nanoid["']/,
-      "non-builtin dependencies must remain external",
-    );
+    assert.match(packedJavaScript, /export\s*\{[^}]*\bcreatePlainSdkId\b[^}]*\}/s, "packed SDK must export createPlainSdkId");
+    assert.match(packedJavaScript, /from ["']nanoid["']/, "non-builtin dependencies must remain external");
     assert.doesNotMatch(packedJavaScript, /window|document|process\.env|torus-scripts/);
-    assert.doesNotMatch(
-      packedJavaScript,
-      /Object\.hasOwn|\bhasOwn\s*\(/,
-      "library output must not include browser Object.hasOwn polyfills",
-    );
+    assert.doesNotMatch(packedJavaScript, /Object\.hasOwn|\bhasOwn\s*\(/, "library output must not include browser Object.hasOwn polyfills");
 
     const packageFixture = await mkdtemp(path.join(os.tmpdir(), "plain-sdk-install-"));
     try {
@@ -146,26 +126,17 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
         encoding: "utf8",
         stdio: "pipe",
       });
-      const imported = await import(
-        pathToFileURL(path.join(packageFixture, "node_modules", "plain-sdk", "dist", "index.mjs"))
-      );
+      const imported = await import(pathToFileURL(path.join(packageFixture, "node_modules", "plain-sdk", "dist", "index.mjs")));
       assert.equal(typeof imported.createPlainSdkId, "function");
       assert.match(imported.createPlainSdkId(), /^[A-Za-z0-9_-]+$/);
     } finally {
       await rm(packageFixture, { recursive: true, force: true });
     }
-    assert.match(
-      packedDeclarations,
-      /export\s+type\s+PlainSdkOptions\b/,
-      "packed SDK declarations must export PlainSdkOptions",
-    );
+    assert.match(packedDeclarations, /export\s+type\s+PlainSdkOptions\b/, "packed SDK declarations must export PlainSdkOptions");
 
     const sourcePath = path.join(fixtureDirectory, "src", "index.ts");
     const originalSource = await readFile(sourcePath, "utf8");
-    const changedSource = originalSource.replace(
-      'prefix?: string;',
-      'prefix?: string;\n  watchProof?: "rebuilt";',
-    );
+    const changedSource = originalSource.replace("prefix?: string;", 'prefix?: string;\n  watchProof?: "rebuilt";');
     const watchProcess = spawn("npm", ["exec", "--", "vp", "pack", "--watch"], {
       cwd: fixtureDirectory,
       stdio: ["ignore", "pipe", "pipe"],
@@ -184,9 +155,6 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
       await writeFile(sourcePath, originalSource);
     }
   } finally {
-    await Promise.all([
-      rm(temporaryDirectory, { recursive: true, force: true }),
-      rm(buildDirectory, { recursive: true, force: true }),
-    ]);
+    await Promise.all([rm(temporaryDirectory, { recursive: true, force: true }), rm(buildDirectory, { recursive: true, force: true })]);
   }
 }, 30_000);

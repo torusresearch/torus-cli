@@ -8,11 +8,5 @@
   "updateInternalDependencies": "patch",
   "fixed": [],
   "linked": [],
-  "ignore": [
-    "@toruslabs/eslint-config-javascript",
-    "@toruslabs/eslint-config-node",
-    "@toruslabs/eslint-config-react",
-    "@toruslabs/eslint-config-typescript",
-    "@toruslabs/eslint-config-vue"
-  ]
+  "ignore": []
 }

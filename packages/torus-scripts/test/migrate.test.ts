@@ -101,8 +101,8 @@ describe("read-only migration inspection", () => {
     try {
       await writeFile(filePath, "file\n");
 
-      await expect(inspectProject(path.join(root, "missing"))).rejects.toThrow();
-      await expect(inspectProject(filePath)).rejects.toThrow();
+      await expect(inspectProject(path.join(root, "missing"))).rejects.toThrow(/./);
+      await expect(inspectProject(filePath)).rejects.toThrow(/./);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

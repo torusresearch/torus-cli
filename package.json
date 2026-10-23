@@ -16,18 +16,18 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release-packages": "changeset publish",
-    "check:styles": "prettier --check .",
-    "fix:styles": "prettier --write ."
+    "check:styles": "vp fmt --check .",
+    "fix:styles": "vp fmt --write ."
   },
   "devDependencies": {
-    "eslint": "^9.39.2",
-    "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.6.0",
-    "prettier": "^3.8.3",
+    "@changesets/cli": "3.0.3",
+    "@lavamoat/harden": "0.8.1",
+    "@vizejs/vite-plugin": "^0.485.0",
+    "oxlint-plugin-vize": "^0.485.0",
+    "oxlint-tailwindcss": "^1.14.0",
     "typescript": "5.9.3",
     "vite-plus": "1.3.0",
-    "@changesets/cli": "3.0.3",
-    "@lavamoat/harden": "0.8.1"
+    "vize": "^0.485.0"
   },
   "type": "module",
   "devEngines": {

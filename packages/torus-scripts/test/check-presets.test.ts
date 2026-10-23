@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { formatPreset } from "../src/presets/fmt.js";
-import { lintPreset } from "../src/presets/lint.js";
+import { lintPreset, tailwindLintPreset } from "../src/presets/lint.js";
+import { vueLintPreset } from "../src/presets/vue-lint.js";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.resolve(testDirectory, "..");
@@ -25,6 +26,101 @@ describe("lint and format presets", () => {
     expect(config.options).toBeUndefined();
   });
 
+  it("enables native rule families without dropping default plugins", () => {
+    const config = lintPreset();
+    expect(config.plugins).toEqual(
+      expect.arrayContaining(["eslint", "typescript", "unicorn", "oxc", "import", "promise", "vitest", "react", "jsx-a11y", "node"])
+    );
+    expect(config.rules).toMatchObject({ "no-console": ["error", { allow: ["warn", "error"] }], "promise/always-return": expect.anything() });
+  });
+
+  it("keeps Vue and Tailwind integrations opt-in and tied to consumer settings", () => {
+    const vue = vueLintPreset();
+    const tailwind = tailwindLintPreset({ entryPoint: "src/styles.css" });
+    expect(vue.jsPlugins).toEqual(expect.arrayContaining(["oxlint-plugin-vize"]));
+    expect(vue.plugins).toContain("vue");
+    expect(tailwind.jsPlugins).toEqual(["oxlint-tailwindcss"]);
+    expect(tailwind.settings).toMatchObject({ tailwindcss: { entryPoint: "src/styles.css" } });
+    expect(tailwind.rules).toHaveProperty("tailwindcss/no-unknown-classes", "error");
+  });
+
+  it("does not enable framework plugins or Tailwind until requested", () => {
+    const config = lintPreset();
+    expect(config.plugins).not.toContain("vue");
+    expect(config.jsPlugins).toBeUndefined();
+    expect(config.settings?.tailwindcss).toBeUndefined();
+  });
+
+  it("reports a Vize template diagnostic through the opt-in Vue profile", async () => {
+    const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "vize-fixture-"));
+    try {
+      await writeFile(
+        path.join(fixtureDirectory, "vite.config.ts"),
+        `import { defineConfig } from "vite-plus";\nimport { vueLintPreset } from "../packages/torus-scripts/src/presets/vue-lint.js";\nexport default defineConfig({ lint: vueLintPreset() });\n`
+      );
+      await writeFile(
+        path.join(fixtureDirectory, "Bad.vue"),
+        '<template><div v-for="item in items">{{ item }}</div></template>\n<script setup lang="ts">const items = [1];</script>\n'
+      );
+      const result = spawnSync(vp, ["lint", "Bad.vue"], { cwd: fixtureDirectory, encoding: "utf8" });
+      expect(result.status).not.toBe(0);
+      expect(result.stdout + result.stderr).toContain("vize(vue/require-v-for-key)");
+    } finally {
+      await rm(fixtureDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it("reports an unknown Tailwind class through the opt-in CSS profile", async () => {
+    const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "tailwind-fixture-"));
+    try {
+      await writeFile(
+        path.join(fixtureDirectory, "vite.config.ts"),
+        `import { defineConfig } from "vite-plus";\nimport { tailwindLintPreset } from "../packages/torus-scripts/src/presets/lint.js";\nexport default defineConfig({ lint: tailwindLintPreset({ entryPoint: "styles.css" }) });\n`
+      );
+      await writeFile(path.join(fixtureDirectory, "styles.css"), '@import "tailwindcss";\n');
+      await writeFile(path.join(fixtureDirectory, "Bad.tsx"), 'export const View = () => <div className="madeuputility" />;\n');
+      const result = spawnSync(vp, ["lint", "Bad.tsx"], { cwd: fixtureDirectory, encoding: "utf8" });
+      expect(result.status).not.toBe(0);
+      expect(result.stdout + result.stderr).toContain("tailwindcss(no-unknown-classes)");
+    } finally {
+      await rm(fixtureDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it("removes the old CLI and ESLint packages from published workspace metadata", async () => {
+    const root = JSON.parse(await readFile(path.join(repositoryDirectory, "package.json"), "utf8"));
+    const manifest = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
+    const changesets = JSON.parse(await readFile(path.join(repositoryDirectory, ".changeset/config.json"), "utf8"));
+    expect(manifest.bin).toEqual({ "torus-scripts-upgrade": "./dist/migrate/cli.mjs" });
+    expect(manifest.peerDependencies).not.toHaveProperty("eslint");
+    expect(root.devDependencies).not.toHaveProperty("eslint");
+    expect(root.scripts["check:styles"]).toBe("vp fmt --check .");
+    expect(changesets.ignore).toEqual([]);
+  });
+
+  it("runs hardened validation without publishing on pull requests", async () => {
+    const workflow = await readFile(path.join(repositoryDirectory, ".github/workflows/validate-pr.yml"), "utf8");
+    expect(workflow).toContain("pull_request:");
+    expect(workflow).toContain("contents: read");
+    expect(workflow).toContain("npm ci");
+    expect(workflow).toContain("harden check --package-manager npm");
+    expect(workflow).toContain("npm run check");
+    expect(workflow).toContain("npm run test");
+    expect(workflow).toContain("npm run build");
+    expect(workflow).toContain("npm pack --workspaces --dry-run");
+    expect(workflow).not.toContain("changeset publish");
+  });
+
+  it("scans JavaScript and TypeScript with CodeQL and Semgrep without tokens", async () => {
+    const workflow = await readFile(path.join(repositoryDirectory, ".github/workflows/security-code-scanner.yml"), "utf8");
+    expect(workflow).toContain("security-extended");
+    expect(workflow).toContain("javascript-typescript");
+    expect(workflow).toContain("semgrep scan");
+    expect(workflow).toContain("p/javascript");
+    expect(workflow).toContain("p/typescript");
+    expect(workflow).not.toContain("SEMGREP_APP_TOKEN");
+  });
+
   it("uses the formatter baseline and enables Oxfmt import sorting", () => {
     expect(formatPreset()).toEqual({
       printWidth: 150,
@@ -34,6 +130,12 @@ describe("lint and format presets", () => {
       sortImports: true,
       sortPackageJson: false,
     });
+  });
+
+  it("exports Vue lint only from its optional entry", async () => {
+    const manifest = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
+    expect(manifest.exports["./vue-lint"].import).toBe("./dist/vue-lint.mjs");
+    expect(manifest.peerDependenciesMeta["oxlint-plugin-vize"].optional).toBe(true);
   });
 
   it("exports reusable lint and format subpaths", async () => {
@@ -63,7 +165,7 @@ describe("lint and format presets", () => {
           cwd: repositoryDirectory,
           encoding: "utf8",
         });
-        expect(result.status, `${fixture}: ${result.stdout}\n${result.stderr}`).not.toBe(0);
+        expect(result.status).not.toBe(0);
         expect(result.stdout + result.stderr).toContain("no-unused-vars");
       }
 
@@ -71,7 +173,7 @@ describe("lint and format presets", () => {
         cwd: repositoryDirectory,
         encoding: "utf8",
       });
-      expect(checkResult.status, checkResult.stdout + checkResult.stderr).not.toBe(0);
+      expect(checkResult.status).not.toBe(0);
       expect(checkResult.stdout + checkResult.stderr).toContain("no-unused-vars");
     } finally {
       await rm(fixturesDirectory, { recursive: true, force: true });
@@ -88,7 +190,7 @@ describe("lint and format presets", () => {
         cwd: repositoryDirectory,
         encoding: "utf8",
       });
-      expect(result.status, `${result.stdout}\n${result.stderr}`).not.toBe(0);
+      expect(result.status).not.toBe(0);
       expect(result.stdout + result.stderr).toContain("sort-imports");
     } finally {
       await rm(fixturesDirectory, { recursive: true, force: true });
@@ -105,7 +207,7 @@ describe("lint and format presets", () => {
         cwd: repositoryDirectory,
         encoding: "utf8",
       });
-      expect(result.status, `${result.stdout}\n${result.stderr}`).not.toBe(0);
+      expect(result.status).not.toBe(0);
       expect(result.stdout + result.stderr).toContain("Formatting issues found");
     } finally {
       await rm(fixturesDirectory, { recursive: true, force: true });
@@ -127,8 +229,8 @@ describe("lint and format presets", () => {
           cwd: repositoryDirectory,
           encoding: "utf8",
         });
-        expect(result.status, `${fixture}: ${result.stdout}\n${result.stderr}`).not.toBe(0);
-        expect(result.stdout + result.stderr, fixture).toContain("Format issues found");
+        expect(result.status).not.toBe(0);
+        expect(result.stdout + result.stderr).toContain("Format issues found");
       }
     } finally {
       await rm(fixturesDirectory, { recursive: true, force: true });
@@ -140,6 +242,6 @@ describe("lint and format presets", () => {
       cwd: packageDirectory,
       encoding: "utf8",
     });
-    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.status).toBe(0);
   });
 });

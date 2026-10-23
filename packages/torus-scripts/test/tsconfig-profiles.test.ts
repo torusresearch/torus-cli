@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
@@ -47,7 +48,7 @@ describe("TypeScript profiles", () => {
         profilePath,
         path.join(fixtureDirectory, "tsconfig.json"),
         { moduleResolution: ts.ModuleResolutionKind.NodeNext, resolveJsonModule: true },
-        ts.sys,
+        ts.sys
       ).resolvedModule?.resolvedFileName;
 
       expect(nodeResolvedPath).toBe(path.join(configPackageDirectory, profileName));

@@ -1,0 +1,8 @@
+{
+  "extends": "@toruslabs/config/tsconfig.library.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*"]
+}

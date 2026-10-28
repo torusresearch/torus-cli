@@ -1,25 +1,29 @@
 {
   "name": "@toruslabs/config",
   "version": "4.0.1",
-  "description": "Sensible Babel, Prettier, Typescript configuration for libraries",
+  "description": "TypeScript profiles for Vite+ libraries and Node packages",
   "keywords": [
-    "eslint",
-    "eslintconfig",
-    "babel",
+    "typescript",
     "tsconfig",
-    "prettier",
     "config"
   ],
   "publishConfig": {
     "access": "public"
   },
   "engines": {
-    "node": ">=22",
-    "npm": ">=10.x"
+    "node": ">=24.22.0",
+    "npm": ">=12"
   },
-  "peerDependencies": {
-    "@babel/runtime": "^7.16"
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.library.json": "./tsconfig.library.json",
+    "./tsconfig.node.json": "./tsconfig.node.json"
   },
+  "files": [
+    "tsconfig.base.json",
+    "tsconfig.library.json",
+    "tsconfig.node.json"
+  ],
   "author": "Torus Labs",
   "license": "MIT",
   "bugs": {

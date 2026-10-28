@@ -10,27 +10,21 @@
   ],
   "repository": "git@github.com:torusresearch/torus-cli.git",
   "scripts": {
-    "publish:lerna": "npm run clean && npm install && lerna publish",
-    "just:publish:lerna": "lerna publish",
-    "pack:lerna": "lerna exec -- 'npm pack'",
-    "clean": "lerna clean --yes && lerna exec -- npx rimraf package-lock.json yarn.lock dist/ .rollup.cache/ tsconfig.build.tsbuildinfo .rts2_cache_{cjs,esm}/ toruslabs-*.tgz openlogin-*.tgz .eslintcache",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release-packages": "changeset publish",
     "check:styles": "prettier --check .",
     "fix:styles": "prettier --write ."
   },
   "devDependencies": {
+    "@changesets/cli": "3.0.3",
     "@lavamoat/harden": "0.8.1",
     "eslint": "^9.39.2",
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.6.0",
-    "lerna": "^9.0.7",
     "prettier": "^3.8.3",
     "typescript": "5.9.3",
     "vite-plus": "1.4.0"
-  },
-  "overrides": {
-    "release-it": {
-      "undici": "6.24.0"
-    }
   },
   "type": "module",
   "devEngines": {

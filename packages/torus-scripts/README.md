@@ -1,13 +1,13 @@
 # torus-scripts
 
-Torus scripts provide you a convenient way to build, release & create a dev server for building ts libraries.
+Torus scripts provide you a convenient way to build and create a dev server for building ts libraries.
 It offers a modern build setup with no configuration
 
 The CLI Service is built on top of rollup. It contains:
 
 - The core service that loads other CLI Plugins;
 - An internal rollup config that is optimized for most apps;
-- The torus-scripts binary inside the project, which comes with the basic start, build and release commands.
+- The torus-scripts binary inside the project, which comes with the basic start, build, and lint commands.
 
 If you are familiar with create-react-app, @toruslabs/torus-scripts is roughly the equivalent of react-scripts, although the feature set is different.
 
@@ -169,28 +169,9 @@ The dev server build is produced in the following formats depending on the optio
 you can use npm folder links to install this to any other project and
 watch it live updated as you change code in your torus-scripts project
 
-### torus-scripts release
+### Package release
 
-```
-Usage: torus-scripts release [options]
-Use e.g. "torus-scripts release" directly".
-
-```
-
-`torus-scripts release` command internally uses [release-it](https://github.com/release-it/release-it) for release management
-All options from `release-it` are supported by default
-
-you're recommended to add `prepack` command to build before calling release
-
-```json
-{
-  "scripts": {
-    "build": "torus-scripts build",
-    "prepack": "npm run build",
-    "release": "torus-scripts release"
-  }
-}
-```
+`torus-scripts release` is removed. Record and publish versions with Changesets at the repository root. Run `changeset` to record a change. Run `changeset version` to prepare versions. Run `changeset publish` only after release approval.
 
 ## Migration Notes
 

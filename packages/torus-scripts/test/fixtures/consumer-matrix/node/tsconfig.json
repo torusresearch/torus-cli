@@ -1,0 +1,4 @@
+{
+  "extends": "@toruslabs/config/tsconfig.node.json",
+  "include": ["src/**/*"]
+}

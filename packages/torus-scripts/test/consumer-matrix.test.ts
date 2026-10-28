@@ -22,10 +22,20 @@ function run(command: string, args: string[], cwd: string): string {
   }
 }
 
+function parsePackResult(output: string): { filename: string } {
+  const jsonStart = Math.max(output.lastIndexOf("\n["), output.lastIndexOf("\n{"));
+  const packed = JSON.parse(jsonStart === -1 ? output : output.slice(jsonStart + 1)) as
+    | { filename: string }[]
+    | { filename: string }
+    | Record<string, { filename: string }>;
+  if (Array.isArray(packed)) return packed[0];
+  if ("filename" in packed) return packed;
+  return Object.values(packed)[0];
+}
+
 async function pack(cwd: string, destination: string): Promise<string> {
-  const packed = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", destination], cwd));
-  const result = Array.isArray(packed) ? packed[0] : (Object.values(packed)[0] as { filename: string });
-  return path.join(destination, result.filename);
+  const packed = parsePackResult(run("npm", ["pack", "--json", "--pack-destination", destination], cwd));
+  return path.join(destination, packed.filename);
 }
 
 async function install(consumer: string, tarballs: string[], dependencies: string[] = []): Promise<void> {
@@ -54,7 +64,6 @@ async function buildScriptsTarball(temporary: string): Promise<{ workspace: stri
     await cp(path.join(packageSource, filename), path.join(scriptsSource, filename));
   }
   await cp(path.join(packageSource, "src"), path.join(scriptsSource, "src"), { recursive: true });
-  run(path.join(workspace, "node_modules/.bin/vp"), ["pack"], scriptsSource);
   const tarball = await pack(scriptsSource, temporary);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], workspace);
   const installed = JSON.parse(await readFile(path.join(workspace, "node_modules", scriptsPackage, "package.json"), "utf8"));

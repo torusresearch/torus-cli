@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { cp, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -160,3 +160,34 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
 }, 90_000);
+
+test("npm pack builds dist from a source tree that has no build output", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "torus-scripts-prepack-"));
+  const packageCopy = path.join(temporaryDirectory, "torus-scripts");
+  try {
+    await mkdir(packageCopy);
+    await cp(path.join(packageDirectory, "src"), path.join(packageCopy, "src"), { recursive: true });
+    for (const filename of ["package.json", "README.md", "vite.config.ts", "tsconfig.json"]) {
+      await cp(path.join(packageDirectory, filename), path.join(packageCopy, filename));
+    }
+    await cp(path.resolve(packageDirectory, "../config"), path.join(temporaryDirectory, "config"), { recursive: true });
+    await symlink(path.resolve(packageDirectory, "../../node_modules"), path.join(packageCopy, "node_modules"), "dir");
+    await assert.rejects(readFile(path.join(packageCopy, "dist", "library.mjs")));
+
+    const packOutput = execFileSync("npm", ["pack", "--json", "--pack-destination", temporaryDirectory], {
+      cwd: packageCopy,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+    const jsonStart = Math.max(packOutput.lastIndexOf("\n["), packOutput.lastIndexOf("\n{"));
+    const packed = JSON.parse(jsonStart === -1 ? packOutput : packOutput.slice(jsonStart + 1));
+    const result = Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
+    const packedFiles = execFileSync("tar", ["-tzf", path.join(temporaryDirectory, result.filename)], { encoding: "utf8" });
+    for (const name of ["library", "react", "node", "fmt"]) {
+      assert.match(packedFiles, new RegExp(`package/dist/${name}\\.mjs$`, "m"));
+      assert.match(packedFiles, new RegExp(`package/dist/${name}\\.d\\.mts$`, "m"));
+    }
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+}, 60_000);

@@ -1,0 +1,17 @@
+{
+  "name": "matrix-node",
+  "version": "1.0.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "dependencies": {
+    "nanoid": "^5.1.0"
+  }
+}

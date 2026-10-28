@@ -157,7 +157,7 @@ describe("lint and format presets", () => {
     const root = JSON.parse(await readFile(path.join(repositoryDirectory, "package.json"), "utf8"));
     const manifest = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
     const changesets = JSON.parse(await readFile(path.join(repositoryDirectory, ".changeset/config.json"), "utf8"));
-    expect(manifest.bin).toBeUndefined();
+    expect(manifest.bin).toEqual({ "torus-scripts-upgrade": "./dist/migrate/cli.mjs" });
     expect(manifest.peerDependencies).not.toHaveProperty("eslint");
     expect(root.devDependencies).not.toHaveProperty("eslint");
     expect(root.scripts["check:styles"]).toBe("vp fmt --check .");

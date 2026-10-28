@@ -9,7 +9,7 @@ import { test } from "vitest";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.resolve(testDirectory, "..");
-const fixtureDirectory = path.join(testDirectory, "fixtures", "plain-sdk");
+const fixtureDirectory = path.join(testDirectory, "fixtures", "consumer-matrix", "plain");
 
 async function waitForFileContent(filePath, expectedContent, timeoutMs = 10_000) {
   const deadline = Date.now() + timeoutMs;
@@ -57,17 +57,21 @@ function trackPackBuilds(child) {
 test("library export packs a plain ESM SDK value and declaration", async () => {
   const torusScriptsPackage = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
 
-  assert.deepEqual(torusScriptsPackage.exports?.["./library"], {
-    types: "./dist/index.d.mts",
-    import: "./dist/index.mjs",
-  });
+  assert.deepEqual(Object.keys(torusScriptsPackage.exports).sort(), ["./fmt", "./library", "./node", "./react"]);
   assert.deepEqual(torusScriptsPackage.files, ["dist"]);
   assert.equal(torusScriptsPackage.bin, undefined);
-  for (const subpath of ["library", "react", "vue", "node", "fmt"]) {
-    const { import: entry } = torusScriptsPackage.exports[`./${subpath}`];
-    assert.equal(typeof entry, "string");
-    const exported = await import(pathToFileURL(path.join(packageDirectory, entry)));
-    assert.ok(Object.keys(exported).length > 0, `${subpath} must export a preset`);
+  for (const [subpath, exportName] of Object.entries({
+    library: "libraryPreset",
+    react: "reactPreset",
+    node: "nodePreset",
+    fmt: "formatPreset",
+  })) {
+    assert.deepEqual(torusScriptsPackage.exports[`./${subpath}`], {
+      types: `./dist/${subpath}.d.mts`,
+      import: `./dist/${subpath}.mjs`,
+    });
+    const exported = await import(pathToFileURL(path.join(packageDirectory, "dist", `${subpath}.mjs`)));
+    assert.deepEqual(Object.keys(exported).sort(), [exportName], `${subpath} must export only ${exportName}`);
   }
 
   const { libraryPreset } = await import(path.join(packageDirectory, "src", "presets", "library.ts"));

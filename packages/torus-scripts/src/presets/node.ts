@@ -1,5 +1,6 @@
 export type NodeOptions = {
   entry: string | string[];
+  dts?: boolean;
 };
 
 /**
@@ -14,6 +15,7 @@ export function nodePreset(options: NodeOptions) {
       deps: {
         neverBundle: true,
       },
+      dts: options.dts ?? true,
     },
   };
 }

@@ -1,11 +1,8 @@
 {
+  "extends": "@toruslabs/config/tsconfig.library.json",
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "target": "ES2024",
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx",
-    "strict": true
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*"]
 }

@@ -11,24 +11,20 @@
   },
   "exports": {
     "./library": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/library.d.mts",
+      "import": "./dist/library.mjs"
     },
     "./react": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
-    },
-    "./vue": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/react.d.mts",
+      "import": "./dist/react.mjs"
     },
     "./node": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/node.d.mts",
+      "import": "./dist/node.mjs"
     },
     "./fmt": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/fmt.d.mts",
+      "import": "./dist/fmt.mjs"
     }
   },
   "peerDependencies": {

@@ -7,17 +7,12 @@ import { describe, expect, it } from "vitest";
 
 import { nodePreset } from "../src/presets/node.js";
 import { reactPreset } from "../src/presets/react.js";
-import { vuePreset } from "../src/presets/vue.js";
 
 describe("optional framework presets", () => {
   it("sets the automatic JSX runtime without installing a React plugin", () => {
     expect(reactPreset()).toEqual({ esbuild: { jsx: "automatic" } });
     expect(reactPreset()).not.toHaveProperty("plugins");
-  });
-
-  it("leaves Vue single-file component transforms to a consumer plugin", () => {
-    expect(vuePreset()).toEqual({});
-    expect(vuePreset()).not.toHaveProperty("plugins");
+    expect(reactPreset()).not.toHaveProperty("pack");
   });
 
   it("keeps a consumer-supplied plugin when a preset is merged", () => {
@@ -35,8 +30,10 @@ describe("Node preset", () => {
         entry: ["src/index.ts", "src/worker.ts"],
         platform: "node",
         deps: { neverBundle: true },
+        dts: true,
       },
     });
+    expect(nodePreset({ entry: "src/index.ts", dts: false }).pack.dts).toBe(false);
   });
 
   it("does not add browser, CSS, or environment replacement settings", () => {
@@ -63,10 +60,7 @@ describe("public preset exports", () => {
     const packageDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const packageJson = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
 
-    for (const profile of ["react", "vue", "node"]) {
-      expect(packageJson.exports).toHaveProperty(`./${profile}`);
-    }
-    expect(packageJson.exports).toHaveProperty("./library");
+    expect(Object.keys(packageJson.exports).sort()).toEqual(["./fmt", "./library", "./node", "./react"]);
 
     const configuredDependencies = {
       ...packageJson.dependencies,

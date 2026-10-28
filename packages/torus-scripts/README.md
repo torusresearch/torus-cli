@@ -27,6 +27,12 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({ fmt: formatPreset() });
 ```
 
+## Lint
+
+Install one of `@toruslabs/oxlint-config-typescript`, `@toruslabs/oxlint-config-react`, `@toruslabs/oxlint-config-vue`, or `@toruslabs/oxlint-config-node`. The TypeScript preset checks both JavaScript and TypeScript. React, Vue, and Node extend it. This package does not export `/lint` or `/vue-lint`.
+
+The old `@toruslabs/eslint-config-*` packages are removed. Read the [rule audit](https://github.com/torusresearch/torus-cli/blob/main/docs/superpowers/eslint-to-oxlint-rule-audit.md) before you treat an Oxlint rule as equal to an old ESLint rule.
+
 ## TypeScript profiles
 
 `@toruslabs/config` exports `tsconfig.base.json`, `tsconfig.library.json`, and `tsconfig.node.json`. Replace `tsconfig.default.json` or `tsconfig.build.json` with the matching profile.

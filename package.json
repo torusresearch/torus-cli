@@ -11,7 +11,8 @@
   "repository": "git@github.com:torusresearch/torus-cli.git",
   "scripts": {
     "build": "vp run -r build --fail-if-no-match",
-    "typecheck": "tsc --noEmit -p packages/torus-scripts/tsconfig.json",
+    "check": "vp check",
+    "typecheck": "tsc --noEmit -p packages/torus-scripts/tsconfig.json && tsc --noEmit -p packages/oxlint-config-typescript/tsconfig.json && tsc --noEmit -p packages/oxlint-config-react/tsconfig.json && tsc --noEmit -p packages/oxlint-config-vue/tsconfig.json && tsc --noEmit -p packages/oxlint-config-node/tsconfig.json",
     "test": "vp test",
     "changeset": "changeset",
     "version-packages": "changeset version",
@@ -23,12 +24,12 @@
     "@changesets/cli": "3.0.3",
     "@lavamoat/harden": "0.8.1",
     "@types/node": "24.13.6",
-    "eslint": "^9.39.2",
-    "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.6.0",
-    "prettier": "^3.8.3",
+    "@vizejs/vite-plugin": "^0.485.0",
+    "oxlint-plugin-vize": "^0.485.0",
+    "oxlint-tailwindcss": "^1.14.0",
     "typescript": "7.0.2",
-    "vite-plus": "1.4.0"
+    "vite-plus": "1.4.0",
+    "vize": "^0.485.0"
   },
   "type": "module",
   "devEngines": {

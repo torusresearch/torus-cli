@@ -2,7 +2,7 @@
   "private": true,
   "packageManager": "npm@12.2.0",
   "engines": {
-    "node": ">=24.15.0",
+    "node": ">=24.22.0",
     "npm": ">=12"
   },
   "workspaces": [

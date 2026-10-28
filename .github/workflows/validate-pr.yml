@@ -28,6 +28,12 @@ jobs:
         run: npm ci
       - name: Check dependency hardening
         run: npx --no-install harden check --package-manager npm
+      - name: Build packages
+        run: npm run build
+      - name: Check TypeScript projects
+        run: npm run typecheck
+      - name: Run tests
+        run: npm run test
       - name: Fetch Changesets base
         run: git fetch --no-tags origin main:refs/remotes/origin/main
       - name: Check release notes

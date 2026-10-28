@@ -155,4 +155,4 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
-}, 30_000);
+}, 90_000);

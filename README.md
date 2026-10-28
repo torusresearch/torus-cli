@@ -14,7 +14,7 @@ Torus CLI and devtools
 
 ## Release checks
 
-CI checks Node 24.15.0 and Node 26 with npm 12.2.0. It checks dependency hardening, builds, tests, and Changesets status.
+CI checks Node 24.22.0 and Node 26 with npm 12.2.0. It checks dependency hardening, builds, tests, and Changesets status.
 
 GitHub CodeQL default setup scans JavaScript and TypeScript. The separate workflow runs Semgrep OSS.
 

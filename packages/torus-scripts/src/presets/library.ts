@@ -5,7 +5,16 @@ export type LibraryOptions = {
   sourcemap?: boolean;
 };
 
-export function libraryPreset(options: LibraryOptions) {
+export type LibraryPreset = {
+  pack: {
+    entry: string | string[];
+    dts: boolean;
+    format: Array<"esm" | "cjs">;
+    sourcemap: boolean;
+  };
+};
+
+export function libraryPreset(options: LibraryOptions): LibraryPreset {
   return {
     pack: {
       entry: options.entry,

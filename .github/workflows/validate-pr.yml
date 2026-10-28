@@ -28,6 +28,8 @@ jobs:
         run: npm ci
       - name: Check dependency hardening
         run: npx --no-install harden check --package-manager npm
+      - name: Check source
+        run: npm run check
       - name: Build packages
         run: npm run build
       - name: Check TypeScript projects

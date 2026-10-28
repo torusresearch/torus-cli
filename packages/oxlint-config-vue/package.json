@@ -1,0 +1,38 @@
+{
+  "name": "@toruslabs/oxlint-config-vue",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Oxlint Vue and Vize preset for Torus libraries",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vp pack"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "dependencies": {
+    "@toruslabs/oxlint-config-typescript": "^1.0.0"
+  },
+  "peerDependencies": {
+    "vite-plus": "^1.0.0",
+    "oxlint-plugin-vize": "^0.485.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24.15.0",
+    "npm": ">=12"
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/torus-cli.git"
+  }
+}

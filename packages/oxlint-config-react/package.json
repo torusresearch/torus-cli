@@ -1,0 +1,43 @@
+{
+  "name": "@toruslabs/oxlint-config-react",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Oxlint React preset and optional Tailwind fragment for Torus libraries",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vp pack"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "dependencies": {
+    "@toruslabs/oxlint-config-typescript": "^1.0.0"
+  },
+  "peerDependencies": {
+    "vite-plus": "^1.0.0",
+    "oxlint-tailwindcss": "^1.14.0"
+  },
+  "peerDependenciesMeta": {
+    "oxlint-tailwindcss": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24.15.0",
+    "npm": ">=12"
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/torus-cli.git"
+  }
+}

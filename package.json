@@ -1,7 +1,9 @@
 {
   "private": true,
+  "packageManager": "npm@12.2.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24.15.0",
+    "npm": ">=12"
   },
   "workspaces": [
     "packages/*"
@@ -16,17 +18,27 @@
     "fix:styles": "prettier --write ."
   },
   "devDependencies": {
+    "@lavamoat/harden": "0.8.1",
     "eslint": "^9.39.2",
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.6.0",
     "lerna": "^9.0.7",
     "prettier": "^3.8.3",
-    "typescript": "^5.9.3"
+    "typescript": "5.9.3",
+    "vite-plus": "1.4.0"
   },
   "overrides": {
     "release-it": {
       "undici": "6.24.0"
     }
   },
-  "type": "module"
+  "type": "module",
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.17.0",
+      "onFail": "error"
+    }
+  },
+  "allowScripts": {}
 }

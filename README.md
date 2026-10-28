@@ -5,7 +5,7 @@ Torus CLI and devtools
 ## Packages
 
 - [`@toruslabs/config`](packages/config): TypeScript profiles for libraries and applications.
-- [`@toruslabs/torus-scripts`](packages/torus-scripts): Vite+ build and format presets.
+- [`@toruslabs/torus-scripts`](packages/torus-scripts): Vite+ build and format presets. Use `torus-scripts-upgrade` to inspect an old project.
 - [`@toruslabs/oxlint-config-typescript`](packages/oxlint-config-typescript): JavaScript and TypeScript lint preset.
 - [`@toruslabs/oxlint-config-react`](packages/oxlint-config-react): React and Tailwind lint presets.
 - [`@toruslabs/oxlint-config-vue`](packages/oxlint-config-vue): Vue lint preset.

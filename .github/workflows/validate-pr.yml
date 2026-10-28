@@ -28,3 +28,17 @@ jobs:
         run: npm ci
       - name: Check dependency hardening
         run: npx --no-install harden check --package-manager npm
+      - name: Fetch Changesets base
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+      - name: Check release notes
+        run: npm exec -- changeset status --since=origin/main
+      - name: Check changed package release notes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if git diff --name-only "origin/${BASE_REF}...HEAD" -- packages/ | rg -q .; then
+            npm exec -- changeset status --since="origin/${BASE_REF}"
+          fi
+      - name: Preview package archives
+        run: npm pack --workspaces --dry-run --json

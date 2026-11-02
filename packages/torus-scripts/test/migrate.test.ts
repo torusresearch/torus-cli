@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -6,9 +5,10 @@ import path from "node:path";
 import { describe, expect, it, onTestFinished } from "vite-plus/test";
 
 import { inspectProject } from "../src/migrate/inspect.js";
-import type { PathBlockerCode } from "../src/migrate/model.js";
+import { type Code, exitCodes, type Finding } from "../src/migrate/model.js";
 import { formatReport } from "../src/migrate/report.js";
-import { exitCodes, run, usage } from "../src/migrate/run.js";
+import { rollupConfigCodes } from "../src/migrate/rollup.js";
+import { run, usage } from "../src/migrate/run.js";
 
 async function writeFixture(root: string, files: Record<string, string>) {
   for (const [filePath, contents] of Object.entries(files)) {
@@ -25,12 +25,8 @@ async function fixture(files: Record<string, string> = {}): Promise<string> {
   return root;
 }
 
-function blocker(code: PathBlockerCode, ...pathParts: string[]) {
-  return { code, path: path.join(...pathParts) };
-}
-
-async function blockerCodes(root: string): Promise<string[]> {
-  return (await inspectProject(root)).blockers.map(({ code }) => code);
+function finding(code: Code, filePath: string, detail?: string): Finding {
+  return { code, path: path.join(...filePath.split("/")), ...(detail === undefined ? {} : { detail }) };
 }
 
 async function runCli(args: string[]) {
@@ -44,6 +40,56 @@ async function runCli(args: string[]) {
 }
 
 const customPlugins = "export default { plugins: [customPlugin()] };\n";
+
+describe("Rollup config rules", () => {
+  it.each<[string, string, Code[]]>([
+    ["an empty config", "export default {};", []],
+    ["an empty or commented plugin array", "export default { plugins: [] }; // plugins: [notAPlugin()]", []],
+    ["a glob that looks like a comment", 'export default { input: "src/*/index.ts" }; /* plugins: [x()] */', []],
+    ["a load() call that is not a hook", "export default { external: (id) => cache.load(id) };", []],
+    ["a non-empty plugin array", "export default { plugins: [customPlugin()] };", ["rollup-plugins"]],
+    ["a plugin array in a variable", "const shared = [x()];\nexport default { plugins: shared };", ["rollup-plugins"]],
+    ["a shorthand plugin property", "export default { plugins };", ["rollup-plugins"]],
+    ["a hook built by a call", "export default { load: createLoader() };", ["rollup-transforms"]],
+    ["a disabled hook", "export default { transform: null };", []],
+    ["a class hook method", "class Plugin { renderChunk(code) { return code; } }\nexport default {};", ["rollup-transforms"]],
+    ["a polyfill import", 'import nodePolyfills from "rollup-plugin-polyfill-node";\nexport default {};', ["polyfills"]],
+    ["a core-js require", 'require("core-js");\nmodule.exports = {};', ["polyfills"]],
+    ["a process alias", "export default { resolve: { alias: { process: 'polyfill' } } };", ["polyfills"]],
+    ["a Buffer injection", 'export default { inject: { Buffer: ["buffer", "Buffer"] } };', ["polyfills"]],
+    ["a variable that mentions polyfills", 'const skipPolyfills = true;\nexport default { output: { banner: "/* no polyfills */" } };', []],
+    ["a NODE_ENV define", 'export default { define: { "process.env.NODE_ENV": \'"production"\' } };', []],
+    ["asset file names", "export default { output: { assetFileNames: 'assets/[name].js' } };", ["asset-handling"]],
+    [
+      "an emitFile call",
+      'function plugin() { return { generateBundle() { this.emitFile({ type: "asset" }); } }; }\nexport default {};',
+      ["asset-handling"],
+    ],
+    ["a single array input", 'export default { input: ["src/index.ts"] };', []],
+    ["a single object input", 'export default { input: { main: "src/index.ts" } };', []],
+    ["one build in an array", 'export default [{ input: "src/index.ts", output: { file: "a.js" } }];', []],
+    ["a config in a variable", 'const config = { input: "src/index.ts" };\nexport default config;', []],
+    ["class members named input", 'class A { input() {} }\nclass B { input() {} }\nexport default { input: "src/index.ts" };', []],
+    ["two array inputs", 'export default { input: ["src/a.ts", "src/b.ts"] };', ["multi-entry"]],
+    ["two object inputs", 'export default { input: { a: "src/a.ts", b: "src/b.ts" } };', ["multi-entry"]],
+    ["two builds", 'export default [{ input: "src/a.ts" }, { input: "src/b.ts" }];', ["multi-entry"]],
+    ["two builds in defineConfig", 'module.exports = defineConfig([{ input: "src/a.ts" }, { input: "src/b.ts" }]);', ["multi-entry"]],
+    ["inputs in a variable", 'const input = ["src/a.ts", "src/b.ts"];\nexport default { input };', ["multi-entry"]],
+    ["builds made by map()", 'export default ["src/a.ts", "src/b.ts"].map((input) => ({ input }));', ["dynamic-rollup-config"]],
+    ["a config function", 'export default (args) => ({ input: "src/index.ts" });', ["dynamic-rollup-config"]],
+    ["inputs from a call", "export default { input: getInputs() };", ["dynamic-rollup-config"]],
+    ["a spread without input", 'export default { ...base, output: { dir: "dist" } };', ["dynamic-rollup-config"]],
+    ["a syntax error", "export default {", ["unparseable-rollup-config"]],
+  ])("handles %s", (_name, source, expected) => {
+    expect(rollupConfigCodes("rollup.config.js", source).sort()).toEqual(expected);
+  });
+
+  it("parses TypeScript configs by file name", () => {
+    const source = 'import type { RollupOptions } from "rollup";\nexport default { input: "src/index.ts" } satisfies RollupOptions;';
+    expect(rollupConfigCodes("rollup.config.ts", source)).toEqual([]);
+    expect(rollupConfigCodes("rollup.config.js", source)).toEqual(["unparseable-rollup-config"]);
+  });
+});
 
 describe("read-only migration inspection", () => {
   it("detects legacy config files and tools without changing bytes", async () => {
@@ -63,33 +109,21 @@ describe("read-only migration inspection", () => {
         }) + "\n",
     };
     const root = await fixture(files);
-    const originalBytes = new Map(
-      await Promise.all(Object.keys(files).map(async (filePath) => [filePath, await readFile(path.join(root, filePath))] as const))
-    );
 
-    const result = await inspectProject(root);
-
-    expect(result.findings).toEqual([
-      { kind: "config", path: ".babelrc" },
-      { kind: "config", path: ".browserslistrc" },
-      { kind: "config", path: "babel.config.js" },
-      { kind: "tool", tool: "Lerna", path: "lerna.json" },
-      { kind: "tool", tool: "Lerna", path: "package.json" },
-      { kind: "tool", tool: "release-it", path: "package.json" },
-      { kind: "config", path: "rollup.config.mjs" },
-      { kind: "config", path: "torus.config.js" },
-      { kind: "config", path: "tsconfig.build.json" },
+    expect(await inspectProject(root)).toEqual([
+      finding("config", ".babelrc"),
+      finding("config", ".browserslistrc"),
+      finding("config", "babel.config.js"),
+      finding("lerna", "lerna.json"),
+      finding("lerna", "package.json"),
+      finding("release-it", "package.json"),
+      finding("config", "rollup.config.mjs"),
+      finding("torus-config", "torus.config.js"),
+      finding("config", "tsconfig.build.json"),
     ]);
-    expect(result.blockers).toEqual([blocker("torus-config", "torus.config.js")]);
-    for (const [filePath, bytes] of originalBytes) {
-      assert.deepEqual(await readFile(path.join(root, filePath)), bytes);
+    for (const [filePath, contents] of Object.entries(files)) {
+      expect(await readFile(path.join(root, filePath), "utf8")).toBe(contents);
     }
-  });
-
-  it("warns when a nested package manifest declares workspaces", async () => {
-    const root = await fixture({ "packages/nested/package.json": JSON.stringify({ workspaces: ["children/*"] }) + "\n" });
-
-    expect((await inspectProject(root)).blockers).toEqual([blocker("nested-workspaces", "packages", "nested", "package.json")]);
   });
 
   it("rejects missing and non-directory roots", async () => {
@@ -99,66 +133,42 @@ describe("read-only migration inspection", () => {
     await expect(inspectProject(path.join(root, "not-a-directory"))).rejects.toThrow(/not a directory/);
   });
 
-  it("does not warn about empty or commented plugin arrays", async () => {
-    const root = await fixture({ "rollup.config.js": "export default { plugins: [] }; // plugins: [notAPlugin()]\n" });
-
-    expect(await blockerCodes(root)).toEqual([]);
-  });
-
-  it("warns about non-empty plugin arrays", async () => {
-    const root = await fixture({ "rollup.config.js": customPlugins });
-
-    expect((await inspectProject(root)).blockers).toEqual([blocker("rollup-plugins", "rollup.config.js")]);
-  });
-
-  it("detects JavaScript and TypeScript Rollup configs by relative path", async () => {
+  it("inspects JavaScript and TypeScript Rollup configs by relative path", async () => {
     const root = await fixture({
       "packages/one/rollup.config.js": customPlugins,
-      "packages/two/rollup.config.mjs": customPlugins,
-      "packages/three/rollup.config.cjs": "module.exports = { plugins: [customPlugin()] };\n",
-      "packages/four/rollup.config.ts":
-        'import type { RollupOptions } from "rollup";\nexport default { plugins: [customPlugin()] } satisfies RollupOptions;\n',
+      "packages/two/rollup.config.cjs": "module.exports = { plugins: [customPlugin()] };\n",
+      "packages/three/rollup.config.mts": customPlugins,
     });
 
-    expect((await inspectProject(root)).blockers).toEqual([
-      blocker("rollup-plugins", "packages", "four", "rollup.config.ts"),
-      blocker("rollup-plugins", "packages", "one", "rollup.config.js"),
-      blocker("rollup-plugins", "packages", "three", "rollup.config.cjs"),
-      blocker("rollup-plugins", "packages", "two", "rollup.config.mjs"),
+    expect(await inspectProject(root)).toEqual([
+      finding("config", "packages/one/rollup.config.js"),
+      finding("rollup-plugins", "packages/one/rollup.config.js"),
+      finding("config", "packages/three/rollup.config.mts"),
+      finding("rollup-plugins", "packages/three/rollup.config.mts"),
+      finding("config", "packages/two/rollup.config.cjs"),
+      finding("rollup-plugins", "packages/two/rollup.config.cjs"),
     ]);
   });
 
-  it("parses Rollup configs instead of matching text", async () => {
-    const root = await fixture({
-      "glob/rollup.config.js": 'export default { input: "src/*/index.ts", plugins: [] }; /* plugins: [notAPlugin()] */\n',
-      "load-call/rollup.config.js": "export default { external: (id) => cache.load(id) };\n",
-    });
-    const configPath = path.join(root, "glob", "rollup.config.js");
-    expect(await blockerCodes(root)).toEqual([]);
+  it("does not execute the Rollup config it inspects", async () => {
+    const root = await fixture();
+    const marker = path.join(root, "config-was-executed");
+    await writeFile(
+      path.join(root, "rollup.config.mjs"),
+      `import { writeFileSync } from "node:fs";\nwriteFileSync(${JSON.stringify(marker)}, "executed");\nexport default {};\n`
+    );
 
-    for (const config of ["const shared = [x()];\nexport default { plugins: shared };\n", "export default { plugins };\n"]) {
-      await writeFile(configPath, config);
-      expect(await blockerCodes(root)).toEqual(["rollup-plugins"]);
-    }
-
-    await writeFile(configPath, "export default {\n");
-    expect((await inspectProject(root)).blockers).toEqual([blocker("unparseable-rollup-config", "glob", "rollup.config.js")]);
+    expect(await inspectProject(root)).toEqual([finding("config", "rollup.config.mjs")]);
+    await expect(readFile(marker)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
-  it("inspects installed workspace packages that have their own node_modules", async () => {
+  it("skips node_modules but inspects packages that have their own node_modules", async () => {
     const root = await fixture({
       "packages/one/node_modules/dependency/package.json": JSON.stringify({ workspaces: ["ignored/*"] }) + "\n",
       "packages/one/package.json": JSON.stringify({ scripts: { release: "release-it" } }) + "\n",
-      "packages/one/rollup.config.js": customPlugins,
     });
 
-    const result = await inspectProject(root);
-
-    expect(result.findings).toEqual([
-      { kind: "tool", tool: "release-it", path: path.join("packages", "one", "package.json") },
-      { kind: "config", path: path.join("packages", "one", "rollup.config.js") },
-    ]);
-    expect(result.blockers).toEqual([blocker("rollup-plugins", "packages", "one", "rollup.config.js")]);
+    expect(await inspectProject(root)).toEqual([finding("release-it", "packages/one/package.json")]);
   });
 
   it("follows symlinked package directories inside the root", async () => {
@@ -167,75 +177,57 @@ describe("read-only migration inspection", () => {
     await symlink(path.join(root, "node_modules", ".store", "linked"), path.join(root, "packages", "linked"), "dir");
     await symlink(root, path.join(root, "packages", "loop"), "dir");
 
-    expect((await inspectProject(root)).blockers).toEqual([blocker("rollup-plugins", "packages", "linked", "rollup.config.mjs")]);
-  });
-
-  it("reports symlinks that leave the root without inspecting their targets", async () => {
-    const root = await fixture();
-    const outside = await fixture({ "rollup.config.mjs": customPlugins });
-    await mkdir(path.join(root, "packages"));
-    await symlink(outside, path.join(root, "packages", "linked"), "dir");
-    await symlink(path.join(outside, "rollup.config.mjs"), path.join(root, "rollup.config.mjs"), "file");
-
-    const result = await inspectProject(root);
-
-    expect(result.findings).toEqual([]);
-    expect(result.blockers).toEqual([blocker("escaped-symlink", "packages", "linked"), blocker("escaped-symlink", "rollup.config.mjs")]);
-  });
-
-  it("reports legacy torus-scripts signals in workspace packages", async () => {
-    const root = await fixture({
-      "package.json": JSON.stringify({ workspaces: ["packages/*"], devDependencies: { "@toruslabs/torus-scripts": "^8.1.0" } }) + "\n",
-      "packages/one/package.json": JSON.stringify({ scripts: { build: "torus-scripts build" } }) + "\n",
-      "packages/one/torus.config.js": "module.exports = {};\n",
-      "packages/two/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "^7.2.0" } }) + "\n",
-      "packages/three/package.json": JSON.stringify({ scripts: { check: "torus-scripts-upgrade ." } }) + "\n",
-      "packages/four/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "latest" } }) + "\n",
-    });
-
-    const result = await inspectProject(root);
-
-    expect(result.findings).toEqual(
-      expect.arrayContaining([
-        { kind: "legacy-scripts", path: path.join("packages", "one", "package.json") },
-        { kind: "legacy-dependency", path: path.join("packages", "two", "package.json"), spec: "^7.2.0" },
-      ])
-    );
-    expect(result.blockers).toEqual([
-      blocker("unknown-dependency-version", "packages", "four", "package.json"),
-      blocker("legacy-commands", "packages", "one", "package.json"),
-      blocker("torus-config", "packages", "one", "torus.config.js"),
-      blocker("legacy-dependency", "packages", "two", "package.json"),
+    expect(await inspectProject(root)).toEqual([
+      finding("config", "packages/linked/rollup.config.mjs"),
+      finding("rollup-plugins", "packages/linked/rollup.config.mjs"),
     ]);
   });
 
-  it("keeps Babel and browserslist configs out of the blockers", async () => {
-    const root = await fixture({
-      "packages/one/babel.config.js": "module.exports = {};\n",
-      "packages/one/.browserslistrc": "defaults\n",
-      "packages/one/tsconfig.build.json": "{}\n",
-    });
+  it("reports only relevant symlinks that leave the root", async () => {
+    const root = await fixture();
+    const outside = await fixture({ "rollup.config.mjs": customPlugins, "README.md": "# outside\n" });
+    await mkdir(path.join(root, "packages"));
+    await symlink(outside, path.join(root, "packages", "linked"), "dir");
+    await symlink(outside, path.join(root, "node_modules"), "dir");
+    await symlink(path.join(outside, "rollup.config.mjs"), path.join(root, "rollup.config.mjs"), "file");
+    await symlink(path.join(outside, "README.md"), path.join(root, "README.md"), "file");
 
-    const result = await inspectProject(root);
-
-    expect(result.findings).toHaveLength(3);
-    expect(result.blockers).toEqual([]);
+    expect(await inspectProject(root)).toEqual([finding("escaped-symlink", "packages/linked"), finding("escaped-symlink", "rollup.config.mjs")]);
   });
 
-  it("reports malformed package.json files and inspects the other files", async () => {
+  it("reports legacy torus-scripts commands and versions", async () => {
+    const root = await fixture({
+      "package.json": JSON.stringify({ workspaces: ["packages/*"], devDependencies: { "@toruslabs/torus-scripts": "^8.1.0" } }) + "\n",
+      "packages/one/package.json": JSON.stringify({ scripts: { build: "./node_modules/.bin/torus-scripts build" } }) + "\n",
+      "packages/two/package.json":
+        JSON.stringify({ dependencies: { "@toruslabs/torus-scripts": "^6.0.0" }, devDependencies: { "@toruslabs/torus-scripts": "^8.0.0" } }) + "\n",
+      "packages/three/package.json": JSON.stringify({ scripts: { check: "torus-scripts-upgrade .", echo: "echo release-it-is-not-used" } }) + "\n",
+      "packages/four/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "latest" } }) + "\n",
+      "packages/five/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "npm:@toruslabs/torus-scripts@^7.0.0" } }) + "\n",
+      "packages/six/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "workspace:*" } }) + "\n",
+    });
+
+    expect(await inspectProject(root)).toEqual([
+      finding("legacy-dependency", "packages/five/package.json", "npm:@toruslabs/torus-scripts@^7.0.0"),
+      finding("unknown-dependency-version", "packages/four/package.json", "latest"),
+      finding("legacy-commands", "packages/one/package.json"),
+      finding("local-dependency", "packages/six/package.json", "workspace:*"),
+      finding("legacy-dependency", "packages/two/package.json", "^6.0.0"),
+    ]);
+  });
+
+  it("reports nested workspaces and malformed package.json files", async () => {
     const root = await fixture({
       "packages/broken/package.json": "{ not json\n",
       "packages/null/package.json": "null\n",
+      "packages/nested/package.json": JSON.stringify({ workspaces: ["children/*"] }) + "\n",
       "packages/odd/package.json": JSON.stringify({ dependencies: "lerna", scripts: ["lerna run build"] }) + "\n",
-      "packages/good/package.json": JSON.stringify({ scripts: { release: "release-it" } }) + "\n",
     });
 
-    const result = await inspectProject(root);
-
-    expect(result.findings).toEqual([{ kind: "tool", tool: "release-it", path: path.join("packages", "good", "package.json") }]);
-    expect(result.blockers).toEqual([
-      blocker("unreadable-manifest", "packages", "broken", "package.json"),
-      blocker("unreadable-manifest", "packages", "null", "package.json"),
+    expect(await inspectProject(root)).toEqual([
+      finding("unreadable-manifest", "packages/broken/package.json"),
+      finding("nested-workspaces", "packages/nested/package.json"),
+      finding("unreadable-manifest", "packages/null/package.json"),
     ]);
   });
 
@@ -248,77 +240,34 @@ describe("read-only migration inspection", () => {
       "test/fixtures/sample/package.json": nestedWorkspace,
     });
 
-    expect(await blockerCodes(root)).toEqual([]);
+    expect(await inspectProject(root)).toEqual([]);
   });
 
   it("reports a blocker when the directory cap stops the walk", async () => {
-    const root = await fixture({
-      "a/package.json": "{}\n",
-      "b/package.json": "{}\n",
-      "c/rollup.config.js": "export default {};\n",
-    });
+    const root = await fixture({ "a/package.json": "{}\n", "b/package.json": "{}\n", "c/package.json": "{}\n" });
 
-    expect((await inspectProject(root, { maxDirectories: 2 })).blockers).toEqual([{ code: "truncated", limit: 2 }]);
-    expect((await inspectProject(root, { maxDirectories: 4 })).blockers).toEqual([]);
-  });
-
-  it("flags multi-entry builds only when there is more than one entry or build", async () => {
-    const root = await fixture({
-      "single-array/rollup.config.js": 'export default { input: ["src/index.ts"] };\n',
-      "single-object/rollup.config.js": 'export default { input: { main: "src/index.ts" } };\n',
-      "single-build/rollup.config.js": 'export default [{ input: "src/index.ts", output: { file: "a.js" } }];\n',
-    });
-    expect(await blockerCodes(root)).toEqual([]);
-
-    for (const config of [
-      'export default { input: ["src/a.ts", "src/b.ts"] };\n',
-      'export default { input: { a: "src/a.ts", b: "src/b.ts" } };\n',
-      'export default [{ input: "src/a.ts" }, { input: "src/b.ts" }];\n',
-      'module.exports = defineConfig([{ input: "src/a.ts" }, { input: "src/b.ts" }]);\n',
-    ]) {
-      await writeFile(path.join(root, "single-build", "rollup.config.js"), config);
-      expect(await blockerCodes(root)).toEqual(["multi-entry"]);
-    }
-  });
-
-  it("warns about custom Rollup behavior without loading user config", async () => {
-    const root = await fixture();
-    const marker = path.join(root, "config-was-executed");
-    const rollupConfig = [
-      'import { writeFileSync } from "node:fs";',
-      `writeFileSync(${JSON.stringify(marker)}, "executed");`,
-      "export default {",
-      "  input: { first: 'src/a.js', second: 'src/b.js' },",
-      "  plugins: [customTransform()],",
-      "  transform(code) { return code; },",
-      "  resolve: { alias: { process: 'polyfill' } },",
-      "  output: { assetFileNames: 'assets/[name].js' },",
-      "};",
-    ].join("\n");
-    await writeFile(path.join(root, "rollup.config.mjs"), rollupConfig);
-
-    expect((await blockerCodes(root)).sort()).toEqual(["asset-handling", "multi-entry", "polyfills", "rollup-plugins", "rollup-transforms"]);
-    await expect(readFile(marker)).rejects.toMatchObject({ code: "ENOENT" });
-    expect(await readFile(path.join(root, "rollup.config.mjs"), "utf8")).toBe(rollupConfig);
+    expect(await inspectProject(root, { maxDirectories: 2 })).toEqual([{ code: "truncated", path: ".", detail: "2 directories" }]);
+    expect(await inspectProject(root, { maxDirectories: 4 })).toEqual([]);
   });
 });
 
 describe("migration report", () => {
-  it("lists findings and blockers with their paths", () => {
-    const report = formatReport({
-      findings: [{ kind: "config", path: "torus.config.js" }],
-      blockers: [blocker("rollup-plugins", "rollup.config.js"), { code: "truncated", limit: 5 }],
-    });
+  it("separates found items from blockers and shows details", () => {
+    const report = formatReport([
+      finding("config", "babel.config.js"),
+      finding("legacy-dependency", "package.json", "^7.0.0"),
+      { code: "truncated", path: ".", detail: "5 directories" },
+    ]);
 
-    expect(report).toContain("- torus.config.js\n");
-    expect(report).toContain("- rollup.config.js: Custom Rollup plugins need a separate review.\n");
-    expect(report).toContain("- Inspection stopped after 5 directories.");
+    expect(report).toContain("Found\n- babel.config.js: Legacy build configuration.\n\nUnsupported\n");
+    expect(report).toContain("- package.json: @toruslabs/torus-scripts before v8 needs manual replacement. (^7.0.0)\n");
+    expect(report).toContain("- .: Inspection stopped at the directory limit. Review the remaining directories by hand. (5 directories)\n");
     expect(report).toContain("Next steps\n- Run `vp migrate` at the workspace root.");
     expect(report).toContain("Skipped directories: node_modules,");
   });
 
   it("states when nothing was found", () => {
-    const report = formatReport({ findings: [], blockers: [] });
+    const report = formatReport([]);
 
     expect(report).toContain("- No legacy configuration detected.");
     expect(report).toContain("- No known unsupported behavior detected.");
@@ -348,12 +297,12 @@ describe("torus-scripts-upgrade command", () => {
   });
 
   it("exits with the blocked code only when blockers exist", async () => {
-    const plain = await fixture({ "package.json": JSON.stringify({ name: "plain" }) });
+    const plain = await fixture({ "babel.config.js": "module.exports = {};\n" });
     const blocked = await fixture({ "rollup.config.js": customPlugins });
 
     const plainResult = await runCli([plain]);
     expect(plainResult.code).toBe(exitCodes.clean);
-    expect(plainResult.stdout).toContain("Next steps");
+    expect(plainResult.stdout).toContain("babel.config.js: Legacy build configuration.");
 
     const blockedResult = await runCli([blocked]);
     expect(blockedResult.code).toBe(exitCodes.blocked);

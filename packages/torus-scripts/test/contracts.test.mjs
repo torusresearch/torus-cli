@@ -136,6 +136,22 @@ describe("packed torus-scripts", () => {
     assert.match(blocked.stdout, /rollup\.config\.mjs: Custom Rollup plugins need a separate review\./);
     assert.equal(await readFile(legacyConfig, "utf8"), legacySource);
   });
+
+  test("exits with the failed code when the vite-plus peer is missing", async () => {
+    const withoutPeers = path.join(temporaryDirectory, "without-peers");
+    await mkdir(withoutPeers);
+    execFileSync("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--legacy-peer-deps", tarball], {
+      cwd: withoutPeers,
+      stdio: "pipe",
+    });
+
+    const result = spawnSync(path.join(withoutPeers, "node_modules", ".bin", "torus-scripts-upgrade"), [withoutPeers], {
+      cwd: withoutPeers,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 2, result.stdout + result.stderr);
+    assert.match(result.stderr, /needs the vite-plus peer dependency/);
+  });
 });
 
 async function waitForFileContent(filePath, expectedContent, timeoutMs = 10_000) {

@@ -2,7 +2,7 @@ import type { Dirent } from "node:fs";
 import { readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
-export type ProjectFileKind = "rollup" | "manifest" | "torus-config" | "lerna" | "config";
+export type ProjectFileKind = "rollup" | "manifest" | "torus-config" | "lerna" | "config" | "escaped-link";
 
 export interface ProjectFile {
   kind: ProjectFileKind;
@@ -11,7 +11,6 @@ export interface ProjectFile {
 
 export interface ProjectWalk {
   files: ProjectFile[];
-  escapedLinks: string[];
   truncated: boolean;
 }
 
@@ -33,7 +32,7 @@ const configFiles = new Set([
   "tsconfig.build.json",
 ]);
 
-function classify(name: string): ProjectFileKind | undefined {
+function classify(name: string): Exclude<ProjectFileKind, "escaped-link"> | undefined {
   if (/^rollup\.config\.[cm]?[jt]s$/.test(name)) return "rollup";
   if (name === "package.json") return "manifest";
   if (/^torus\.config\.(?:[cm]?[jt]s|json)$/.test(name)) return "torus-config";
@@ -83,7 +82,6 @@ async function resolveEntry(entry: Dirent, absolutePath: string, realPath: strin
 
 export async function walkProject(root: string, maxDirectories: number): Promise<ProjectWalk> {
   const files: ProjectFile[] = [];
-  const escapedLinks: string[] = [];
   const rootRealPath = await realpath(root);
   const seen = new Set([rootRealPath]);
   const queue = [{ path: root, realPath: rootRealPath }];
@@ -91,19 +89,21 @@ export async function walkProject(root: string, maxDirectories: number): Promise
 
   for (const directory of queue) {
     for (const entry of await readEntries(directory.path)) {
+      if (skipped.has(entry.name)) continue;
       const absolutePath = path.join(directory.path, entry.name);
       const target = await resolveEntry(entry, absolutePath, path.join(directory.realPath, entry.name));
       if (target === undefined) continue;
+      const fileKind = target.kind === "file" ? classify(entry.name) : undefined;
+      if (target.kind === "file" && fileKind === undefined) continue;
       if (!isInside(rootRealPath, target.realPath)) {
-        escapedLinks.push(absolutePath);
+        files.push({ kind: "escaped-link", path: absolutePath });
         continue;
       }
-      if (target.kind === "file") {
-        const kind = classify(entry.name);
-        if (kind !== undefined) files.push({ kind, path: absolutePath });
+      if (fileKind !== undefined) {
+        files.push({ kind: fileKind, path: absolutePath });
         continue;
       }
-      if (skipped.has(entry.name) || seen.has(target.realPath)) continue;
+      if (seen.has(target.realPath)) continue;
       if (seen.size >= maxDirectories) {
         truncated = true;
         continue;
@@ -112,5 +112,5 @@ export async function walkProject(root: string, maxDirectories: number): Promise
       queue.push({ path: absolutePath, realPath: target.realPath });
     }
   }
-  return { files, escapedLinks, truncated };
+  return { files, truncated };
 }

@@ -2,11 +2,8 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 
 import { inspectProject } from "./inspect.js";
+import { type ExitCode, exitCodes, isBlocking } from "./model.js";
 import { formatReport } from "./report.js";
-
-export const exitCodes = { clean: 0, blocked: 1, failed: 2 } as const;
-
-export type ExitCode = (typeof exitCodes)[keyof typeof exitCodes];
 
 export interface Output {
   stdout(text: string): void;
@@ -35,9 +32,9 @@ export async function run(args: string[], output: Output): Promise<ExitCode> {
 
   const projectRoot = path.resolve(inputPath);
   try {
-    const result = await inspectProject(projectRoot);
-    output.stdout(`${formatReport(result)}\n`);
-    return result.blockers.length > 0 ? exitCodes.blocked : exitCodes.clean;
+    const findings = await inspectProject(projectRoot);
+    output.stdout(`${formatReport(findings)}\n`);
+    return findings.some(isBlocking) ? exitCodes.blocked : exitCodes.clean;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     output.stderr(`Unable to inspect ${projectRoot}: ${message}\n`);

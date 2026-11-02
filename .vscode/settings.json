@@ -1,19 +1,12 @@
 {
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.oxc": "explicit"
   },
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
   "files.insertFinalNewline": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
-  "eslint.workingDirectories": [
-    {
-      "directory": "packages/*",
-      "changeProcessCWD": true
-    }
-  ],
   "cSpell.words": [
     "arbitrum",
     "autoclean",
@@ -21,7 +14,7 @@
     "cdpath",
     "customauth",
     "customizer",
-    "eslintconfig",
+    "oxcconfig",
     "gitattributes",
     "gitlab",
     "hgcheck",
@@ -42,5 +35,9 @@
     "vercel",
     "wordmark",
     "yarnpkg"
-  ]
+  ],
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

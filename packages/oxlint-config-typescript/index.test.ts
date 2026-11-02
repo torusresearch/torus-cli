@@ -102,6 +102,22 @@ it("reports each restored custom rule", async () => {
   }
 }, 30_000);
 
+it("reports duplicate class members when the source parses", async () => {
+  await withFixture(
+    "typescript-duplicate-member",
+    {
+      "vite.config.ts": presetConfig,
+      "bad.js": "class Duplicate { method() {} method() {} }\nexport { Duplicate };\n",
+    },
+    (directory) => {
+      const result = runVp(["lint", "--format", "json", "bad.js"], directory);
+      const { diagnostics } = JSON.parse(result.stdout) as { diagnostics: { code: string; message: string }[] };
+      expect(result.status).not.toBe(0);
+      expect(diagnostics.map(({ code }) => code)).toContain("eslint(no-dupe-class-members)");
+    }
+  );
+});
+
 it("accepts valid type names, member order, and test-only dev dependencies", async () => {
   const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "oxlint-custom-ok-"));
 

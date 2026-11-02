@@ -91,6 +91,31 @@ describe("lint and format presets", () => {
     });
   });
 
+  it("reports unused arguments and caught errors in Vue project TypeScript files", async () => {
+    const files = {
+      "vite.config.ts": vueConfig,
+      "Bad.ts": "function use(unused: number, _ignored: number) { return 1; }\nuse(1, 2);\ntry { throw Error(); } catch (caught) {}\n",
+    };
+    await withFixture("vue-unused-vars", files, (directory) => {
+      const result = runVp(["lint", "--format", "json", "Bad.ts"], directory);
+      const { diagnostics } = JSON.parse(result.stdout) as { diagnostics: { code: string; message: string }[] };
+      const unused = diagnostics.filter(({ code }) => code.includes("no-unused-vars")).map(({ message }) => message);
+      expect(result.status).not.toBe(0);
+      expect(unused.join("\n")).toContain("unused");
+      expect(unused.join("\n")).toContain("caught");
+      expect(unused.join("\n")).not.toContain("_ignored");
+    });
+  });
+
+  it("does not claim native unused-variable coverage in Vue script blocks", async () => {
+    const files = { "vite.config.ts": vueConfig, "Bad.vue": vueFile("<div />", "const unusedValue = 1;") };
+    await withFixture("vue-script-unused-gap", files, (directory) => {
+      const result = runVp(["lint", "--format", "json", "Bad.vue"], directory);
+      const { diagnostics } = JSON.parse(result.stdout) as { diagnostics: { code: string }[] };
+      expect(diagnostics.map(({ code }) => code)).not.toContain("eslint(no-unused-vars)");
+    });
+  });
+
   it("skips template-only Vue files, so they need a separate task", async () => {
     const files = { "vite.config.ts": vueConfig, "TemplateOnly.vue": '<template><div v-for="item in items">{{ item }}</div></template>\n' };
     await withFixture("vue-template-only", files, (directory) => {
@@ -340,6 +365,24 @@ describe("lint and format presets", () => {
       );
       expect(typecheck.stdout + typecheck.stderr).toBe("");
       expect(typecheck.status).toBe(0);
+      await writeFile(
+        path.join(fixtureDirectory, "vite.config.mjs"),
+        'import { defineConfig } from "vite-plus";\nimport { typescriptLintPreset } from "@toruslabs/oxlint-config-typescript";\nexport default defineConfig({ lint: typescriptLintPreset() });\n'
+      );
+      await writeFile(path.join(fixtureDirectory, "Bad.ts"), "type snake_case = number;\nconsole.warn(1);\n");
+      const lint = runVp(["lint", "--format", "json", "Bad.ts"], fixtureDirectory);
+      expect(lint.status).not.toBe(0);
+      const { diagnostics } = JSON.parse(lint.stdout) as { diagnostics: { code: string }[] };
+      expect(diagnostics.map(({ code }) => code)).toEqual(expect.arrayContaining(["torus(type-names)", "eslint(no-console)"]));
+      await writeFile(
+        path.join(fixtureDirectory, "vite.config.mjs"),
+        'import { defineConfig } from "vite-plus";\nimport { nodeLintPreset } from "@toruslabs/oxlint-config-node";\nexport default defineConfig({ lint: nodeLintPreset() });\n'
+      );
+      await writeFile(path.join(fixtureDirectory, "Syntax.ts"), "export const kawi = /\\p{Script=Kawi}/u;\n");
+      const nodeLint = runVp(["lint", "--format", "json", "Syntax.ts"], fixtureDirectory);
+      expect(nodeLint.status).not.toBe(0);
+      const nodeDiagnostics = JSON.parse(nodeLint.stdout) as { diagnostics: { code: string }[] };
+      expect(nodeDiagnostics.diagnostics.map(({ code }) => code)).toContain("n(no-unsupported-features/es-syntax)");
     } finally {
       await rm(fixtureDirectory, { recursive: true, force: true });
     }

@@ -1,15 +1,15 @@
-import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { expect, it } from "vite-plus/test";
 
+import { repositoryDirectory, runVp, viteLintConfig, withFixture } from "../../test/lint-fixture.js";
 import { typescriptLintPreset } from "./index.js";
 
-const repositoryDirectory = path.resolve(import.meta.dirname, "../..");
-const vp = path.join(repositoryDirectory, "node_modules", ".bin", "vp");
-const presetConfig =
-  'import { defineConfig } from "vite-plus";\nimport { typescriptLintPreset } from "../packages/oxlint-config-typescript/index.js";\nexport default defineConfig({ lint: typescriptLintPreset() });\n';
+const presetConfig = viteLintConfig(
+  'import { typescriptLintPreset } from "../packages/oxlint-config-typescript/index.js";',
+  "typescriptLintPreset()"
+);
 
 function lintDiagnostics(stdout: string): string[] {
   const { diagnostics } = JSON.parse(stdout) as { diagnostics: { code: string; message: string }[] };
@@ -30,21 +30,18 @@ it("provides JS and TS unused-variable checks without framework plugins", () => 
 });
 
 it("lints consumer source types and test fixtures", async () => {
-  const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "oxlint-paths-"));
-
-  try {
-    await writeFile(path.join(fixtureDirectory, "vite.config.ts"), presetConfig);
-    for (const directory of ["src/types", "test/fixtures"]) {
-      const targetDirectory = path.join(fixtureDirectory, directory);
-      await mkdir(targetDirectory, { recursive: true });
-      await writeFile(path.join(targetDirectory, "bad.ts"), "const unusedValue = 1;\n");
-      const result = spawnSync(vp, ["lint", path.join(directory, "bad.ts")], { cwd: fixtureDirectory, encoding: "utf8" });
-      expect(result.stdout + result.stderr).toContain("no-unused-vars");
+  const files = {
+    "vite.config.ts": presetConfig,
+    "src/types/bad.ts": "const unusedValue = 1;\n",
+    "test/fixtures/bad.ts": "const unusedValue = 1;\n",
+  };
+  await withFixture("typescript-lint-paths", files, (directory) => {
+    for (const file of ["src/types/bad.ts", "test/fixtures/bad.ts"]) {
+      const result = runVp(["lint", file], directory);
+      expect(result.output).toContain("no-unused-vars");
       expect(result.status).not.toBe(0);
     }
-  } finally {
-    await rm(fixtureDirectory, { recursive: true, force: true });
-  }
+  });
 });
 
 it("reports each restored custom rule", async () => {
@@ -83,7 +80,7 @@ it("reports each restored custom rule", async () => {
         "",
       ].join("\n")
     );
-    const result = spawnSync(vp, ["lint", "--format", "json", "bad.ts"], { cwd: fixtureDirectory, encoding: "utf8" });
+    const result = runVp(["lint", "--format", "json", "bad.ts"], fixtureDirectory);
     const output = lintDiagnostics(result.stdout).join("\n");
     expect(result.status).not.toBe(0);
     for (const diagnostic of [
@@ -147,7 +144,7 @@ it("accepts valid type names, member order, and test-only dev dependencies", asy
         "",
       ].join("\n")
     );
-    const result = spawnSync(vp, ["lint", "--format", "json", "good.test.ts"], { cwd: fixtureDirectory, encoding: "utf8" });
+    const result = runVp(["lint", "--format", "json", "good.test.ts"], fixtureDirectory);
     expect(lintDiagnostics(result.stdout)).toEqual([]);
     expect(result.status).toBe(0);
   } finally {

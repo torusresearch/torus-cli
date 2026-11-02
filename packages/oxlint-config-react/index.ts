@@ -19,7 +19,24 @@ export interface TailwindLintOptions {
   entryPoint: string;
 }
 
-/** Independent fragment for React or Vue consumers of Tailwind v4. */
+/**
+ * Independent fragment for React consumers of Tailwind v4.
+ *
+ * Merge each field into the React preset. A plain `{ ...reactLintPreset(), ...tailwindLintPreset() }`
+ * replaces `jsPlugins`, `rules`, and `settings`, so the React Hooks rules disappear.
+ *
+ * @example
+ * ```ts
+ * const react = reactLintPreset();
+ * const tailwind = tailwindLintPreset({ entryPoint: "src/styles.css" });
+ * const lint = {
+ *   ...react,
+ *   jsPlugins: [...(react.jsPlugins ?? []), ...(tailwind.jsPlugins ?? [])],
+ *   rules: { ...react.rules, ...tailwind.rules },
+ *   settings: { ...react.settings, ...tailwind.settings },
+ * };
+ * ```
+ */
 export function tailwindLintPreset({ entryPoint }: TailwindLintOptions): OxlintConfig {
   if (!entryPoint.trim()) throw new Error("Tailwind lint requires a CSS entry point");
   return {

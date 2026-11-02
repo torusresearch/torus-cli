@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { test } from "vite-plus/test";
 
+import { parsePackResult } from "../../../test/lint-fixture.js";
 import { nodePreset } from "../src/presets/node.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -20,17 +21,6 @@ function run(command: string, args: string[], cwd: string): string {
     const failure = error as Error & { stdout?: string; stderr?: string };
     throw new Error(`${command} ${args.join(" ")} failed in ${cwd}:\n${failure.stdout ?? ""}\n${failure.stderr ?? ""}`, { cause: error });
   }
-}
-
-function parsePackResult(output: string): { filename: string } {
-  const jsonStart = Math.max(output.lastIndexOf("\n["), output.lastIndexOf("\n{"));
-  const packed = JSON.parse(jsonStart === -1 ? output : output.slice(jsonStart + 1)) as
-    | { filename: string }[]
-    | { filename: string }
-    | Record<string, { filename: string }>;
-  if (Array.isArray(packed)) return packed[0];
-  if ("filename" in packed) return packed;
-  return Object.values(packed)[0];
 }
 
 async function pack(cwd: string, destination: string): Promise<string> {

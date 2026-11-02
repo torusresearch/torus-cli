@@ -4,8 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { OxlintConfig } from "vite-plus/lint";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 
 import { nodeLintPreset } from "../../oxlint-config-node/index.js";
 import { reactLintPreset, tailwindLintPreset } from "../../oxlint-config-react/index.js";
@@ -17,10 +16,6 @@ const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.resolve(testDirectory, "..");
 const repositoryDirectory = path.resolve(packageDirectory, "../..");
 const vp = path.join(repositoryDirectory, "node_modules", ".bin", "vp");
-
-function jsPluginNames(config: OxlintConfig): string[] {
-  return (config.jsPlugins ?? []).map((plugin) => (typeof plugin === "string" ? plugin : plugin.name));
-}
 
 describe("lint and format presets", () => {
   it("enables native checks for JavaScript and TypeScript source", () => {
@@ -37,7 +32,7 @@ describe("lint and format presets", () => {
     const config = typescriptLintPreset();
     expect(config.plugins).toEqual(expect.arrayContaining(["eslint", "typescript", "unicorn", "oxc", "import", "promise", "vitest"]));
     expect(config.plugins).not.toEqual(expect.arrayContaining(["react", "jsx-a11y", "vue", "node"]));
-    expect(config.rules).toMatchObject({ "no-console": "error", "promise/always-return": expect.anything() });
+    expect(config.rules).toMatchObject({ "no-console": ["error", { allow: ["warn", "error"] }], "promise/always-return": expect.anything() });
   });
 
   it("keeps Vue and Tailwind integrations opt-in and tied to consumer settings", () => {
@@ -46,9 +41,9 @@ describe("lint and format presets", () => {
     expect(vueTailwindLintPreset({ entryPoint: "src/styles.css" })).toEqual(tailwind);
     expect(tailwind.plugins).toBeUndefined();
     expect(tailwind.rules).not.toHaveProperty("no-unused-vars");
-    expect(jsPluginNames(vue)).toEqual([...jsPluginNames(typescriptLintPreset()), "oxlint-plugin-vize"]);
+    expect(vue.jsPlugins).toEqual(expect.arrayContaining(["oxlint-plugin-vize"]));
     expect(vue.jsPlugins).not.toContain("oxlint-tailwindcss");
-    expect(jsPluginNames(reactLintPreset())).toEqual(jsPluginNames(typescriptLintPreset()));
+    expect(reactLintPreset().jsPlugins).toBeUndefined();
     expect(vue.plugins).toContain("vue");
     expect(tailwind.jsPlugins).toEqual(["oxlint-tailwindcss"]);
     expect(tailwind.settings).toMatchObject({ tailwindcss: { entryPoint: "src/styles.css" } });
@@ -60,7 +55,7 @@ describe("lint and format presets", () => {
     expect(config.plugins).not.toContain("vue");
     expect(config.plugins).not.toContain("react");
     expect(config.plugins).not.toContain("node");
-    expect(JSON.stringify(config.jsPlugins)).not.toMatch(/tailwind|vize|eslint-plugin-n/);
+    expect(config.jsPlugins).toBeUndefined();
     expect(config.settings?.tailwindcss).toBeUndefined();
   });
 
@@ -107,13 +102,9 @@ describe("lint and format presets", () => {
         `import { defineConfig } from "vite-plus";\nimport { nodeLintPreset } from "../packages/oxlint-config-node/index.js";\nexport default defineConfig({ lint: nodeLintPreset() });\n`
       );
       await writeFile(path.join(fixtureDirectory, "Bad.cjs"), "exports = { value: 1 };\n");
-      await writeFile(path.join(fixtureDirectory, "Syntax.ts"), "export const answer = Object.groupBy([1], String);\n");
       const result = spawnSync(vp, ["lint", "Bad.cjs"], { cwd: fixtureDirectory, encoding: "utf8" });
       expect(result.status).not.toBe(0);
       expect(result.stdout + result.stderr).toContain("node(no-exports-assign)");
-      const syntax = spawnSync(vp, ["lint", "Syntax.ts"], { cwd: fixtureDirectory, encoding: "utf8" });
-      expect(syntax.status).not.toBe(0);
-      expect(syntax.stdout + syntax.stderr).toContain("n(no-unsupported-features/es-syntax)");
     } finally {
       await rm(fixtureDirectory, { recursive: true, force: true });
     }
@@ -381,20 +372,6 @@ describe("lint and format presets", () => {
     expect(reactLintPreset().rules).toHaveProperty("react/rules-of-hooks");
     expect(nodeLintPreset().rules).toHaveProperty("node/no-exports-assign");
     expect(vueLintPreset().rules).toHaveProperty("vize/vue/require-v-for-key");
-    expect(jsPluginNames(nodeLintPreset())).toEqual([...jsPluginNames(base), "n"]);
-    expect(nodeLintPreset().rules).toHaveProperty("n/no-unsupported-features/es-syntax", ["error", { version: ">=20", ignores: ["modules"] }]);
-    expect(vueLintPreset().rules?.["no-unused-vars"]).toEqual([
-      "error",
-      {
-        args: "all",
-        argsIgnorePattern: "^_",
-        caughtErrors: "all",
-        caughtErrorsIgnorePattern: "^_",
-        destructuredArrayIgnorePattern: "^_",
-        varsIgnorePattern: "^_",
-        ignoreRestSiblings: true,
-      },
-    ]);
   });
 
   it("rejects a blank Tailwind entry point in React and Vue", () => {

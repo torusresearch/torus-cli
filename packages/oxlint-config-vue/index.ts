@@ -8,23 +8,8 @@ export function vueLintPreset(): OxlintConfig {
   return {
     ...base,
     plugins: vize.plugins,
-    jsPlugins: [...(base.jsPlugins ?? []), ...(vize.jsPlugins ?? [])],
-    rules: {
-      ...base.rules,
-      ...vize.rules,
-      "no-unused-vars": [
-        "error",
-        {
-          args: "all",
-          argsIgnorePattern: "^_",
-          caughtErrors: "all",
-          caughtErrorsIgnorePattern: "^_",
-          destructuredArrayIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          ignoreRestSiblings: true,
-        },
-      ],
-    },
+    jsPlugins: vize.jsPlugins,
+    rules: { ...base.rules, ...vize.rules },
     settings: { ...base.settings, ...vize.settings },
   };
 }

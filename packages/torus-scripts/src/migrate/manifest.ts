@@ -1,5 +1,4 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 
 import type { Code, Finding } from "./model.js";
 
@@ -24,7 +23,7 @@ function commandWords(script: string): string[] {
   return script
     .split(/[\s;&|()]+/)
     .filter(Boolean)
-    .map((word) => path.basename(word));
+    .map((word) => word.replace(/^(?:.*\/)?node_modules\/\.bin\//, ""));
 }
 
 async function readManifest(manifestPath: string): Promise<Manifest | undefined> {

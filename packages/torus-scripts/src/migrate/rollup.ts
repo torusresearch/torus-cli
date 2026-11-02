@@ -35,10 +35,14 @@ function calleeName(callee: ESTree.Expression): string | undefined {
   return undefined;
 }
 
-function behaviorCodes(program: ESTree.Program): Set<RollupCode> {
+function behaviorCodes(program: ESTree.Program, bindings: Map<string, ESTree.Expression>): Set<RollupCode> {
   const found = new Set<RollupCode>();
   const checkModule = (source: string | undefined) => {
     if (source !== undefined && polyfillPattern.test(source)) found.add("polyfills");
+  };
+  const isEmptyArray = (value: ESTree.Node) => {
+    const resolved = isExpression(value) ? resolve(value, bindings) : value;
+    return resolved.type === "ArrayExpression" && resolved.elements.length === 0;
   };
 
   new Visitor({
@@ -56,10 +60,13 @@ function behaviorCodes(program: ESTree.Program): Set<RollupCode> {
     MethodDefinition(node) {
       if (hookNames.has(keyName(node) ?? "")) found.add("rollup-transforms");
     },
+    PropertyDefinition(node) {
+      if (hookNames.has(keyName(node) ?? "") && node.value !== null && !isDisabled(node.value)) found.add("rollup-transforms");
+    },
     Property(node) {
       const name = keyName(node);
       const { value } = node;
-      if (name === "plugins" && !(value.type === "ArrayExpression" && value.elements.length === 0)) found.add("rollup-plugins");
+      if (name === "plugins" && !isEmptyArray(value)) found.add("rollup-plugins");
       if (name !== undefined && hookNames.has(name) && !isDisabled(value)) found.add("rollup-transforms");
       if (name === "assetFileNames") found.add("asset-handling");
       if (
@@ -143,8 +150,7 @@ function entryCount(value: ESTree.Expression): number | undefined {
   return undefined;
 }
 
-function structureCodes(program: ESTree.Program): RollupCode[] {
-  const bindings = topLevelBindings(program);
+function structureCodes(program: ESTree.Program, bindings: Map<string, ESTree.Expression>): RollupCode[] {
   const exported = exportedConfig(program);
   if (!isExpression(exported)) return ["dynamic-rollup-config"];
 
@@ -172,7 +178,8 @@ function structureCodes(program: ESTree.Program): RollupCode[] {
 export function rollupConfigCodes(filename: string, source: string): RollupCode[] {
   const { program, errors } = parseSync(filename, source);
   if (errors.length > 0) return ["unparseable-rollup-config"];
-  return [...behaviorCodes(program), ...structureCodes(program)];
+  const bindings = topLevelBindings(program);
+  return [...behaviorCodes(program, bindings), ...structureCodes(program, bindings)];
 }
 
 export async function inspectRollupConfig(filePath: string, relativePath: string): Promise<Finding[]> {

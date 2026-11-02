@@ -50,9 +50,13 @@ describe("Rollup config rules", () => {
     ["a non-empty plugin array", "export default { plugins: [customPlugin()] };", ["rollup-plugins"]],
     ["a plugin array in a variable", "const shared = [x()];\nexport default { plugins: shared };", ["rollup-plugins"]],
     ["a shorthand plugin property", "export default { plugins };", ["rollup-plugins"]],
+    ["a typed empty plugin array", "export default { plugins: ([] as Plugin[]) };", []],
+    ["an empty plugin array in a variable", "const plugins: Plugin[] = [];\nexport default { plugins };", []],
     ["a hook built by a call", "export default { load: createLoader() };", ["rollup-transforms"]],
     ["a disabled hook", "export default { transform: null };", []],
     ["a class hook method", "class Plugin { renderChunk(code) { return code; } }\nexport default {};", ["rollup-transforms"]],
+    ["a class field hook", "class Plugin { transform = (code) => code; }\nexport default {};", ["rollup-transforms"]],
+    ["a class field without a hook value", "class Plugin { transform; }\nexport default {};", []],
     ["a polyfill import", 'import nodePolyfills from "rollup-plugin-polyfill-node";\nexport default {};', ["polyfills"]],
     ["a core-js require", 'require("core-js");\nmodule.exports = {};', ["polyfills"]],
     ["a process alias", "export default { resolve: { alias: { process: 'polyfill' } } };", ["polyfills"]],
@@ -81,7 +85,7 @@ describe("Rollup config rules", () => {
     ["a spread without input", 'export default { ...base, output: { dir: "dist" } };', ["dynamic-rollup-config"]],
     ["a syntax error", "export default {", ["unparseable-rollup-config"]],
   ])("handles %s", (_name, source, expected) => {
-    expect(rollupConfigCodes("rollup.config.js", source).sort()).toEqual(expected);
+    expect(rollupConfigCodes("rollup.config.ts", source).sort()).toEqual(expected);
   });
 
   it("parses TypeScript configs by file name", () => {
@@ -201,7 +205,10 @@ describe("read-only migration inspection", () => {
       "packages/one/package.json": JSON.stringify({ scripts: { build: "./node_modules/.bin/torus-scripts build" } }) + "\n",
       "packages/two/package.json":
         JSON.stringify({ dependencies: { "@toruslabs/torus-scripts": "^6.0.0" }, devDependencies: { "@toruslabs/torus-scripts": "^8.0.0" } }) + "\n",
-      "packages/three/package.json": JSON.stringify({ scripts: { check: "torus-scripts-upgrade .", echo: "echo release-it-is-not-used" } }) + "\n",
+      "packages/three/package.json":
+        JSON.stringify({
+          scripts: { check: "torus-scripts-upgrade .", echo: "echo release-it-is-not-used", setup: "npm install @toruslabs/torus-scripts" },
+        }) + "\n",
       "packages/four/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "latest" } }) + "\n",
       "packages/five/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "npm:@toruslabs/torus-scripts@^7.0.0" } }) + "\n",
       "packages/six/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "workspace:*" } }) + "\n",

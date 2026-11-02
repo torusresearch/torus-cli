@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { mergeConfig } from "vite";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { nodePreset } from "../src/presets/node.js";
 import { reactPreset } from "../src/presets/react.js";

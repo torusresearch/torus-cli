@@ -31,7 +31,7 @@ export default defineConfig({ fmt: formatPreset() });
 
 Install one of `@toruslabs/oxlint-config-typescript`, `@toruslabs/oxlint-config-react`, `@toruslabs/oxlint-config-vue`, or `@toruslabs/oxlint-config-node`. The TypeScript preset checks both JavaScript and TypeScript. React, Vue, and Node extend it. This package does not export `/lint` or `/vue-lint`.
 
-The Vue preset enables only the Vize template rules in `vueTemplateRules`, and fixture tests prove each one. It uses the Vize Oxlint plugin through `vp lint` and `vp check`. These commands can skip a `.vue` file that has no `<script>` block, so they do not check template-only files. Run a separate task for those files, such as the native Vize lint task, and verify it in your project.
+The Vue preset enables only the Vize template rules in `vueTemplateRules`, and fixture tests prove each one. It uses the Vize Oxlint plugin through `vp lint` and `vp check`. These commands can skip a `.vue` file that has no `<script>` block, so they do not check template-only files. The preset's native `no-unused-vars` options report unused arguments and caught errors in `.ts` files, but `vp lint` does not report that rule for `.vue` script blocks. Run a separate check for these gaps and verify it in your project.
 
 React and Vue each export an optional `tailwindLintPreset({ entryPoint: "src/styles.css" })` fragment. Install `oxlint-tailwindcss` if you use this fragment. Vue projects import it from `@toruslabs/oxlint-config-vue`, not the React package.
 

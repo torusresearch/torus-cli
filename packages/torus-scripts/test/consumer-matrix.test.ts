@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { test } from "vitest";
+import { test } from "vite-plus/test";
 
 import { parsePackResult } from "../../../test/lint-fixture.js";
 import { nodePreset } from "../src/presets/node.js";

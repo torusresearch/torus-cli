@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -161,6 +161,110 @@ describe("read-only migration inspection", () => {
     }
   });
 
+  it("inspects installed workspace packages that have their own node_modules", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-installed-"));
+
+    try {
+      await writeFixture(root, {
+        "packages/one/node_modules/dependency/package.json": JSON.stringify({ workspaces: ["ignored/*"] }) + "\n",
+        "packages/one/package.json": JSON.stringify({ scripts: { release: "release-it" } }) + "\n",
+        "packages/one/rollup.config.js": "export default { plugins: [customPlugin()] };\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toEqual(expect.arrayContaining(["packages/one/rollup.config.js", "release-it"]));
+      expect(result.unsupported).toEqual(["Custom Rollup plugins need a separate review."]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("follows symlinked package directories", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-symlink-"));
+    const outside = await mkdtemp(path.join(tmpdir(), "torus-migrate-symlink-target-"));
+
+    try {
+      await writeFixture(outside, { "rollup.config.mjs": "export default { plugins: [customPlugin()] };\n" });
+      await mkdir(path.join(root, "packages"), { recursive: true });
+      await symlink(outside, path.join(root, "packages", "linked"), "dir");
+      await symlink(root, path.join(root, "packages", "loop"), "dir");
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toContain(path.join("packages", "linked", "rollup.config.mjs"));
+      expect(result.unsupported).toContain("Custom Rollup plugins need a separate review.");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(outside, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores manifests in build output, coverage, and test fixtures", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-ignored-"));
+    const nestedWorkspace = JSON.stringify({ workspaces: ["nested/*"] }) + "\n";
+
+    try {
+      await writeFixture(root, {
+        "package.json": JSON.stringify({ name: "root" }) + "\n",
+        "dist/package.json": nestedWorkspace,
+        "coverage/package.json": nestedWorkspace,
+        "test/fixtures/sample/package.json": nestedWorkspace,
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.unsupported).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a blocker when the directory cap stops the walk", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-cap-"));
+
+    try {
+      await writeFixture(root, {
+        "a/package.json": "{}\n",
+        "b/package.json": "{}\n",
+        "c/rollup.config.js": "export default {};\n",
+      });
+
+      const capped = await inspectProject(root, { maxDirectories: 2 });
+      expect(capped.unsupported).toEqual(["Inspection stopped after 2 directories. Review the remaining directories by hand."]);
+
+      const complete = await inspectProject(root, { maxDirectories: 4 });
+      expect(complete.unsupported).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("flags multi-entry builds only when there is more than one entry or build", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-multi-entry-"));
+
+    try {
+      await writeFixture(root, {
+        "single-array/rollup.config.js": 'export default { input: ["src/index.ts"] };\n',
+        "single-object/rollup.config.js": 'export default { input: { main: "src/index.ts" } };\n',
+        "single-build/rollup.config.js": 'export default [{ input: "src/index.ts", output: { file: "a.js" } }];\n',
+      });
+      expect((await inspectProject(root)).unsupported).not.toContain("Multi-entry builds need a separate review.");
+
+      for (const config of [
+        'export default { input: ["src/a.ts", "src/b.ts"] };\n',
+        'export default { input: { a: "src/a.ts", b: "src/b.ts" } };\n',
+        'export default [{ input: "src/a.ts" }, { input: "src/b.ts" }];\n',
+        'module.exports = defineConfig([{ input: "src/a.ts" }, { input: "src/b.ts" }]);\n',
+      ]) {
+        await writeFile(path.join(root, "single-build", "rollup.config.js"), config);
+        expect((await inspectProject(root)).unsupported).toContain("Multi-entry builds need a separate review.");
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("warns about custom Rollup behavior without loading user config", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-rollup-"));
     const marker = path.join(root, "config-was-executed");
@@ -213,6 +317,7 @@ describe("read-only migration inspection", () => {
 
   it("packs and runs the CLI in a temporary npm fixture", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-cli-"));
+    const packageCopy = path.join(root, "torus-scripts");
     const packDirectory = path.join(root, "pack");
     const plainFixture = path.join(root, "plain");
     const unsupportedFixture = path.join(root, "unsupported");
@@ -227,9 +332,17 @@ describe("read-only migration inspection", () => {
         }),
       ]);
       await mkdir(packDirectory, { recursive: true });
+      await mkdir(packageCopy);
+      await cp(path.join(packageDirectory, "src"), path.join(packageCopy, "src"), { recursive: true });
+      await cp(path.join(packageDirectory, "skills"), path.join(packageCopy, "skills"), { recursive: true });
+      for (const filename of ["package.json", "README.md", "vite.config.ts", "tsconfig.json"]) {
+        await cp(path.join(packageDirectory, filename), path.join(packageCopy, filename));
+      }
+      await cp(path.resolve(packageDirectory, "../config"), path.join(root, "config"), { recursive: true });
+      await symlink(path.resolve(packageDirectory, "../../node_modules"), path.join(packageCopy, "node_modules"), "dir");
 
       const packResult = spawnSync("npm", ["pack", "--pack-destination", packDirectory], {
-        cwd: packageDirectory,
+        cwd: packageCopy,
         encoding: "utf8",
       });
       expect(packResult.status, `${packResult.stdout}\n${packResult.stderr}`).toBe(0);
@@ -261,8 +374,18 @@ describe("read-only migration inspection", () => {
         encoding: "utf8",
       });
       expect(missingResult.status, `${missingResult.stdout}\n${missingResult.stderr}`).toBe(2);
+
+      for (const flag of ["--help", "-h"]) {
+        const helpResult = spawnSync(packagedCli, [flag], { cwd: root, encoding: "utf8" });
+        expect(helpResult.status, `${helpResult.stdout}\n${helpResult.stderr}`).toBe(0);
+        expect(helpResult.stdout).toContain("Usage: torus-scripts-upgrade <path>");
+      }
+
+      const unknownOptionResult = spawnSync(packagedCli, ["--verbose"], { cwd: root, encoding: "utf8" });
+      expect(unknownOptionResult.status).toBe(2);
+      expect(unknownOptionResult.stderr).toContain("Usage: torus-scripts-upgrade <path>");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
-  });
+  }, 120_000);
 });

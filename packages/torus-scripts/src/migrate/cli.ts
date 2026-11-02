@@ -6,9 +6,12 @@ import { stderr, stdout } from "node:process";
 import { inspectProject } from "./inspect.js";
 import { formatReport } from "./report.js";
 
+const usage = "Usage: torus-scripts-upgrade <path>\n";
 const inputPath = process.argv[2];
-if (!inputPath || process.argv.length > 3) {
-  stderr.write("Usage: torus-scripts-upgrade <path>\n");
+if (inputPath === "--help" || inputPath === "-h") {
+  stdout.write(usage);
+} else if (!inputPath || inputPath.startsWith("-") || process.argv.length > 3) {
+  stderr.write(usage);
   process.exitCode = 2;
 } else {
   try {

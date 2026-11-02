@@ -1,4 +1,5 @@
-import { readFile, readdir, stat } from "node:fs/promises";
+import type { Dirent } from "node:fs";
+import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 export interface InspectionResult {
@@ -7,15 +8,16 @@ export interface InspectionResult {
   next: string[];
 }
 
+export interface InspectionOptions {
+  maxDirectories?: number;
+}
+
 const configFiles = [
   "torus.config.js",
-  "rollup.config.js",
-  "rollup.config.mjs",
   ".browserslistrc",
   "babel.config.js",
   "babel.config.cjs",
   "babel.config.mjs",
-  "babel.config.cjs",
   "babel.config.json",
   ".babelrc",
   ".babelrc.json",
@@ -26,6 +28,8 @@ const configFiles = [
   "lerna.json",
 ];
 
+const ignoredDirectories = new Set(["node_modules", ".git", ".vite", "dist", "build", "coverage", "fixtures", "__fixtures__"]);
+
 const nextSteps = [
   "Run `vp migrate` at the workspace root.",
   "Review rewritten files before you accept the migration.",
@@ -33,14 +37,16 @@ const nextSteps = [
   "Configure Changesets at the repository root.",
 ];
 
+function isMissing(error: unknown): boolean {
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "ENOENT");
+}
+
 async function exists(filePath: string): Promise<boolean> {
   try {
     await stat(filePath);
     return true;
   } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-      return false;
-    }
+    if (isMissing(error)) return false;
     throw error;
   }
 }
@@ -51,6 +57,48 @@ function stripComments(source: string): string {
 
 function hasNonEmptyPlugins(source: string): boolean {
   return /\bplugins\s*:\s*(?!\[\s*\])\[[\s\S]*?\S[\s\S]*?\]/.test(source);
+}
+
+function countTopLevelItems(source: string, openIndex: number): number {
+  let depth = 0;
+  let items = 0;
+  let hasContent = false;
+  let quote: string | undefined;
+
+  for (let index = openIndex; index < source.length; index += 1) {
+    const character = source.charAt(index);
+    if (quote) {
+      if (character === "\\") index += 1;
+      else if (character === quote) quote = undefined;
+      continue;
+    }
+    if (character === "," && depth === 1) {
+      if (hasContent) items += 1;
+      hasContent = false;
+      continue;
+    }
+    if ("([{".includes(character)) {
+      depth += 1;
+      if (depth === 1) continue;
+    } else if (")]}".includes(character)) {
+      depth -= 1;
+      if (depth === 0) return items + Number(hasContent);
+    } else if ("\"'`".includes(character)) {
+      quote = character;
+    }
+    if (!/\s/.test(character)) hasContent = true;
+  }
+  return items + Number(hasContent);
+}
+
+function hasMultipleEntries(source: string): boolean {
+  const listPatterns = [/\binput\s*:\s*[[{]/g, /\b(?:export\s+default|module\.exports\s*=)\s*(?:defineConfig\s*\(\s*)?\[/g];
+  for (const pattern of listPatterns) {
+    for (const match of source.matchAll(pattern)) {
+      if (countTopLevelItems(source, match.index + match[0].length - 1) > 1) return true;
+    }
+  }
+  return false;
 }
 
 async function inspectRollupConfig(filePath: string, unsupported: Set<string>): Promise<void> {
@@ -65,7 +113,7 @@ async function inspectRollupConfig(filePath: string, unsupported: Set<string>): 
   if (/\b(?:polyfill|core-js|babel-polyfill|process\s*:\s*["']|Buffer\s*:\s*["'])/i.test(source)) {
     unsupported.add("Polyfills or runtime replacements need a separate review.");
   }
-  if (/\binput\s*:\s*\{/.test(source) || /\binput\s*:\s*\[/.test(source)) {
+  if (hasMultipleEntries(source)) {
     unsupported.add("Multi-entry builds need a separate review.");
   }
   if (/\bassetFileNames\s*:|\b(?:emitFile|this\.emitFile)\s*\(/.test(source)) {
@@ -73,68 +121,66 @@ async function inspectRollupConfig(filePath: string, unsupported: Set<string>): 
   }
 }
 
-async function hasNestedWorkspaces(root: string, manifests: string[]): Promise<boolean> {
-  for (const manifestPath of manifests) {
-    if (manifestPath === path.join(root, "package.json")) continue;
-    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { workspaces?: unknown };
-    if (manifest.workspaces) return true;
+async function entryKind(entry: Dirent, absolutePath: string): Promise<"directory" | "file" | undefined> {
+  if (entry.isDirectory()) return "directory";
+  if (entry.isFile()) return "file";
+  if (!entry.isSymbolicLink()) return undefined;
+  try {
+    const target = await stat(absolutePath);
+    if (target.isDirectory()) return "directory";
+    if (target.isFile()) return "file";
+    return undefined;
+  } catch (error) {
+    if (isMissing(error)) return undefined;
+    throw error;
   }
-  return false;
 }
 
-async function findRollupConfigs(root: string): Promise<string[]> {
-  const configs: string[] = [];
-  const queue = [root];
-  let visited = 0;
-
-  while (queue.length > 0 && visited < 10000) {
-    visited += 1;
-    const directory = queue.shift();
-    if (!directory) continue;
-
-    const entries = await readdir(directory, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === ".vite") continue;
-      const absolutePath = path.join(directory, entry.name);
-      if (entry.isDirectory() && !(await exists(path.join(absolutePath, "node_modules"))) && visited + queue.length < 10000) {
-        queue.push(absolutePath);
-      } else if (entry.isFile() && /^rollup\.config\.(?:js|mjs|cjs)$/.test(entry.name)) {
-        configs.push(absolutePath);
-      }
-    }
-  }
-  return configs;
+interface ProjectFiles {
+  rollupConfigs: string[];
+  manifests: string[];
+  truncated: boolean;
 }
 
-async function findManifests(root: string): Promise<string[]> {
+async function walkProject(root: string, maxDirectories: number): Promise<ProjectFiles> {
+  const rollupConfigs: string[] = [];
   const manifests: string[] = [];
+  const seen = new Set([await realpath(root)]);
   const queue = [root];
-  let visited = 0;
+  let truncated = false;
 
-  while (queue.length > 0 && visited < 10000) {
-    visited += 1;
-    const directory = queue.shift();
-    if (!directory) continue;
-
-    let entries;
+  for (const directory of queue) {
+    let entries: Dirent[];
     try {
       entries = await readdir(directory, { withFileTypes: true });
     } catch (error) {
-      if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") continue;
+      if (isMissing(error)) continue;
       throw error;
     }
 
     for (const entry of entries) {
-      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === ".vite") continue;
       const absolutePath = path.join(directory, entry.name);
-      if (entry.isDirectory() && !(await exists(path.join(absolutePath, "node_modules")))) queue.push(absolutePath);
-      else if (entry.isFile() && entry.name === "package.json") manifests.push(absolutePath);
+      const kind = await entryKind(entry, absolutePath);
+      if (kind === "directory") {
+        if (ignoredDirectories.has(entry.name)) continue;
+        const resolvedPath = await realpath(absolutePath);
+        if (seen.has(resolvedPath)) continue;
+        if (seen.size >= maxDirectories) {
+          truncated = true;
+          continue;
+        }
+        seen.add(resolvedPath);
+        queue.push(absolutePath);
+      } else if (kind === "file") {
+        if (/^rollup\.config\.(?:js|mjs|cjs)$/.test(entry.name)) rollupConfigs.push(absolutePath);
+        else if (entry.name === "package.json") manifests.push(absolutePath);
+      }
     }
   }
-  return manifests;
+  return { rollupConfigs, manifests, truncated };
 }
 
-export async function inspectProject(root: string): Promise<InspectionResult> {
+export async function inspectProject(root: string, { maxDirectories = 10_000 }: InspectionOptions = {}): Promise<InspectionResult> {
   const projectRoot = path.resolve(root);
   const rootStats = await stat(projectRoot);
   if (!rootStats.isDirectory()) throw new Error(`Inspection root is not a directory: ${projectRoot}`);
@@ -143,20 +189,21 @@ export async function inspectProject(root: string): Promise<InspectionResult> {
   const unsupported = new Set<string>();
 
   for (const fileName of configFiles) {
-    const filePath = path.join(projectRoot, fileName);
-    if (!(await exists(filePath))) continue;
+    if (!(await exists(path.join(projectRoot, fileName)))) continue;
     found.add(fileName);
     if (fileName === "lerna.json") found.add("Lerna");
-    if (fileName.startsWith("rollup.config.")) await inspectRollupConfig(filePath, unsupported);
   }
 
-  const rollupConfigs = await findRollupConfigs(projectRoot);
+  const { rollupConfigs, manifests, truncated } = await walkProject(projectRoot, maxDirectories);
+  if (truncated) {
+    unsupported.add(`Inspection stopped after ${maxDirectories} directories. Review the remaining directories by hand.`);
+  }
+
   for (const configPath of rollupConfigs) {
     found.add(path.relative(projectRoot, configPath));
     await inspectRollupConfig(configPath, unsupported);
   }
 
-  const manifests = await findManifests(projectRoot);
   for (const manifestPath of manifests) {
     const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
       scripts?: Record<string, unknown>;
@@ -176,10 +223,6 @@ export async function inspectProject(root: string): Promise<InspectionResult> {
     if ("release-it" in dependencies || Object.values(scripts).some((script) => typeof script === "string" && /\brelease-it\b/.test(script))) {
       found.add("release-it");
     }
-  }
-
-  if (manifests.length > 1 && (await hasNestedWorkspaces(projectRoot, manifests))) {
-    unsupported.add("Nested workspace migration needs a separate review.");
   }
 
   return {

@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/oxlint-config-vue",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "type": "module",
   "description": "Oxlint Vue and Vize preset for Torus libraries",
   "files": [
@@ -17,7 +17,7 @@
     }
   },
   "dependencies": {
-    "@toruslabs/oxlint-config-typescript": "^1.0.0"
+    "@toruslabs/oxlint-config-typescript": "^0.0.0"
   },
   "peerDependencies": {
     "vite-plus": "^1.0.0",

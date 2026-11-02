@@ -21,4 +21,10 @@ Dependabot security updates, secret scanning, and push protection are enabled. W
 
 Review package files, security alerts, and the Changesets preview before release. Do not publish without approval.
 
+## Release
+
+1. Run the "Create release pull request" workflow on `main` from the Actions tab. It runs `npm run version-packages` and opens or updates the `chore: release packages` pull request.
+2. Review and merge that pull request.
+3. On `main`, run `npm ci`, `npm run build`, and `npm run release-packages`. Then run `git push --follow-tags`.
+
 This workspace uses TypeScript 7.0.2 with Vite+ 1.4.0. Its source packages use explicit TypeScript project files for declaration builds.

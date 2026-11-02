@@ -58,6 +58,20 @@ For React, import `reactLintPreset` and `tailwindLintPreset` from `@toruslabs/ox
 
 The old `@toruslabs/eslint-config-*` packages are removed. Do not treat an Oxlint rule as equal to an old ESLint rule until you test it in your project.
 
+## Upgrade from the old CLI
+
+The package includes an agent skill at `skills/migrating-to-torus-cli/SKILL.md`. In a consumer project, read it at `node_modules/@toruslabs/torus-scripts/skills/migrating-to-torus-cli/SKILL.md`. To make it available as a project skill in Cursor, copy it to `.cursor/skills/migrating-to-torus-cli/SKILL.md` in that project. Keep the skill and this README from the same package version.
+
+Run `torus-scripts-upgrade <path>` to inspect an old project without changing files. It reports unsupported custom behavior and exits nonzero for those cases. Run `vp migrate` at the workspace root, not inside each package, and review its changes. The diagnostic does not run `vp migrate` for you.
+
+Replace the old commands:
+
+- `torus-scripts build` → define `pack` in the consumer's `vite.config.ts`, then run `vp pack`.
+- `torus-scripts lint` → select an Oxlint package, set root `lint` and `fmt` config, then run `vp check`.
+- `torus-scripts start` → set the consumer's Vite+ dev task. No shared dev server ships.
+- `torus-scripts release` → use Changesets at the repository root.
+- Lerna workspace tasks → run `vp run -r build` with explicit build tasks.
+
 ## TypeScript profiles
 
 `@toruslabs/config` exports `tsconfig.base.json`, `tsconfig.library.json`, and `tsconfig.node.json`. Replace `tsconfig.default.json` or `tsconfig.build.json` with the matching profile.

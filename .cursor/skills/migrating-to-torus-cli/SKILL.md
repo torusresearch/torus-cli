@@ -1,0 +1,1 @@
+../../../packages/torus-scripts/skills/migrating-to-torus-cli/SKILL.md

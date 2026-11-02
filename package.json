@@ -10,7 +10,7 @@
   ],
   "repository": "git@github.com:torusresearch/torus-cli.git",
   "scripts": {
-    "build": "vp run -r build --fail-if-no-match",
+    "build": "vp run -r --fail-if-no-match build",
     "check": "vp check",
     "typecheck": "tsc --noEmit -p packages/torus-scripts/tsconfig.json && tsc --noEmit -p packages/oxlint-config-typescript/tsconfig.json && tsc --noEmit -p packages/oxlint-config-react/tsconfig.json && tsc --noEmit -p packages/oxlint-config-vue/tsconfig.json && tsc --noEmit -p packages/oxlint-config-node/tsconfig.json",
     "test": "vp test",

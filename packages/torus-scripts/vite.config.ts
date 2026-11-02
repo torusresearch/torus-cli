@@ -5,6 +5,7 @@ export default {
       react: "src/presets/react.ts",
       node: "src/presets/node.ts",
       fmt: "src/presets/fmt.ts",
+      "migrate/cli": "src/migrate/cli.ts",
     },
     dts: true,
     format: ["esm"],

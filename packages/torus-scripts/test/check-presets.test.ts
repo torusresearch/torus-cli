@@ -197,7 +197,7 @@ describe("lint and format presets", () => {
     const root = JSON.parse(await readFile(path.join(repositoryDirectory, "package.json"), "utf8"));
     const manifest = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
     const changesets = JSON.parse(await readFile(path.join(repositoryDirectory, ".changeset/config.json"), "utf8"));
-    expect(manifest.bin).toBeUndefined();
+    expect(manifest.bin).toEqual({ "torus-scripts-upgrade": "./dist/migrate/cli.mjs" });
     expect(manifest.peerDependencies).not.toHaveProperty("eslint");
     expect(root.devDependencies).not.toHaveProperty("eslint");
     expect(root.devDependencies).not.toHaveProperty("@vizejs/vite-plugin");
@@ -257,7 +257,7 @@ describe("lint and format presets", () => {
 
   it("builds workspaces recursively in dependency order", async () => {
     const root = JSON.parse(await readFile(path.join(repositoryDirectory, "package.json"), "utf8"));
-    expect(root.scripts.build).toBe("vp run -r build --fail-if-no-match");
+    expect(root.scripts.build).toBe("vp run -r --fail-if-no-match build");
     for (const name of ["typescript", "react", "vue", "node"]) {
       const manifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
       expect(manifest.scripts?.build).toBe("vp pack");

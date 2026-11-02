@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { repositoryDirectory, runVp, viteLintConfig, withFixture } from "../../../test/lint-fixture.js";
+import { parsePackResult, repositoryDirectory, runVp, viteLintConfig, withFixture } from "../../../test/lint-fixture.js";
 import { nodeLintPreset } from "../../oxlint-config-node/index.js";
 import { reactLintPreset, tailwindLintPreset } from "../../oxlint-config-react/index.js";
 import { typescriptLintPreset } from "../../oxlint-config-typescript/index.js";
@@ -254,7 +254,7 @@ describe("lint and format presets", () => {
         });
         expect(packed.stderr + packed.stdout).not.toContain("npm error");
         expect(packed.status).toBe(0);
-        tarballs.push(path.join(fixtureDirectory, (Object.values(JSON.parse(packed.stdout)) as { filename: string }[])[0].filename));
+        tarballs.push(path.join(fixtureDirectory, parsePackResult(packed.stdout).filename));
       }
       const install = spawnSync(
         "npm",

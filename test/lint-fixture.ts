@@ -17,6 +17,18 @@ export function runVp(args: string[], cwd: string): VpResult {
   return { status: result.status, stdout: result.stdout, output: result.stdout + result.stderr };
 }
 
+/** Reads the `npm pack --json` result. Lifecycle scripts such as `prepack` can print text before the JSON. */
+export function parsePackResult(output: string): { filename: string } {
+  const jsonStart = Math.max(output.lastIndexOf("\n["), output.lastIndexOf("\n{"));
+  const packed = JSON.parse(jsonStart === -1 ? output : output.slice(jsonStart + 1)) as
+    | { filename: string }[]
+    | { filename: string }
+    | Record<string, { filename: string }>;
+  if (Array.isArray(packed)) return packed[0];
+  if ("filename" in packed) return packed;
+  return Object.values(packed)[0];
+}
+
 /** Builds a fixture `vite.config.ts`. Fixtures live in the repository root, so `importLine` paths start with `../packages/`. */
 export function viteLintConfig(importLine: string, lint: string): string {
   return `import { defineConfig } from "vite-plus";\n${importLine}\nexport default defineConfig({ lint: ${lint} });\n`;

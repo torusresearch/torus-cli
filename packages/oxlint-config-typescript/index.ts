@@ -4,7 +4,7 @@ import type { OxlintConfig } from "vite-plus/lint";
 export function typescriptLintPreset(): OxlintConfig {
   return {
     plugins: ["eslint", "typescript", "unicorn", "oxc", "import", "promise", "vitest"],
-    ignorePatterns: ["**/node_modules/**", "**/coverage/**", "**/build/**", "**/dist/**", "**/examples/**", "**/types/**", "**/test/fixtures/**"],
+    ignorePatterns: ["**/node_modules/**", "**/coverage/**", "**/build/**", "**/dist/**", "**/examples/**"],
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
       "promise/always-return": "warn",

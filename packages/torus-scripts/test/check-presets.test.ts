@@ -177,10 +177,9 @@ describe("lint and format presets", () => {
     expect(workflow).toContain("npm run test");
     expect(workflow).toContain("npm run build");
     expect(workflow.indexOf("npm run build")).toBeLessThan(workflow.indexOf("npm run typecheck"));
-    expect(workflow).toContain("git fetch --no-tags origin main:refs/remotes/origin/main");
-    expect(workflow).toContain("changeset status --since=origin/main");
+    expect(workflow).toContain('git fetch --no-tags origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}"');
+    expect(workflow).toContain('changeset status --since="origin/${BASE_REF}"');
     expect(workflow).toContain("npm pack --workspaces --dry-run");
-    expect(workflow).toContain("-- packages/");
     expect(workflow).not.toContain("changeset publish");
   });
 

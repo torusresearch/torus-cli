@@ -7,28 +7,25 @@
     "dist"
   ],
   "scripts": {
-    "build": "vp pack"
+    "build": "vp pack",
+    "prepack": "vp pack"
   },
   "exports": {
     "./library": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/library.d.mts",
+      "import": "./dist/library.mjs"
     },
     "./react": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
-    },
-    "./vue": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/react.d.mts",
+      "import": "./dist/react.mjs"
     },
     "./node": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/node.d.mts",
+      "import": "./dist/node.mjs"
     },
     "./fmt": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/fmt.d.mts",
+      "import": "./dist/fmt.mjs"
     }
   },
   "peerDependencies": {
@@ -38,7 +35,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=24.15.0",
+    "node": ">=24.22.0",
     "npm": ">=12"
   },
   "author": "Torus Labs",

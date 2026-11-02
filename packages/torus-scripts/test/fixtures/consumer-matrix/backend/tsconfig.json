@@ -1,9 +1,4 @@
 {
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2024",
-    "strict": true
-  },
+  "extends": "@toruslabs/config/tsconfig.node.json",
   "include": ["index.ts"]
 }

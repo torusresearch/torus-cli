@@ -1,6 +1,6 @@
 # @toruslabs/torus-scripts
 
-Vite+ config fragments for libraries, React, Vue, and Node packages. The presets do not install framework build plugins.
+Vite+ config fragments for libraries, React, and Node packages. The presets do not install framework build plugins.
 
 ## Install
 
@@ -8,10 +8,11 @@ Install `@toruslabs/torus-scripts` and `vite-plus` in your project.
 
 ## Build presets
 
-- `@toruslabs/torus-scripts/library`: `libraryPreset()` for ESM library builds.
+- `@toruslabs/torus-scripts/library`: `libraryPreset({ entry: "src/index.ts" })` for ESM library builds.
 - `@toruslabs/torus-scripts/react`: `reactPreset()` selects the automatic JSX runtime. Add `@vitejs/plugin-react` for Fast Refresh or its transforms.
-- `@toruslabs/torus-scripts/vue`: `vuePreset()` is a small Vue fragment. Add `@vitejs/plugin-vue` to transform Vue files.
 - `@toruslabs/torus-scripts/node`: `nodePreset({ entry: "src/index.ts" })` targets Node and keeps dependencies external. Use a separate build for decorator metadata.
+
+Compile Vue single-file components with `@vitejs/plugin-vue` in your project. Use `libraryPreset({ entry: "src/index.ts" })` for the pack.
 
 These fragments do not set CSS injection, browser targets, assets, SSR transforms, or `use client`. Set these options in your project.
 

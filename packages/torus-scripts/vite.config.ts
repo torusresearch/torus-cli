@@ -1,7 +1,10 @@
 export default {
   pack: {
     entry: {
-      index: "src/index.ts",
+      library: "src/presets/library.ts",
+      react: "src/presets/react.ts",
+      node: "src/presets/node.ts",
+      fmt: "src/presets/fmt.ts",
     },
     dts: true,
     format: ["esm"],

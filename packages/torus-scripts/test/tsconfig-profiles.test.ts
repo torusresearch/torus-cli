@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const configPackageDirectory = path.resolve(testDirectory, "../../config");
-const fixtureDirectory = path.resolve(testDirectory, "fixtures/plain-sdk");
+const fixtureDirectory = path.resolve(testDirectory, "fixtures/consumer-matrix/plain");
 const tsc = path.resolve(testDirectory, "../../../node_modules/.bin/tsc");
 
 function readProfile(profileName: string): { compilerOptions: Record<string, unknown> } {
@@ -42,6 +42,13 @@ describe("TypeScript profiles", () => {
     expect(profile.compilerOptions.moduleResolution).toBe("nodenext");
     expect(profile.compilerOptions.module).toBe("nodenext");
     expect(profile.compilerOptions.lib).toEqual(["es2024"]);
+    const nodeFixture = JSON.parse(
+      execFileSync(tsc, ["--project", path.join(testDirectory, "fixtures/consumer-matrix/node/tsconfig.json"), "--showConfig"], {
+        encoding: "utf8",
+      })
+    );
+    expect(nodeFixture.compilerOptions.moduleResolution).toBe("nodenext");
+    expect(nodeFixture.compilerOptions.lib).toEqual(["es2024"]);
   });
 
   it("keeps strict null checks enabled in both profiles", () => {

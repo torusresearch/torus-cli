@@ -21,7 +21,7 @@
   },
   "peerDependencies": {
     "vite-plus": "^1.0.0",
-    "oxlint-tailwindcss": "^1.14.0"
+    "oxlint-tailwindcss": "^1.17.0"
   },
   "peerDependenciesMeta": {
     "oxlint-tailwindcss": {

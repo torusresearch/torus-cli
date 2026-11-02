@@ -13,3 +13,23 @@ export function vueLintPreset(): OxlintConfig {
     settings: { ...base.settings, ...vize.settings },
   };
 }
+
+export interface TailwindLintOptions {
+  /** CSS file containing `@import "tailwindcss"`, relative to the consumer root. */
+  entryPoint: string;
+}
+
+/** Independent fragment for Vue consumers of Tailwind v4. */
+export function tailwindLintPreset({ entryPoint }: TailwindLintOptions): OxlintConfig {
+  if (!entryPoint.trim()) throw new Error("Tailwind lint requires a CSS entry point");
+  return {
+    jsPlugins: ["oxlint-tailwindcss"],
+    settings: { tailwindcss: { entryPoint } },
+    rules: {
+      "tailwindcss/no-conflicting-classes": "error",
+      "tailwindcss/no-duplicate-classes": "warn",
+      "tailwindcss/no-unknown-classes": "error",
+      "tailwindcss/no-deprecated-classes": "error",
+    },
+  };
+}

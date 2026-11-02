@@ -31,6 +31,8 @@ export default defineConfig({ fmt: formatPreset() });
 
 Install one of `@toruslabs/oxlint-config-typescript`, `@toruslabs/oxlint-config-react`, `@toruslabs/oxlint-config-vue`, or `@toruslabs/oxlint-config-node`. The TypeScript preset checks both JavaScript and TypeScript. React, Vue, and Node extend it. This package does not export `/lint` or `/vue-lint`.
 
+React and Vue each export an optional `tailwindLintPreset({ entryPoint: "src/styles.css" })` fragment. Install `oxlint-tailwindcss` if you use this fragment. Vue projects import it from `@toruslabs/oxlint-config-vue`, not the React package. Combine the fragment with the framework preset in your Vite+ lint config. Tailwind class checks run on JS, TS, JSX, and TSX, including supported Vue script blocks; they do not check Vue template classes or CSS files.
+
 The old `@toruslabs/eslint-config-*` packages are removed. Read the [rule audit](https://github.com/torusresearch/torus-cli/blob/main/docs/superpowers/eslint-to-oxlint-rule-audit.md) before you treat an Oxlint rule as equal to an old ESLint rule.
 
 ## TypeScript profiles

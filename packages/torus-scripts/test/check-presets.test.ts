@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { nodeLintPreset } from "../../oxlint-config-node/index.js";
 import { reactLintPreset, tailwindLintPreset } from "../../oxlint-config-react/index.js";
 import { typescriptLintPreset } from "../../oxlint-config-typescript/index.js";
-import { vueLintPreset } from "../../oxlint-config-vue/index.js";
+import { tailwindLintPreset as vueTailwindLintPreset, vueLintPreset } from "../../oxlint-config-vue/index.js";
 import { formatPreset } from "../src/presets/fmt.js";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -38,9 +38,12 @@ describe("lint and format presets", () => {
   it("keeps Vue and Tailwind integrations opt-in and tied to consumer settings", () => {
     const vue = vueLintPreset();
     const tailwind = tailwindLintPreset({ entryPoint: "src/styles.css" });
+    expect(vueTailwindLintPreset({ entryPoint: "src/styles.css" })).toEqual(tailwind);
     expect(tailwind.plugins).toBeUndefined();
     expect(tailwind.rules).not.toHaveProperty("no-unused-vars");
     expect(vue.jsPlugins).toEqual(expect.arrayContaining(["oxlint-plugin-vize"]));
+    expect(vue.jsPlugins).not.toContain("oxlint-tailwindcss");
+    expect(reactLintPreset().jsPlugins).toBeUndefined();
     expect(vue.plugins).toContain("vue");
     expect(tailwind.jsPlugins).toEqual(["oxlint-tailwindcss"]);
     expect(tailwind.settings).toMatchObject({ tailwindcss: { entryPoint: "src/styles.css" } });
@@ -112,7 +115,7 @@ describe("lint and format presets", () => {
     try {
       await writeFile(
         path.join(fixtureDirectory, "vite.config.ts"),
-        `import { defineConfig } from "vite-plus";\nimport { vueLintPreset } from "../packages/oxlint-config-vue/index.js";\nimport { tailwindLintPreset } from "../packages/oxlint-config-react/index.js";\nconst vue = vueLintPreset();\nconst tailwind = tailwindLintPreset({ entryPoint: "styles.css" });\nexport default defineConfig({ lint: { ...vue, plugins: [...(vue.plugins ?? []), ...(tailwind.plugins ?? [])], jsPlugins: [...(vue.jsPlugins ?? []), ...(tailwind.jsPlugins ?? [])], rules: { ...vue.rules, ...tailwind.rules }, settings: { ...vue.settings, ...tailwind.settings } } });\n`
+        `import { defineConfig } from "vite-plus";\nimport { vueLintPreset, tailwindLintPreset } from "../packages/oxlint-config-vue/index.js";\nconst vue = vueLintPreset();\nconst tailwind = tailwindLintPreset({ entryPoint: "styles.css" });\nexport default defineConfig({ lint: { ...vue, plugins: [...(vue.plugins ?? []), ...(tailwind.plugins ?? [])], jsPlugins: [...(vue.jsPlugins ?? []), ...(tailwind.jsPlugins ?? [])], rules: { ...vue.rules, ...tailwind.rules }, settings: { ...vue.settings, ...tailwind.settings } } });\n`
       );
       await writeFile(path.join(fixtureDirectory, "styles.css"), '@import "tailwindcss";\n');
       await writeFile(
@@ -225,6 +228,11 @@ describe("lint and format presets", () => {
       expect(Boolean(manifest.peerDependencies?.["oxlint-plugin-vize"])).toBe(name === "vue");
       expect(manifest.peerDependenciesMeta?.["oxlint-plugin-vize"]?.optional).not.toBe(true);
     }
+    for (const name of ["react", "vue"]) {
+      const manifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
+      expect(manifest.peerDependencies?.["oxlint-tailwindcss"]).toBe("^1.14.0");
+      expect(manifest.peerDependenciesMeta?.["oxlint-tailwindcss"]?.optional).toBe(true);
+    }
   });
 
   it("type-checks all five source projects without publishing their local configs", async () => {
@@ -297,6 +305,13 @@ describe("lint and format presets", () => {
           )
           .join("\n")
       );
+      await writeFile(
+        path.join(fixtureDirectory, "vue-tailwind.mjs"),
+        'import { tailwindLintPreset } from "@toruslabs/oxlint-config-vue";\nif (typeof tailwindLintPreset !== "function") throw new Error("Missing Vue Tailwind preset");\n'
+      );
+      const vueTailwindRuntime = spawnSync("node", ["vue-tailwind.mjs"], { cwd: fixtureDirectory, encoding: "utf8" });
+      expect(vueTailwindRuntime.stderr).toBe("");
+      expect(vueTailwindRuntime.status).toBe(0);
       const runtime = spawnSync("node", ["consumer.mjs"], { cwd: fixtureDirectory, encoding: "utf8" });
       expect(runtime.stderr).toBe("");
       expect(runtime.status).toBe(0);
@@ -304,6 +319,15 @@ describe("lint and format presets", () => {
         const declaration = await readFile(path.join(fixtureDirectory, `node_modules/@toruslabs/oxlint-config-${name}/dist/index.d.mts`), "utf8");
         expect(declaration).toContain(`${name}LintPreset`);
       }
+      await writeFile(
+        path.join(fixtureDirectory, "vue-tailwind.mts"),
+        'import { tailwindLintPreset } from "@toruslabs/oxlint-config-vue";\nimport type { OxlintConfig } from "vite-plus/lint";\nconst vueTailwindRules: OxlintConfig = tailwindLintPreset({ entryPoint: "styles.css" });\nvoid vueTailwindRules;\n'
+      );
+      const vueTailwindDeclaration = await readFile(
+        path.join(fixtureDirectory, "node_modules/@toruslabs/oxlint-config-vue/dist/index.d.mts"),
+        "utf8"
+      );
+      expect(vueTailwindDeclaration).toContain("tailwindLintPreset");
       await writeFile(
         path.join(fixtureDirectory, "consumer.mts"),
         names
@@ -315,7 +339,19 @@ describe("lint and format presets", () => {
       );
       const typecheck = spawnSync(
         path.join(repositoryDirectory, "node_modules/.bin/tsc"),
-        ["--noEmit", "--strict", "--module", "nodenext", "--moduleResolution", "nodenext", "--target", "es2022", "--skipLibCheck", "consumer.mts"],
+        [
+          "--noEmit",
+          "--strict",
+          "--module",
+          "nodenext",
+          "--moduleResolution",
+          "nodenext",
+          "--target",
+          "es2022",
+          "--skipLibCheck",
+          "consumer.mts",
+          "vue-tailwind.mts",
+        ],
         {
           cwd: fixtureDirectory,
           encoding: "utf8",
@@ -338,8 +374,9 @@ describe("lint and format presets", () => {
     expect(vueLintPreset().rules).toHaveProperty("vize/vue/require-v-for-key");
   });
 
-  it("rejects a blank Tailwind entry point", () => {
+  it("rejects a blank Tailwind entry point in React and Vue", () => {
     expect(() => tailwindLintPreset({ entryPoint: "   " })).toThrow("Tailwind lint requires a CSS entry point");
+    expect(() => vueTailwindLintPreset({ entryPoint: "   " })).toThrow("Tailwind lint requires a CSS entry point");
   });
 
   it("rejects unused imports and variables in JavaScript and TypeScript", async () => {

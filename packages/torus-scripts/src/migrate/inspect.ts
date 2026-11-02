@@ -12,8 +12,9 @@ export interface InspectionOptions {
   maxDirectories?: number;
 }
 
-const configFiles = [
-  "torus.config.js",
+const torusConfigPattern = /^torus\.config\.(?:js|cjs|mjs|ts|cts|mts|json)$/;
+
+const configFiles = new Set([
   ".browserslistrc",
   "babel.config.js",
   "babel.config.cjs",
@@ -26,7 +27,7 @@ const configFiles = [
   ".babelrc.mjs",
   "tsconfig.build.json",
   "lerna.json",
-];
+]);
 
 const ignoredDirectories = new Set(["node_modules", ".git", ".vite", "dist", "build", "coverage", "fixtures", "__fixtures__"]);
 
@@ -41,14 +42,24 @@ function isMissing(error: unknown): boolean {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "ENOENT");
 }
 
-async function exists(filePath: string): Promise<boolean> {
+async function resolveLink(linkPath: string): Promise<string | undefined> {
   try {
-    await stat(filePath);
-    return true;
+    return await realpath(linkPath);
   } catch (error) {
-    if (isMissing(error)) return false;
+    if (isMissing(error)) return undefined;
     throw error;
   }
+}
+
+function isInside(root: string, target: string): boolean {
+  const relative = path.relative(root, target);
+  return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+function majorVersion(spec: unknown): number | undefined {
+  if (typeof spec !== "string") return undefined;
+  const match = /^\s*[~^]?\s*(?:>=?\s*)?v?(\d+)/.exec(spec);
+  return match?.[1] === undefined ? undefined : Number(match[1]);
 }
 
 function stripComments(source: string): string {
@@ -137,15 +148,20 @@ async function entryKind(entry: Dirent, absolutePath: string): Promise<"director
 }
 
 interface ProjectFiles {
+  configs: string[];
   rollupConfigs: string[];
   manifests: string[];
+  escapedLinks: string[];
   truncated: boolean;
 }
 
 async function walkProject(root: string, maxDirectories: number): Promise<ProjectFiles> {
+  const configs: string[] = [];
   const rollupConfigs: string[] = [];
   const manifests: string[] = [];
-  const seen = new Set([await realpath(root)]);
+  const escapedLinks: string[] = [];
+  const rootRealPath = await realpath(root);
+  const seen = new Set([rootRealPath]);
   const queue = [root];
   let truncated = false;
 
@@ -160,6 +176,14 @@ async function walkProject(root: string, maxDirectories: number): Promise<Projec
 
     for (const entry of entries) {
       const absolutePath = path.join(directory, entry.name);
+      if (entry.isSymbolicLink()) {
+        const target = await resolveLink(absolutePath);
+        if (target === undefined) continue;
+        if (!isInside(rootRealPath, target)) {
+          escapedLinks.push(absolutePath);
+          continue;
+        }
+      }
       const kind = await entryKind(entry, absolutePath);
       if (kind === "directory") {
         if (ignoredDirectories.has(entry.name)) continue;
@@ -174,10 +198,11 @@ async function walkProject(root: string, maxDirectories: number): Promise<Projec
       } else if (kind === "file") {
         if (/^rollup\.config\.(?:js|mjs|cjs)$/.test(entry.name)) rollupConfigs.push(absolutePath);
         else if (entry.name === "package.json") manifests.push(absolutePath);
+        else if (configFiles.has(entry.name) || torusConfigPattern.test(entry.name)) configs.push(absolutePath);
       }
     }
   }
-  return { rollupConfigs, manifests, truncated };
+  return { configs, rollupConfigs, manifests, escapedLinks, truncated };
 }
 
 export async function inspectProject(root: string, { maxDirectories = 10_000 }: InspectionOptions = {}): Promise<InspectionResult> {
@@ -188,15 +213,19 @@ export async function inspectProject(root: string, { maxDirectories = 10_000 }: 
   const found = new Set<string>();
   const unsupported = new Set<string>();
 
-  for (const fileName of configFiles) {
-    if (!(await exists(path.join(projectRoot, fileName)))) continue;
-    found.add(fileName);
-    if (fileName === "lerna.json") found.add("Lerna");
-  }
-
-  const { rollupConfigs, manifests, truncated } = await walkProject(projectRoot, maxDirectories);
+  const { configs, rollupConfigs, manifests, escapedLinks, truncated } = await walkProject(projectRoot, maxDirectories);
   if (truncated) {
     unsupported.add(`Inspection stopped after ${maxDirectories} directories. Review the remaining directories by hand.`);
+  }
+  for (const linkPath of escapedLinks) {
+    unsupported.add(`Symlink outside the inspection root was not inspected: ${path.relative(projectRoot, linkPath)}`);
+  }
+
+  for (const configPath of configs) {
+    const fileName = path.basename(configPath);
+    found.add(path.relative(projectRoot, configPath));
+    if (fileName === "lerna.json") found.add("Lerna");
+    if (torusConfigPattern.test(fileName)) unsupported.add("Legacy torus.config files need manual replacement.");
   }
 
   for (const configPath of rollupConfigs) {
@@ -205,23 +234,40 @@ export async function inspectProject(root: string, { maxDirectories = 10_000 }: 
   }
 
   for (const manifestPath of manifests) {
-    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+    const relativePath = path.relative(projectRoot, manifestPath);
+    let manifest: {
       scripts?: Record<string, unknown>;
       dependencies?: Record<string, unknown>;
       devDependencies?: Record<string, unknown>;
       workspaces?: unknown;
     };
-    if (manifestPath !== path.join(projectRoot, "package.json") && manifest.workspaces !== undefined) {
+    try {
+      manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      unsupported.add(`Unreadable package.json needs a separate review: ${relativePath}`);
+      continue;
+    }
+    if (relativePath !== "package.json" && manifest.workspaces !== undefined) {
       unsupported.add("Nested workspace migration needs a separate review.");
     }
     const dependencies = { ...manifest.dependencies, ...manifest.devDependencies };
-    const scripts = manifest.scripts ?? {};
+    const scripts = Object.values(manifest.scripts ?? {}).filter((script) => typeof script === "string");
 
-    if ("lerna" in dependencies || Object.values(scripts).some((script) => typeof script === "string" && /\blerna\b/.test(script))) {
+    if ("lerna" in dependencies || scripts.some((script) => /\blerna\b/.test(script))) {
       found.add("Lerna");
     }
-    if ("release-it" in dependencies || Object.values(scripts).some((script) => typeof script === "string" && /\brelease-it\b/.test(script))) {
+    if ("release-it" in dependencies || scripts.some((script) => /\brelease-it\b/.test(script))) {
       found.add("release-it");
+    }
+    if (scripts.some((script) => /(?:^|[\s;&|(])torus-scripts(?=\s|$)/.test(script))) {
+      found.add(`${relativePath}: torus-scripts commands`);
+      unsupported.add("Legacy `torus-scripts` commands need manual replacement with `vp` tasks.");
+    }
+    const torusScriptsMajor = majorVersion(dependencies["@toruslabs/torus-scripts"]);
+    if (torusScriptsMajor !== undefined && torusScriptsMajor < 8) {
+      found.add(`${relativePath}: @toruslabs/torus-scripts ${String(dependencies["@toruslabs/torus-scripts"])}`);
+      unsupported.add("@toruslabs/torus-scripts before v8 needs manual replacement.");
     }
   }
 

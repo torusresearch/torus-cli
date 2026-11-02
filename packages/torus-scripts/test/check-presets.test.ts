@@ -257,7 +257,7 @@ describe("lint and format presets", () => {
 
   it("builds workspaces recursively in dependency order", async () => {
     const root = JSON.parse(await readFile(path.join(repositoryDirectory, "package.json"), "utf8"));
-    expect(root.scripts.build).toBe("vp run -r build --fail-if-no-match");
+    expect(root.scripts.build).toBe("vp run -r --fail-if-no-match build");
     for (const name of ["typescript", "react", "vue", "node"]) {
       const manifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
       expect(manifest.scripts?.build).toBe("vp pack");

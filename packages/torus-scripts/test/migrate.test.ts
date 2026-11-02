@@ -180,23 +180,114 @@ describe("read-only migration inspection", () => {
     }
   });
 
-  it("follows symlinked package directories", async () => {
+  it("follows symlinked package directories inside the root", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-symlink-"));
-    const outside = await mkdtemp(path.join(tmpdir(), "torus-migrate-symlink-target-"));
 
     try {
-      await writeFixture(outside, { "rollup.config.mjs": "export default { plugins: [customPlugin()] };\n" });
+      await writeFixture(root, { "node_modules/.store/linked/rollup.config.mjs": "export default { plugins: [customPlugin()] };\n" });
       await mkdir(path.join(root, "packages"), { recursive: true });
-      await symlink(outside, path.join(root, "packages", "linked"), "dir");
+      await symlink(path.join(root, "node_modules", ".store", "linked"), path.join(root, "packages", "linked"), "dir");
       await symlink(root, path.join(root, "packages", "loop"), "dir");
 
       const result = await inspectProject(root);
 
       expect(result.found).toContain(path.join("packages", "linked", "rollup.config.mjs"));
-      expect(result.unsupported).toContain("Custom Rollup plugins need a separate review.");
+      expect(result.unsupported).toEqual(["Custom Rollup plugins need a separate review."]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reports symlinks that leave the root without inspecting their targets", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-escape-"));
+    const outside = await mkdtemp(path.join(tmpdir(), "torus-migrate-escape-target-"));
+
+    try {
+      await writeFixture(outside, { "rollup.config.mjs": "export default { plugins: [customPlugin()] };\n" });
+      await mkdir(path.join(root, "packages"), { recursive: true });
+      await symlink(outside, path.join(root, "packages", "linked"), "dir");
+      await symlink(path.join(outside, "rollup.config.mjs"), path.join(root, "rollup.config.mjs"), "file");
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toEqual([]);
+      expect(result.unsupported).toEqual([
+        `Symlink outside the inspection root was not inspected: ${path.join("packages", "linked")}`,
+        "Symlink outside the inspection root was not inspected: rollup.config.mjs",
+      ]);
     } finally {
       await rm(root, { recursive: true, force: true });
       await rm(outside, { recursive: true, force: true });
+    }
+  });
+
+  it("reports legacy torus-scripts signals in workspace packages", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-legacy-package-"));
+
+    try {
+      await writeFixture(root, {
+        "package.json": JSON.stringify({ workspaces: ["packages/*"], devDependencies: { "@toruslabs/torus-scripts": "^8.1.0" } }) + "\n",
+        "packages/one/package.json": JSON.stringify({ scripts: { build: "torus-scripts build" } }) + "\n",
+        "packages/one/torus.config.js": "module.exports = {};\n",
+        "packages/one/babel.config.js": "module.exports = {};\n",
+        "packages/two/package.json": JSON.stringify({ devDependencies: { "@toruslabs/torus-scripts": "^7.2.0" } }) + "\n",
+        "packages/three/package.json": JSON.stringify({ scripts: { check: "torus-scripts-upgrade ." } }) + "\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toEqual(
+        expect.arrayContaining([
+          path.join("packages", "one", "torus.config.js"),
+          path.join("packages", "one", "babel.config.js"),
+          `${path.join("packages", "one", "package.json")}: torus-scripts commands`,
+          `${path.join("packages", "two", "package.json")}: @toruslabs/torus-scripts ^7.2.0`,
+        ])
+      );
+      expect(result.unsupported).toEqual([
+        "@toruslabs/torus-scripts before v8 needs manual replacement.",
+        "Legacy `torus-scripts` commands need manual replacement with `vp` tasks.",
+        "Legacy torus.config files need manual replacement.",
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps Babel and browserslist configs out of the blockers", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-found-only-"));
+
+    try {
+      await writeFixture(root, {
+        "packages/one/babel.config.js": "module.exports = {};\n",
+        "packages/one/.browserslistrc": "defaults\n",
+        "packages/one/tsconfig.build.json": "{}\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toHaveLength(3);
+      expect(result.unsupported).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a malformed package.json and inspects the other files", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "torus-migrate-malformed-"));
+
+    try {
+      await writeFixture(root, {
+        "packages/broken/package.json": "{ not json\n",
+        "packages/good/package.json": JSON.stringify({ scripts: { release: "release-it" } }) + "\n",
+      });
+
+      const result = await inspectProject(root);
+
+      expect(result.found).toContain("release-it");
+      expect(result.unsupported).toEqual([`Unreadable package.json needs a separate review: ${path.join("packages", "broken", "package.json")}`]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
     }
   });
 

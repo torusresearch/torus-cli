@@ -26,7 +26,7 @@ Use `node_modules/@toruslabs/torus-scripts/README.md` in an installed consumer, 
 
 ## Monorepos moving off Lerna
 
-1. Map Lerna's workspace, build order, version, and publish tasks before removing it. Run `vp migrate` once at the workspace root. Give each package its own `build` task. Use `vp run -r build` at the root, and verify dependency order and each package's output. Do not pass `--fail-if-no-match` after `build`: `vp run` can forward it to npm lifecycle scripts, which fail with `EUNKNOWNCONFIG`.
+1. Map Lerna's workspace, build order, version, and publish tasks before removing it. Run `vp migrate` once at the workspace root. Give each package its own `build` task. Use `vp run -r build` at the root, and verify dependency order and each package's output. Put `vp run` options before the task name, as in `vp run -r --fail-if-no-match build`. `vp run` forwards arguments after the task name to the task, and npm lifecycle scripts fail on unknown options with `EUNKNOWNCONFIG`.
 2. Preserve public package paths before changing their manifests. For packages that expose `dist/lib.esm/index.js`, `dist/lib.cjs/index.js`, and `dist/lib.cjs/types/index.d.ts`, use a consumer-owned `vite.config.ts` with explicit output directories. Adapt this pattern to the installed Vite+ version:
 
 ```ts
@@ -55,4 +55,4 @@ export default defineConfig({
 
 Run the consumer's install, build, lint/check, typecheck, and tests when available. Inspect package contents and import/require entry points if published files changed. If browser tests fail, separate missing browser executables from test failures and browser timeouts. Report each command and result, preserved behavior, manual follow-up, and any check you could not run. Never report a migration as complete if package outputs or lint coverage remain unverified.
 
-Example: A project can get “No legacy configuration detected” while `package.json` still calls `torus-scripts build`. Inspect the scripts and published paths before changing it.
+Example: A project can get “No known unsupported behavior detected” while its `package.json` entry paths still point at old bundle folders. Inspect the scripts and published paths before changing it.

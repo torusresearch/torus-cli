@@ -56,7 +56,7 @@ export default defineConfig({
 
 For React, import `reactLintPreset` and `tailwindLintPreset` from `@toruslabs/oxlint-config-react` and merge the same fields. Tailwind class checks run on JS, TS, JSX, and TSX, including supported Vue script blocks; they do not check Vue template classes or CSS files.
 
-The old `@toruslabs/eslint-config-*` packages are removed. Read the [rule audit](https://github.com/torusresearch/torus-cli/blob/main/docs/superpowers/eslint-to-oxlint-rule-audit.md) before you treat an Oxlint rule as equal to an old ESLint rule.
+The old `@toruslabs/eslint-config-*` packages are removed. Do not treat an Oxlint rule as equal to an old ESLint rule until you test it in your project.
 
 ## TypeScript profiles
 

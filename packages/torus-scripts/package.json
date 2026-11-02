@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/torus-scripts",
-  "version": "8.1.0",
+  "version": "9.0.0",
   "type": "module",
   "description": "Vite+ build and format presets with a read-only migration diagnostic",
   "bin": {

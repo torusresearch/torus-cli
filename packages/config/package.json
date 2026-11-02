@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/config",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "description": "TypeScript profiles for Vite+ libraries and Node packages",
   "keywords": [
     "typescript",

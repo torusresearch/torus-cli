@@ -16,7 +16,8 @@
     }
   },
   "dependencies": {
-    "@toruslabs/oxlint-config-typescript": "^1.0.0"
+    "@toruslabs/oxlint-config-typescript": "^1.0.0",
+    "eslint-plugin-n": "^18.5.0"
   },
   "peerDependencies": {
     "vite-plus": "^1.0.0"

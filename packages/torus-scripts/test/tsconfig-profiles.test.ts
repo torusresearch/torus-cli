@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const configPackageDirectory = path.resolve(testDirectory, "../../config");

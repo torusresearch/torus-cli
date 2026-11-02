@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/oxlint-config-react",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Oxlint React preset and optional Tailwind fragment for Torus libraries",
   "files": [
@@ -17,7 +17,7 @@
     }
   },
   "dependencies": {
-    "@toruslabs/oxlint-config-typescript": "^0.0.0"
+    "@toruslabs/oxlint-config-typescript": "^1.0.0"
   },
   "peerDependencies": {
     "vite-plus": "^1.0.0",

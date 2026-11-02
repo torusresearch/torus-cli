@@ -60,6 +60,8 @@ The old `@toruslabs/eslint-config-*` packages are removed. Do not treat an Oxlin
 
 ## Upgrade from the old CLI
 
+The package includes an agent skill at `skills/migrating-to-torus-cli/SKILL.md`. In a consumer project, read it at `node_modules/@toruslabs/torus-scripts/skills/migrating-to-torus-cli/SKILL.md`. To make it available as a project skill in Cursor, copy it to `.cursor/skills/migrating-to-torus-cli/SKILL.md` in that project. Keep the skill and this README from the same package version.
+
 Run `torus-scripts-upgrade <path>` to inspect an old project without changing files. It reports unsupported custom behavior and exits nonzero for those cases. Run `vp migrate` at the workspace root, not inside each package, and review its changes. The diagnostic does not run `vp migrate` for you.
 
 Replace the old commands:

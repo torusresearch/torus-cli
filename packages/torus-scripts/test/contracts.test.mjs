@@ -17,6 +17,7 @@ async function copyScriptsSource(destination) {
     await cp(path.join(packageDirectory, name), path.join(destination, name));
   }
   await cp(path.join(packageDirectory, "src"), path.join(destination, "src"), { recursive: true });
+  await cp(path.join(packageDirectory, "skills"), path.join(destination, "skills"), { recursive: true });
 }
 
 function packWorkspace(workspace, destination) {
@@ -45,12 +46,23 @@ test("packed scripts expose only presets and a read-only diagnostic", async () =
       execFileSync("tar", ["-xOf", path.join(temporaryDirectory, packed.filename), "package/package.json"], { encoding: "utf8" })
     );
     assert.ok(files.includes("dist/migrate/cli.mjs"), "pack must contain freshly built output");
+    assert.ok(files.includes("skills/migrating-to-torus-cli/SKILL.md"), "pack must contain the agent migration skill");
+    const skill = execFileSync("tar", ["-xOf", path.join(temporaryDirectory, packed.filename), "package/skills/migrating-to-torus-cli/SKILL.md"], {
+      encoding: "utf8",
+    });
+    const sourceSkill = await readFile(path.resolve(packageDirectory, "../../.cursor/skills/migrating-to-torus-cli/SKILL.md"), "utf8");
+    assert.equal(skill, sourceSkill, "the packed skill must match the repository skill");
+    assert.match(skill, /README\.md/);
     const readme = execFileSync("tar", ["-xOf", path.join(temporaryDirectory, packed.filename), "package/README.md"], { encoding: "utf8" });
     assert.doesNotMatch(readme, /\]\(\.\.\/\.\.\/docs\//);
 
     assert.deepEqual(Object.keys(manifest.exports).sort(), ["./fmt", "./library", "./node", "./react"]);
     assert.deepEqual(Object.keys(manifest.bin), ["torus-scripts-upgrade"]);
-    assert.ok(files.every((filePath) => ["package.json", "README.md"].includes(filePath) || filePath.startsWith("dist/")));
+    assert.ok(
+      files.every(
+        (filePath) => ["package.json", "README.md", "skills/migrating-to-torus-cli/SKILL.md"].includes(filePath) || filePath.startsWith("dist/")
+      )
+    );
     assert.ok(files.every((filePath) => !/\b(?:rollup|release-it|babel|torus-scripts\.js)\b/i.test(filePath)));
 
     const consumer = path.join(temporaryDirectory, "consumer");
@@ -59,6 +71,11 @@ test("packed scripts expose only presets and a read-only diagnostic", async () =
       cwd: consumer,
       stdio: "pipe",
     });
+    assert.equal(
+      await readFile(path.join(consumer, "node_modules", "@toruslabs", "torus-scripts", "skills", "migrating-to-torus-cli", "SKILL.md"), "utf8"),
+      sourceSkill,
+      "an installed consumer must be able to read the skill"
+    );
     const imported = execFileSync(
       "node",
       [
@@ -154,7 +171,7 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
   const torusScriptsPackage = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
 
   assert.deepEqual(Object.keys(torusScriptsPackage.exports).sort(), ["./fmt", "./library", "./node", "./react"]);
-  assert.deepEqual(torusScriptsPackage.files, ["dist"]);
+  assert.deepEqual(torusScriptsPackage.files, ["dist", "skills/migrating-to-torus-cli/SKILL.md"]);
   assert.deepEqual(torusScriptsPackage.bin, { "torus-scripts-upgrade": "./dist/migrate/cli.mjs" });
   for (const [subpath, exportName] of Object.entries({
     library: "libraryPreset",
@@ -263,6 +280,7 @@ test("npm pack builds dist from a source tree that has no build output", async (
   try {
     await mkdir(packageCopy);
     await cp(path.join(packageDirectory, "src"), path.join(packageCopy, "src"), { recursive: true });
+    await cp(path.join(packageDirectory, "skills"), path.join(packageCopy, "skills"), { recursive: true });
     for (const filename of ["package.json", "README.md", "vite.config.ts", "tsconfig.json"]) {
       await cp(path.join(packageDirectory, filename), path.join(packageCopy, filename));
     }

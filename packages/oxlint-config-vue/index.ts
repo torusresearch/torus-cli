@@ -2,9 +2,26 @@ import { typescriptLintPreset } from "@toruslabs/oxlint-config-typescript";
 import { createVizeLintConfig } from "oxlint-plugin-vize";
 import type { OxlintConfig } from "vite-plus/lint";
 
+/** Vize template rules that fixture tests prove through `vp lint`. Add a fixture before you add a rule. */
+export const vueTemplateRules = {
+  "vize/vue/no-duplicate-attributes": "error",
+  "vize/vue/no-mutating-props": "error",
+  "vize/vue/no-use-v-if-with-v-for": "warn",
+  "vize/vue/require-v-for-key": "error",
+  "vize/vue/valid-v-for": "error",
+  "vize/vue/valid-v-if": "error",
+  "vize/vue/valid-v-model": "error",
+  "vize/vue/valid-v-on": "error",
+} as const;
+
+/**
+ * Vue preset for `.vue` files that have a script block.
+ *
+ * `vp lint` and `vp check` can skip a `.vue` file with no script block, so template-only files need a separate task.
+ */
 export function vueLintPreset(): OxlintConfig {
   const base = typescriptLintPreset();
-  const vize = createVizeLintConfig({ preset: "happy-path", plugins: [...(base.plugins ?? []), "vue"] });
+  const vize = createVizeLintConfig({ preset: "incremental", plugins: [...(base.plugins ?? []), "vue"], rules: vueTemplateRules });
   return {
     ...base,
     plugins: vize.plugins,

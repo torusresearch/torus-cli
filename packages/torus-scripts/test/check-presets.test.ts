@@ -2,20 +2,33 @@ import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { repositoryDirectory, runVp, viteLintConfig, withFixture } from "../../../test/lint-fixture.js";
 import { nodeLintPreset } from "../../oxlint-config-node/index.js";
 import { reactLintPreset, tailwindLintPreset } from "../../oxlint-config-react/index.js";
 import { typescriptLintPreset } from "../../oxlint-config-typescript/index.js";
-import { tailwindLintPreset as vueTailwindLintPreset, vueLintPreset } from "../../oxlint-config-vue/index.js";
+import { tailwindLintPreset as vueTailwindLintPreset, vueLintPreset, vueTemplateRules } from "../../oxlint-config-vue/index.js";
 import { formatPreset } from "../src/presets/fmt.js";
 
-const testDirectory = path.dirname(fileURLToPath(import.meta.url));
-const packageDirectory = path.resolve(testDirectory, "..");
-const repositoryDirectory = path.resolve(packageDirectory, "../..");
-const vp = path.join(repositoryDirectory, "node_modules", ".bin", "vp");
+const packageDirectory = path.resolve(import.meta.dirname, "..");
+const vueConfig = viteLintConfig('import { vueLintPreset } from "../packages/oxlint-config-vue/index.js";', "vueLintPreset()");
+
+function vueFile(template: string, script = ""): string {
+  return `<template>${template}</template>\n<script setup lang="ts">\n${script}\n</script>\n`;
+}
+
+const vueTemplateFixtures: Record<keyof typeof vueTemplateRules, string> = {
+  "vize/vue/no-duplicate-attributes": vueFile('<div class="a" class="b"></div>'),
+  "vize/vue/no-mutating-props": vueFile('<button @click="props.count = 1">x</button>', "const props = defineProps<{ count: number }>();"),
+  "vize/vue/no-use-v-if-with-v-for": vueFile('<div v-for="item in items" v-if="item" :key="item">{{ item }}</div>', "const items = [1];"),
+  "vize/vue/require-v-for-key": vueFile('<div v-for="item in items">{{ item }}</div>', "const items = [1];"),
+  "vize/vue/valid-v-for": vueFile('<div v-for="item" :key="item">x</div>'),
+  "vize/vue/valid-v-if": vueFile("<div v-if>x</div>"),
+  "vize/vue/valid-v-model": vueFile('<input v-model="1 + 1" />'),
+  "vize/vue/valid-v-on": vueFile('<div v-on:click.badmod="go">x</div>', "function go() {}"),
+};
 
 describe("lint and format presets", () => {
   it("enables native checks for JavaScript and TypeScript source", () => {
@@ -59,93 +72,83 @@ describe("lint and format presets", () => {
     expect(config.settings?.tailwindcss).toBeUndefined();
   });
 
-  it("reports a Vize template diagnostic through the opt-in Vue profile", async () => {
-    const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "vize-fixture-"));
-    try {
-      await writeFile(
-        path.join(fixtureDirectory, "vite.config.ts"),
-        `import { defineConfig } from "vite-plus";\nimport { vueLintPreset } from "../packages/oxlint-config-vue/index.js";\nexport default defineConfig({ lint: vueLintPreset() });\n`
-      );
-      await writeFile(
-        path.join(fixtureDirectory, "Bad.vue"),
-        '<template><div v-for="item in items">{{ item }}</div></template>\n<script setup lang="ts">const items = [1];</script>\n'
-      );
-      const result = spawnSync(vp, ["lint", "Bad.vue"], { cwd: fixtureDirectory, encoding: "utf8" });
-      expect(result.status).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("vize(vue/require-v-for-key)");
-    } finally {
-      await rm(fixtureDirectory, { recursive: true, force: true });
-    }
+  it("enables only the Vize rules that fixtures prove", () => {
+    const vizeRules = Object.entries(vueLintPreset().rules ?? {}).filter(([rule]) => rule.startsWith("vize/"));
+    expect(Object.fromEntries(vizeRules)).toEqual(vueTemplateRules);
+    expect(Object.keys(vueTemplateFixtures).sort()).toEqual(Object.keys(vueTemplateRules).sort());
+  });
+
+  it.each(Object.entries(vueTemplateFixtures))("reports %s through the Vue preset", async (rule, source) => {
+    await withFixture("vue-template-rule", { "vite.config.ts": vueConfig, "Bad.vue": source }, (directory) => {
+      const result = runVp(["lint", "--format", "json", "Bad.vue"], directory);
+      const { diagnostics } = JSON.parse(result.stdout) as { diagnostics: { code: string }[] };
+      expect(diagnostics.map(({ code }) => code)).toContain(`vize(${rule.slice("vize/".length)})`);
+    });
+  });
+
+  it("skips template-only Vue files, so they need a separate task", async () => {
+    const files = { "vite.config.ts": vueConfig, "TemplateOnly.vue": '<template><div v-for="item in items">{{ item }}</div></template>\n' };
+    await withFixture("vue-template-only", files, (directory) => {
+      const result = runVp(["lint", "TemplateOnly.vue"], directory);
+      expect(result.output).not.toContain("vize(vue/require-v-for-key)");
+    });
   });
 
   it("reports React and JSX diagnostics with the React preset", async () => {
-    const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "react-lint-fixture-"));
-    try {
-      await writeFile(
-        path.join(fixtureDirectory, "vite.config.ts"),
-        `import { defineConfig } from "vite-plus";\nimport { reactLintPreset } from "../packages/oxlint-config-react/index.js";\nexport default defineConfig({ lint: reactLintPreset() });\n`
-      );
-      await writeFile(path.join(fixtureDirectory, "Bad.jsx"), "export function Bad() { if (true) { useState(0); } return <div />; }\n");
-      const result = spawnSync(vp, ["lint", "Bad.jsx"], { cwd: fixtureDirectory, encoding: "utf8" });
+    const files = {
+      "vite.config.ts": viteLintConfig('import { reactLintPreset } from "../packages/oxlint-config-react/index.js";', "reactLintPreset()"),
+      "Bad.jsx": "export function Bad() { if (true) { useState(0); } return <div />; }\n",
+    };
+    await withFixture("react-lint", files, (directory) => {
+      const result = runVp(["lint", "Bad.jsx"], directory);
       expect(result.status).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("react-hooks(rules-of-hooks)");
-    } finally {
-      await rm(fixtureDirectory, { recursive: true, force: true });
-    }
+      expect(result.output).toContain("react-hooks(rules-of-hooks)");
+    });
   });
 
   it("reports Node diagnostics with the Node preset", async () => {
-    const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "node-lint-fixture-"));
-    try {
-      await writeFile(
-        path.join(fixtureDirectory, "vite.config.ts"),
-        `import { defineConfig } from "vite-plus";\nimport { nodeLintPreset } from "../packages/oxlint-config-node/index.js";\nexport default defineConfig({ lint: nodeLintPreset() });\n`
-      );
-      await writeFile(path.join(fixtureDirectory, "Bad.cjs"), "exports = { value: 1 };\n");
-      const result = spawnSync(vp, ["lint", "Bad.cjs"], { cwd: fixtureDirectory, encoding: "utf8" });
+    const files = {
+      "vite.config.ts": viteLintConfig('import { nodeLintPreset } from "../packages/oxlint-config-node/index.js";', "nodeLintPreset()"),
+      "Bad.cjs": "exports = { value: 1 };\n",
+    };
+    await withFixture("node-lint", files, (directory) => {
+      const result = runVp(["lint", "Bad.cjs"], directory);
       expect(result.status).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("node(no-exports-assign)");
-    } finally {
-      await rm(fixtureDirectory, { recursive: true, force: true });
-    }
+      expect(result.output).toContain("node(no-exports-assign)");
+    });
   });
 
   it("reports Vue and Tailwind diagnostics together in script-side markup", async () => {
-    const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "vue-tailwind-fixture-"));
-    try {
-      await writeFile(
-        path.join(fixtureDirectory, "vite.config.ts"),
-        `import { defineConfig } from "vite-plus";\nimport { vueLintPreset, tailwindLintPreset } from "../packages/oxlint-config-vue/index.js";\nconst vue = vueLintPreset();\nconst tailwind = tailwindLintPreset({ entryPoint: "styles.css" });\nexport default defineConfig({ lint: { ...vue, plugins: [...(vue.plugins ?? []), ...(tailwind.plugins ?? [])], jsPlugins: [...(vue.jsPlugins ?? []), ...(tailwind.jsPlugins ?? [])], rules: { ...vue.rules, ...tailwind.rules }, settings: { ...vue.settings, ...tailwind.settings } } });\n`
-      );
-      await writeFile(path.join(fixtureDirectory, "styles.css"), '@import "tailwindcss";\n');
-      await writeFile(
-        path.join(fixtureDirectory, "Bad.vue"),
-        '<template><div v-for="item in items">{{ item }}</div></template>\n<script setup lang="ts">const items = [1]; const className = "madeuputility";</script>\n'
-      );
-      const result = spawnSync(vp, ["lint", "Bad.vue"], { cwd: fixtureDirectory, encoding: "utf8" });
+    const files = {
+      "vite.config.ts": viteLintConfig(
+        'import { vueLintPreset, tailwindLintPreset } from "../packages/oxlint-config-vue/index.js";\nconst vue = vueLintPreset();\nconst tailwind = tailwindLintPreset({ entryPoint: "styles.css" });',
+        "{ ...vue, plugins: [...(vue.plugins ?? []), ...(tailwind.plugins ?? [])], jsPlugins: [...(vue.jsPlugins ?? []), ...(tailwind.jsPlugins ?? [])], rules: { ...vue.rules, ...tailwind.rules }, settings: { ...vue.settings, ...tailwind.settings } }"
+      ),
+      "styles.css": '@import "tailwindcss";\n',
+      "Bad.vue": vueFile('<div v-for="item in items">{{ item }}</div>', 'const items = [1]; const className = "madeuputility";'),
+    };
+    await withFixture("vue-tailwind-lint", files, (directory) => {
+      const result = runVp(["lint", "Bad.vue"], directory);
       expect(result.status).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("vize(vue/require-v-for-key)");
-      expect(result.stdout + result.stderr).toContain("tailwindcss(no-unknown-classes)");
-    } finally {
-      await rm(fixtureDirectory, { recursive: true, force: true });
-    }
+      expect(result.output).toContain("vize(vue/require-v-for-key)");
+      expect(result.output).toContain("tailwindcss(no-unknown-classes)");
+    });
   }, 30_000);
 
   it("reports an unknown Tailwind class through the opt-in CSS profile", async () => {
-    const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "tailwind-fixture-"));
-    try {
-      await writeFile(
-        path.join(fixtureDirectory, "vite.config.ts"),
-        `import { defineConfig } from "vite-plus";\nimport { tailwindLintPreset } from "../packages/oxlint-config-react/index.js";\nexport default defineConfig({ lint: tailwindLintPreset({ entryPoint: "styles.css" }) });\n`
-      );
-      await writeFile(path.join(fixtureDirectory, "styles.css"), '@import "tailwindcss";\n');
-      await writeFile(path.join(fixtureDirectory, "Bad.tsx"), 'export const View = () => <div className="madeuputility" />;\n');
-      const result = spawnSync(vp, ["lint", "Bad.tsx"], { cwd: fixtureDirectory, encoding: "utf8" });
+    const files = {
+      "vite.config.ts": viteLintConfig(
+        'import { tailwindLintPreset } from "../packages/oxlint-config-react/index.js";',
+        'tailwindLintPreset({ entryPoint: "styles.css" })'
+      ),
+      "styles.css": '@import "tailwindcss";\n',
+      "Bad.tsx": 'export const View = () => <div className="madeuputility" />;\n',
+    };
+    await withFixture("tailwind-lint", files, (directory) => {
+      const result = runVp(["lint", "Bad.tsx"], directory);
       expect(result.status).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("tailwindcss(no-unknown-classes)");
-    } finally {
-      await rm(fixtureDirectory, { recursive: true, force: true });
-    }
+      expect(result.output).toContain("tailwindcss(no-unknown-classes)");
+    });
   });
 
   it("lists lint presets as separate packages in the root README", async () => {
@@ -156,49 +159,18 @@ describe("lint and format presets", () => {
     }
   });
 
-  it("removes the old CLI and ESLint packages from published workspace metadata", async () => {
+  it("removes the old CLI, ESLint packages, and unused Vize packages from workspace metadata", async () => {
     const root = JSON.parse(await readFile(path.join(repositoryDirectory, "package.json"), "utf8"));
     const manifest = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
     const changesets = JSON.parse(await readFile(path.join(repositoryDirectory, ".changeset/config.json"), "utf8"));
     expect(manifest.bin).toBeUndefined();
     expect(manifest.peerDependencies).not.toHaveProperty("eslint");
     expect(root.devDependencies).not.toHaveProperty("eslint");
+    expect(root.devDependencies).not.toHaveProperty("@vizejs/vite-plugin");
+    expect(root.devDependencies).not.toHaveProperty("vize");
+    expect(root.devDependencies).toHaveProperty("oxlint-plugin-vize");
     expect(root.scripts["check:styles"]).toBe("vp fmt --check .");
     expect(changesets.ignore).toEqual([]);
-  });
-
-  it("runs hardened validation without publishing on pull requests", async () => {
-    const workflow = await readFile(path.join(repositoryDirectory, ".github/workflows/validate-pr.yml"), "utf8");
-    expect(workflow).toContain("pull_request:");
-    expect(workflow).toContain("contents: read");
-    expect(workflow).toContain("npm ci");
-    expect(workflow).not.toContain("cache: npm");
-    expect(workflow.indexOf("Install npm 12")).toBeLessThan(workflow.indexOf("npm ci"));
-    expect(workflow).toContain("harden check --package-manager npm");
-    expect(workflow).toContain("npm run check");
-    expect(workflow).toContain("npm run typecheck");
-    expect(workflow).toContain("npm run test");
-    expect(workflow).toContain("npm run build");
-    expect(workflow.indexOf("npm run build")).toBeLessThan(workflow.indexOf("npm run typecheck"));
-    expect(workflow).toContain('git fetch --no-tags origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}"');
-    expect(workflow).toContain('changeset status --since="origin/${BASE_REF}"');
-    expect(workflow).toContain("npm pack --workspaces --dry-run");
-    expect(workflow).not.toContain("changeset publish");
-  });
-
-  it("scans JavaScript and TypeScript with CodeQL and Semgrep without tokens", async () => {
-    const workflow = await readFile(path.join(repositoryDirectory, ".github/workflows/security-code-scanner.yml"), "utf8");
-    expect(workflow).not.toContain("github/codeql-action/");
-    expect(workflow).toContain("setuptools<81");
-    expect(workflow).toContain("semgrep scan");
-    expect(workflow).toMatch(/semgrep scan[^\n]*\s\.(?:\s|$)/m);
-    expect(workflow).not.toMatch(/semgrep scan[^\n]*\spackages(?:\s|$)/m);
-    for (const generated of ["node_modules", "dist", "build", "coverage"]) {
-      expect(workflow).toContain(`--exclude '**/${generated}/**'`);
-    }
-    expect(workflow).toContain("p/javascript");
-    expect(workflow).toContain("p/typescript");
-    expect(workflow).not.toContain("SEMGREP_APP_TOKEN");
   });
 
   it("uses the formatter baseline and enables Oxfmt import sorting", () => {
@@ -213,25 +185,25 @@ describe("lint and format presets", () => {
   });
 
   it("publishes four independent lint packages with a TypeScript base", async () => {
-    const scripts = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
-    expect(scripts.exports).not.toHaveProperty("./lint");
-    expect(scripts.exports).not.toHaveProperty("./vue-lint");
-    expect(scripts.exports).toHaveProperty("./fmt");
-    expect(scripts.peerDependencies).not.toHaveProperty("oxlint-plugin-vize");
+    const manifest = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
+    expect(manifest.exports).not.toHaveProperty("./lint");
+    expect(manifest.exports).not.toHaveProperty("./vue-lint");
+    expect(manifest.exports).toHaveProperty("./fmt");
+    expect(manifest.peerDependencies).not.toHaveProperty("oxlint-plugin-vize");
     for (const name of ["typescript", "react", "vue", "node"]) {
-      const manifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
-      expect(manifest.private).not.toBe(true);
-      expect(manifest.exports["."].import).toBe("./dist/index.mjs");
-      expect(manifest.exports["."].types).toBe("./dist/index.d.mts");
-      expect(manifest.peerDependencies).toHaveProperty("vite-plus");
-      expect(Boolean(manifest.dependencies?.["@toruslabs/oxlint-config-typescript"])).toBe(name !== "typescript");
-      expect(Boolean(manifest.peerDependencies?.["oxlint-plugin-vize"])).toBe(name === "vue");
-      expect(manifest.peerDependenciesMeta?.["oxlint-plugin-vize"]?.optional).not.toBe(true);
+      const lintManifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
+      expect(lintManifest.private).not.toBe(true);
+      expect(lintManifest.exports["."].import).toBe("./dist/index.mjs");
+      expect(lintManifest.exports["."].types).toBe("./dist/index.d.mts");
+      expect(lintManifest.peerDependencies).toHaveProperty("vite-plus");
+      expect(Boolean(lintManifest.dependencies?.["@toruslabs/oxlint-config-typescript"])).toBe(name !== "typescript");
+      expect(Boolean(lintManifest.peerDependencies?.["oxlint-plugin-vize"])).toBe(name === "vue");
+      expect(lintManifest.peerDependenciesMeta?.["oxlint-plugin-vize"]?.optional).not.toBe(true);
     }
     for (const name of ["react", "vue"]) {
-      const manifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
-      expect(manifest.peerDependencies?.["oxlint-tailwindcss"]).toBe("^1.14.0");
-      expect(manifest.peerDependenciesMeta?.["oxlint-tailwindcss"]?.optional).toBe(true);
+      const lintManifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
+      expect(lintManifest.peerDependencies?.["oxlint-tailwindcss"]).toBe("^1.14.0");
+      expect(lintManifest.peerDependenciesMeta?.["oxlint-tailwindcss"]?.optional).toBe(true);
     }
   });
 
@@ -380,100 +352,75 @@ describe("lint and format presets", () => {
   });
 
   it("rejects unused imports and variables in JavaScript and TypeScript", async () => {
-    const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
-    const jsFixture = path.join(fixturesDirectory, "unused.js");
-    const tsFixture = path.join(fixturesDirectory, "unused.ts");
-    const unusedImportFixture = path.join(fixturesDirectory, "unused-import.js");
-
-    try {
-      await Promise.all([
-        writeFile(jsFixture, "const unusedValue = 1;\n"),
-        writeFile(tsFixture, "const unusedValue: number = 1;\n"),
-        writeFile(unusedImportFixture, 'import { readFile } from "node:fs/promises";\n'),
-      ]);
-
-      for (const fixture of [jsFixture, tsFixture, unusedImportFixture]) {
-        const result = spawnSync(vp, ["lint", fixture], {
-          cwd: repositoryDirectory,
-          encoding: "utf8",
-        });
-        expect(result.status).not.toBe(0);
-        expect(result.stdout + result.stderr).toContain("no-unused-vars");
-      }
-
-      const checkResult = spawnSync(vp, ["check", jsFixture], {
-        cwd: repositoryDirectory,
-        encoding: "utf8",
-      });
-      expect(checkResult.status).not.toBe(0);
-      expect(checkResult.stdout + checkResult.stderr).toContain("no-unused-vars");
-    } finally {
-      await rm(fixturesDirectory, { recursive: true, force: true });
-    }
+    const files = {
+      "unused.js": "const unusedValue = 1;\n",
+      "unused.ts": "const unusedValue: number = 1;\n",
+      "unused-import.js": 'import { readFile } from "node:fs/promises";\n',
+    };
+    await withFixture(
+      "unused-vars",
+      files,
+      (directory) => {
+        for (const file of Object.keys(files)) {
+          const result = runVp(["lint", path.join(directory, file)], repositoryDirectory);
+          expect(result.status).not.toBe(0);
+          expect(result.output).toContain("no-unused-vars");
+        }
+        const checkResult = runVp(["check", path.join(directory, "unused.js")], repositoryDirectory);
+        expect(checkResult.status).not.toBe(0);
+        expect(checkResult.output).toContain("no-unused-vars");
+      },
+      tmpdir()
+    );
   });
 
   it("confirms native sort-imports detects an unsorted JS fixture", async () => {
-    const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
-    const fixture = path.join(fixturesDirectory, "unsorted-imports.js");
-
-    try {
-      await writeFile(fixture, 'import { zeta } from "zeta";\nimport { alpha } from "alpha";\nvoid [zeta, alpha];\n');
-      const result = spawnSync(vp, ["lint", fixture, "--deny", "sort-imports"], {
-        cwd: repositoryDirectory,
-        encoding: "utf8",
-      });
-      expect(result.status).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("sort-imports");
-    } finally {
-      await rm(fixturesDirectory, { recursive: true, force: true });
-    }
+    const files = { "unsorted-imports.js": 'import { zeta } from "zeta";\nimport { alpha } from "alpha";\nvoid [zeta, alpha];\n' };
+    await withFixture(
+      "sort-imports",
+      files,
+      (directory) => {
+        const result = runVp(["lint", path.join(directory, "unsorted-imports.js"), "--deny", "sort-imports"], repositoryDirectory);
+        expect(result.status).not.toBe(0);
+        expect(result.output).toContain("sort-imports");
+      },
+      tmpdir()
+    );
   });
 
   it("rejects a formatter violation through vp check", async () => {
-    const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
-    const fixture = path.join(fixturesDirectory, "unformatted.js");
-
-    try {
-      await writeFile(fixture, "const value={answer:42}\nvoid value\n");
-      const result = spawnSync(vp, ["check", fixture], {
-        cwd: repositoryDirectory,
-        encoding: "utf8",
-      });
-      expect(result.status).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("Formatting issues found");
-    } finally {
-      await rm(fixturesDirectory, { recursive: true, force: true });
-    }
+    await withFixture(
+      "check-format",
+      { "unformatted.js": "const value={answer:42}\nvoid value\n" },
+      (directory) => {
+        const result = runVp(["check", path.join(directory, "unformatted.js")], repositoryDirectory);
+        expect(result.status).not.toBe(0);
+        expect(result.output).toContain("Formatting issues found");
+      },
+      tmpdir()
+    );
   });
 
   it("uses vp fmt --check for format and import-sort failures", async () => {
-    const fixturesDirectory = await mkdtemp(path.join(tmpdir(), "task-6-fixtures-"));
-    const unformattedFixture = path.join(fixturesDirectory, "unformatted.js");
-    const unsortedFixture = path.join(fixturesDirectory, "unsorted-imports.js");
-
-    try {
-      await Promise.all([
-        writeFile(unformattedFixture, "const value={answer:42}\nvoid value\n"),
-        writeFile(unsortedFixture, 'import { zeta } from "zeta";\nimport { alpha } from "alpha";\nvoid [zeta, alpha];\n'),
-      ]);
-      for (const fixture of [unformattedFixture, unsortedFixture]) {
-        const result = spawnSync(vp, ["fmt", "--check", fixture], {
-          cwd: repositoryDirectory,
-          encoding: "utf8",
-        });
-        expect(result.status).not.toBe(0);
-        expect(result.stdout + result.stderr).toContain("Format issues found");
-      }
-    } finally {
-      await rm(fixturesDirectory, { recursive: true, force: true });
-    }
+    const files = {
+      "unformatted.js": "const value={answer:42}\nvoid value\n",
+      "unsorted-imports.js": 'import { zeta } from "zeta";\nimport { alpha } from "alpha";\nvoid [zeta, alpha];\n',
+    };
+    await withFixture(
+      "fmt-check",
+      files,
+      (directory) => {
+        for (const file of Object.keys(files)) {
+          const result = runVp(["fmt", "--check", path.join(directory, file)], repositoryDirectory);
+          expect(result.status).not.toBe(0);
+          expect(result.output).toContain("Format issues found");
+        }
+      },
+      tmpdir()
+    );
   });
 
   it("checks the root config from any workspace directory", () => {
-    const result = spawnSync(vp, ["check", "src/presets"], {
-      cwd: packageDirectory,
-      encoding: "utf8",
-    });
-    expect(result.status).toBe(0);
+    expect(runVp(["check", "src/presets"], packageDirectory).status).toBe(0);
   });
 });

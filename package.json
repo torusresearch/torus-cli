@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit -p packages/torus-scripts/tsconfig.json && tsc --noEmit -p packages/oxlint-config-typescript/tsconfig.json && tsc --noEmit -p packages/oxlint-config-react/tsconfig.json && tsc --noEmit -p packages/oxlint-config-vue/tsconfig.json && tsc --noEmit -p packages/oxlint-config-node/tsconfig.json",
     "test": "vp test",
     "changeset": "changeset",
-    "version-packages": "changeset version",
+    "version-packages": "changeset version && npm install --package-lock-only --ignore-scripts",
     "release-packages": "changeset publish",
     "check:styles": "vp fmt --check .",
     "fix:styles": "vp fmt --write ."

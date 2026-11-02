@@ -19,7 +19,24 @@ export interface TailwindLintOptions {
   entryPoint: string;
 }
 
-/** Independent fragment for Vue consumers of Tailwind v4. */
+/**
+ * Independent fragment for Vue consumers of Tailwind v4.
+ *
+ * Merge each field into the Vue preset. A plain `{ ...vueLintPreset(), ...tailwindLintPreset() }`
+ * replaces `jsPlugins`, `rules`, and `settings`, so the Vize rules and `oxlint-plugin-vize` disappear.
+ *
+ * @example
+ * ```ts
+ * const vue = vueLintPreset();
+ * const tailwind = tailwindLintPreset({ entryPoint: "src/styles.css" });
+ * const lint = {
+ *   ...vue,
+ *   jsPlugins: [...(vue.jsPlugins ?? []), ...(tailwind.jsPlugins ?? [])],
+ *   rules: { ...vue.rules, ...tailwind.rules },
+ *   settings: { ...vue.settings, ...tailwind.settings },
+ * };
+ * ```
+ */
 export function tailwindLintPreset({ entryPoint }: TailwindLintOptions): OxlintConfig {
   if (!entryPoint.trim()) throw new Error("Tailwind lint requires a CSS entry point");
   return {

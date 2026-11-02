@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { test } from "vite-plus/test";
+import { afterAll, beforeAll, describe, test } from "vite-plus/test";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.resolve(testDirectory, "..");
@@ -30,9 +30,17 @@ function packWorkspace(workspace, destination) {
   return Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
 }
 
-test("packed scripts expose only presets and a read-only diagnostic", async () => {
-  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "torus-scripts-boundary-"));
-  try {
+describe("packed torus-scripts", () => {
+  const skillPath = "skills/migrating-to-torus-cli/SKILL.md";
+  let temporaryDirectory;
+  let tarball;
+  let files;
+  let consumer;
+
+  const readPacked = (filePath) => execFileSync("tar", ["-xOf", tarball, `package/${filePath}`], { encoding: "utf8" });
+
+  beforeAll(async () => {
+    temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "torus-scripts-boundary-"));
     const workspace = path.join(temporaryDirectory, "workspace");
     const scriptsCopy = path.join(workspace, "scripts-source");
     await mkdir(workspace);
@@ -41,41 +49,43 @@ test("packed scripts expose only presets and a read-only diagnostic", async () =
     await cp(path.resolve(packageDirectory, "../config"), path.join(workspace, "config"), { recursive: true });
     execFileSync(path.join(workspace, "node_modules/.bin/vp"), ["pack"], { cwd: scriptsCopy, stdio: "pipe" });
     const packed = packWorkspace(scriptsCopy, temporaryDirectory);
-    const files = packed.files.map(({ path: filePath }) => filePath);
-    const manifest = JSON.parse(
-      execFileSync("tar", ["-xOf", path.join(temporaryDirectory, packed.filename), "package/package.json"], { encoding: "utf8" })
-    );
-    assert.ok(files.includes("dist/migrate/cli.mjs"), "pack must contain freshly built output");
-    assert.ok(files.includes("skills/migrating-to-torus-cli/SKILL.md"), "pack must contain the agent migration skill");
-    const skill = execFileSync("tar", ["-xOf", path.join(temporaryDirectory, packed.filename), "package/skills/migrating-to-torus-cli/SKILL.md"], {
-      encoding: "utf8",
-    });
-    const sourceSkill = await readFile(path.resolve(packageDirectory, "../../.cursor/skills/migrating-to-torus-cli/SKILL.md"), "utf8");
-    assert.equal(skill, sourceSkill, "the packed skill must match the repository skill");
-    assert.match(skill, /README\.md/);
-    const readme = execFileSync("tar", ["-xOf", path.join(temporaryDirectory, packed.filename), "package/README.md"], { encoding: "utf8" });
-    assert.doesNotMatch(readme, /\]\(\.\.\/\.\.\/docs\//);
+    tarball = path.join(temporaryDirectory, packed.filename);
+    files = packed.files.map(({ path: filePath }) => filePath);
 
+    consumer = path.join(temporaryDirectory, "consumer");
+    await mkdir(consumer);
+    execFileSync("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], { cwd: consumer, stdio: "pipe" });
+  }, 60_000);
+
+  afterAll(async () => {
+    if (temporaryDirectory) await rm(temporaryDirectory, { recursive: true, force: true });
+  });
+
+  test("contains only the manifest, README, skill, and freshly built output", () => {
+    assert.ok(files.includes("dist/migrate/cli.mjs"), "pack must contain freshly built output");
+    assert.ok(files.includes(skillPath), "pack must contain the agent migration skill");
+    assert.ok(files.every((filePath) => ["package.json", "README.md", skillPath].includes(filePath) || filePath.startsWith("dist/")));
+    assert.ok(files.every((filePath) => !/\b(?:rollup|release-it|babel|torus-scripts\.js)\b/i.test(filePath)));
+    assert.ok(files.every((filePath) => !filePath.startsWith("dist/migrate/") || /^dist\/migrate\/cli\.(?:mjs|d\.mts)(?:\.map)?$/.test(filePath)));
+
+    const manifest = JSON.parse(readPacked("package.json"));
     assert.deepEqual(Object.keys(manifest.exports).sort(), ["./fmt", "./library", "./node", "./react"]);
     assert.deepEqual(Object.keys(manifest.bin), ["torus-scripts-upgrade"]);
-    assert.ok(
-      files.every(
-        (filePath) => ["package.json", "README.md", "skills/migrating-to-torus-cli/SKILL.md"].includes(filePath) || filePath.startsWith("dist/")
-      )
-    );
-    assert.ok(files.every((filePath) => !/\b(?:rollup|release-it|babel|torus-scripts\.js)\b/i.test(filePath)));
+  });
 
-    const consumer = path.join(temporaryDirectory, "consumer");
-    await mkdir(consumer);
-    execFileSync("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", path.join(temporaryDirectory, packed.filename)], {
-      cwd: consumer,
-      stdio: "pipe",
-    });
+  test("ships the source skill and a README without repository links", async () => {
+    const sourceSkill = await readFile(path.join(packageDirectory, skillPath), "utf8");
+    assert.equal(readPacked(skillPath), sourceSkill, "the packed skill must match the source skill");
+    assert.match(sourceSkill, /README\.md/);
     assert.equal(
-      await readFile(path.join(consumer, "node_modules", "@toruslabs", "torus-scripts", "skills", "migrating-to-torus-cli", "SKILL.md"), "utf8"),
+      await readFile(path.join(consumer, "node_modules", "@toruslabs", "torus-scripts", skillPath), "utf8"),
       sourceSkill,
       "an installed consumer must be able to read the skill"
     );
+    assert.doesNotMatch(readPacked("README.md"), /\]\(\.\.\/\.\.\/docs\//);
+  });
+
+  test("exposes the presets and rejects legacy subpaths", () => {
     const imported = execFileSync(
       "node",
       [
@@ -102,23 +112,31 @@ test("packed scripts expose only presets and a read-only diagnostic", async () =
       assert.notEqual(result.status, 0, `legacy subpath ${subpath} must fail`);
       assert.match(result.stderr, /ERR_PACKAGE_PATH_NOT_EXPORTED/);
     }
+  });
+
+  test("installs only the read-only diagnostic bin", async () => {
     const binDirectory = path.join(consumer, "node_modules", ".bin");
     assert.throws(() => execFileSync(path.join(binDirectory, "torus-scripts"), [], { cwd: consumer }), { code: "ENOENT" });
-    const before = await readFile(path.join(consumer, "package.json"), "utf8");
-    const report = execFileSync(path.join(binDirectory, "torus-scripts-upgrade"), [consumer], { cwd: consumer, encoding: "utf8" });
-    assert.match(report, /vp migrate|Vite\+/i);
-    assert.equal(await readFile(path.join(consumer, "package.json"), "utf8"), before);
-    const legacyConfig = path.join(consumer, "rollup.config.mjs");
+    const project = path.join(temporaryDirectory, "project");
+    const manifestSource = JSON.stringify({ name: "project" });
+    await mkdir(project);
+    await writeFile(path.join(project, "package.json"), manifestSource);
+    const diagnose = () => spawnSync(path.join(binDirectory, "torus-scripts-upgrade"), [project], { cwd: consumer, encoding: "utf8" });
+
+    const clean = diagnose();
+    assert.equal(clean.status, 0, clean.stdout + clean.stderr);
+    assert.match(clean.stdout, /vp migrate/);
+    assert.equal(await readFile(path.join(project, "package.json"), "utf8"), manifestSource);
+
+    const legacyConfig = path.join(project, "rollup.config.mjs");
     const legacySource = "export default { plugins: [customPlugin()] };\n";
     await writeFile(legacyConfig, legacySource);
-    const diagnostic = spawnSync(path.join(binDirectory, "torus-scripts-upgrade"), [consumer], { cwd: consumer, encoding: "utf8" });
-    assert.equal(diagnostic.status, 1);
-    assert.match(diagnostic.stdout, /Rollup|plugin|unsupported/i);
+    const blocked = diagnose();
+    assert.equal(blocked.status, 1, blocked.stdout + blocked.stderr);
+    assert.match(blocked.stdout, /rollup\.config\.mjs: Custom Rollup plugins need a separate review\./);
     assert.equal(await readFile(legacyConfig, "utf8"), legacySource);
-  } finally {
-    await rm(temporaryDirectory, { recursive: true, force: true });
-  }
-}, 30_000);
+  });
+});
 
 async function waitForFileContent(filePath, expectedContent, timeoutMs = 10_000) {
   const deadline = Date.now() + timeoutMs;
@@ -278,25 +296,13 @@ test("npm pack builds dist from a source tree that has no build output", async (
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "torus-scripts-prepack-"));
   const packageCopy = path.join(temporaryDirectory, "torus-scripts");
   try {
-    await mkdir(packageCopy);
-    await cp(path.join(packageDirectory, "src"), path.join(packageCopy, "src"), { recursive: true });
-    await cp(path.join(packageDirectory, "skills"), path.join(packageCopy, "skills"), { recursive: true });
-    for (const filename of ["package.json", "README.md", "vite.config.ts", "tsconfig.json"]) {
-      await cp(path.join(packageDirectory, filename), path.join(packageCopy, filename));
-    }
+    await copyScriptsSource(packageCopy);
     await cp(path.resolve(packageDirectory, "../config"), path.join(temporaryDirectory, "config"), { recursive: true });
     await symlink(path.resolve(packageDirectory, "../../node_modules"), path.join(packageCopy, "node_modules"), "dir");
     await assert.rejects(readFile(path.join(packageCopy, "dist", "library.mjs")));
 
-    const packOutput = execFileSync("npm", ["pack", "--json", "--pack-destination", temporaryDirectory], {
-      cwd: packageCopy,
-      encoding: "utf8",
-      stdio: "pipe",
-    });
-    const jsonStart = Math.max(packOutput.lastIndexOf("\n["), packOutput.lastIndexOf("\n{"));
-    const packed = JSON.parse(jsonStart === -1 ? packOutput : packOutput.slice(jsonStart + 1));
-    const result = Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
-    const packedFiles = execFileSync("tar", ["-tzf", path.join(temporaryDirectory, result.filename)], { encoding: "utf8" });
+    const packed = packWorkspace(packageCopy, temporaryDirectory);
+    const packedFiles = execFileSync("tar", ["-tzf", path.join(temporaryDirectory, packed.filename)], { encoding: "utf8" });
     for (const name of ["library", "react", "node", "fmt"]) {
       assert.match(packedFiles, new RegExp(`package/dist/${name}\\.mjs$`, "m"));
       assert.match(packedFiles, new RegExp(`package/dist/${name}\\.d\\.mts$`, "m"));

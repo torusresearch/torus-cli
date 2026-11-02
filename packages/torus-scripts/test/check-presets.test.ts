@@ -236,7 +236,7 @@ describe("lint and format presets", () => {
     }
     for (const name of ["react", "vue"]) {
       const lintManifest = JSON.parse(await readFile(path.join(repositoryDirectory, `packages/oxlint-config-${name}/package.json`), "utf8"));
-      expect(lintManifest.peerDependencies?.["oxlint-tailwindcss"]).toBe("^1.14.0");
+      expect(lintManifest.peerDependencies?.["oxlint-tailwindcss"]).toBe("^1.17.0");
       expect(lintManifest.peerDependenciesMeta?.["oxlint-tailwindcss"]?.optional).toBe(true);
     }
   });
@@ -292,7 +292,7 @@ describe("lint and format presets", () => {
       }
       const install = spawnSync(
         "npm",
-        ["install", "--ignore-scripts", "--no-audit", "--no-fund", "vite-plus@1.4.0", "typescript@7.0.2", "oxlint-plugin-vize@0.485.0", ...tarballs],
+        ["install", "--ignore-scripts", "--no-audit", "--no-fund", "vite-plus@1.4.0", "typescript@7.0.2", "oxlint-plugin-vize@0.608.0", ...tarballs],
         {
           cwd: fixtureDirectory,
           encoding: "utf8",

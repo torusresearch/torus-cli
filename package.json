@@ -24,8 +24,8 @@
     "@changesets/cli": "3.0.3",
     "@lavamoat/harden": "0.8.1",
     "@types/node": "24.13.6",
-    "oxlint-plugin-vize": "^0.485.0",
-    "oxlint-tailwindcss": "^1.14.0",
+    "oxlint-plugin-vize": "^0.608.0",
+    "oxlint-tailwindcss": "^1.17.0",
     "typescript": "7.0.2",
     "vite-plus": "1.4.0"
   },

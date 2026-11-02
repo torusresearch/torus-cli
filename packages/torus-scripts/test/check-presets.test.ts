@@ -107,7 +107,7 @@ describe("lint and format presets", () => {
         `import { defineConfig } from "vite-plus";\nimport { nodeLintPreset } from "../packages/oxlint-config-node/index.js";\nexport default defineConfig({ lint: nodeLintPreset() });\n`
       );
       await writeFile(path.join(fixtureDirectory, "Bad.cjs"), "exports = { value: 1 };\n");
-      await writeFile(path.join(fixtureDirectory, "Syntax.ts"), "export const answer = Object.groupBy([1], String);\n");
+      await writeFile(path.join(fixtureDirectory, "Syntax.ts"), "export const kawi = /\\p{Script=Kawi}/u;\n");
       const result = spawnSync(vp, ["lint", "Bad.cjs"], { cwd: fixtureDirectory, encoding: "utf8" });
       expect(result.status).not.toBe(0);
       expect(result.stdout + result.stderr).toContain("node(no-exports-assign)");
@@ -382,7 +382,7 @@ describe("lint and format presets", () => {
     expect(nodeLintPreset().rules).toHaveProperty("node/no-exports-assign");
     expect(vueLintPreset().rules).toHaveProperty("vize/vue/require-v-for-key");
     expect(jsPluginNames(nodeLintPreset())).toEqual([...jsPluginNames(base), "n"]);
-    expect(nodeLintPreset().rules).toHaveProperty("n/no-unsupported-features/es-syntax", ["error", { version: ">=20", ignores: ["modules"] }]);
+    expect(nodeLintPreset().rules).toHaveProperty("n/no-unsupported-features/es-syntax", ["error", { version: ">=24", ignores: ["modules"] }]);
     expect(vueLintPreset().rules?.["no-unused-vars"]).toEqual([
       "error",
       {

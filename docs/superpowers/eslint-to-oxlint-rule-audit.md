@@ -13,7 +13,7 @@ Current package split: `@toruslabs/oxlint-config-typescript` owns the shared JS/
 - Native rules in the TypeScript preset: `no-console` (all calls), `no-unused-vars` (`args: "after-used"`, `argsIgnorePattern: "_"`), `no-dupe-class-members`, and `no-useless-constructor`.
 - JS plugins in the TypeScript preset: `tsdoc/syntax`, `simple-import-sort/exports`, and `import-js/no-extraneous-dependencies` (from `eslint-plugin-import`, with the old dev-dependency globs; `vite.config.*` replaces `eslint.config.mjs`).
 - Local plugin rules in `torus-plugin.mjs`: `torus/type-names` ports the `typeLike` `naming-convention` check, and `torus/member-ordering` ports the default `member-ordering` order. `@typescript-eslint/eslint-plugin` throws on load with TypeScript 7, and `naming-convention` needs type information that Oxlint JS plugins do not supply.
-- Vue keeps its own `no-unused-vars` options. Node adds `n/no-unsupported-features/es-syntax` (`>=20`, modules ignored) from `eslint-plugin-n`.
+- Vue keeps its own `no-unused-vars` options. Node adds `n/no-unsupported-features/es-syntax` (`>=24`, modules ignored; the old ESLint config used `>=20`) from `eslint-plugin-n`.
 - Not restored: `simple-import-sort/imports`, because it reports files that Oxfmt already sorted; and `import/extensions`, by decision. `import-js/no-extraneous-dependencies` skips imports that its resolver cannot find, such as TypeScript 7.
 
 ### Shared rules and behavior

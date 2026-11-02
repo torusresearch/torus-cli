@@ -11,6 +11,11 @@ const vp = path.join(repositoryDirectory, "node_modules", ".bin", "vp");
 const presetConfig =
   'import { defineConfig } from "vite-plus";\nimport { typescriptLintPreset } from "../packages/oxlint-config-typescript/index.js";\nexport default defineConfig({ lint: typescriptLintPreset() });\n';
 
+function lintDiagnostics(stdout: string): string[] {
+  const { diagnostics } = JSON.parse(stdout) as { diagnostics: { code: string; message: string }[] };
+  return diagnostics.map(({ code, message }) => `${code}: ${message}`);
+}
+
 it("provides JS and TS unused-variable checks without framework plugins", () => {
   const config = typescriptLintPreset();
   expect(config.plugins).toContain("typescript");
@@ -78,8 +83,8 @@ it("reports each restored custom rule", async () => {
         "",
       ].join("\n")
     );
-    const result = spawnSync(vp, ["lint", "bad.ts"], { cwd: fixtureDirectory, encoding: "utf8" });
-    const output = result.stdout + result.stderr;
+    const result = spawnSync(vp, ["lint", "--format", "json", "bad.ts"], { cwd: fixtureDirectory, encoding: "utf8" });
+    const output = lintDiagnostics(result.stdout).join("\n");
     expect(result.status).not.toBe(0);
     for (const diagnostic of [
       "torus(type-names): Type Alias name `snake_case` must match one of the following formats: camelCase, UPPER_CASE, PascalCase",
@@ -142,8 +147,8 @@ it("accepts valid type names, member order, and test-only dev dependencies", asy
         "",
       ].join("\n")
     );
-    const result = spawnSync(vp, ["lint", "good.test.ts"], { cwd: fixtureDirectory, encoding: "utf8" });
-    expect(result.stdout + result.stderr).not.toMatch(/torus\(|import-js\(|tsdoc\(|simple-import-sort\(/);
+    const result = spawnSync(vp, ["lint", "--format", "json", "good.test.ts"], { cwd: fixtureDirectory, encoding: "utf8" });
+    expect(lintDiagnostics(result.stdout)).toEqual([]);
     expect(result.status).toBe(0);
   } finally {
     await rm(fixtureDirectory, { recursive: true, force: true });

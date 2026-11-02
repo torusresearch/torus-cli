@@ -1,10 +1,12 @@
 {
-  "name": "matrix-plain",
+  "name": "plain-sdk",
   "version": "1.0.0",
-  "type": "module",
+  "private": true,
+  "source": "./src/index.ts",
   "files": [
     "dist"
   ],
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",

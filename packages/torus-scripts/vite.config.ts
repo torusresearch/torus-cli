@@ -1,7 +1,10 @@
 export default {
   pack: {
     entry: {
-      index: "src/index.ts",
+      library: "src/presets/library.ts",
+      react: "src/presets/react.ts",
+      node: "src/presets/node.ts",
+      fmt: "src/presets/fmt.ts",
       "migrate/inspect": "src/migrate/inspect.ts",
       "migrate/report": "src/migrate/report.ts",
       "migrate/cli": "src/migrate/cli.ts",

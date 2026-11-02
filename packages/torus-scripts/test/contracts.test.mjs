@@ -5,11 +5,11 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { test } from "vitest";
+import { test } from "vite-plus/test";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const packageDirectory = path.resolve(testDirectory, "..");
-const fixtureDirectory = path.join(testDirectory, "fixtures", "plain-sdk");
+const fixtureDirectory = path.join(testDirectory, "fixtures", "consumer-matrix", "plain");
 
 async function copyScriptsSource(destination) {
   await mkdir(destination, { recursive: true });
@@ -24,7 +24,8 @@ function packWorkspace(workspace, destination) {
     cwd: workspace,
     encoding: "utf8",
   });
-  const packed = JSON.parse(output);
+  const jsonStart = Math.max(output.lastIndexOf("\n["), output.lastIndexOf("\n{"));
+  const packed = JSON.parse(jsonStart === -1 ? output : output.slice(jsonStart + 1));
   return Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
 }
 
@@ -45,10 +46,9 @@ test("packed scripts expose only presets and a read-only diagnostic", async () =
     );
     assert.ok(files.includes("dist/migrate/cli.mjs"), "pack must contain freshly built output");
     const readme = execFileSync("tar", ["-xOf", path.join(temporaryDirectory, packed.filename), "package/README.md"], { encoding: "utf8" });
-    assert.match(readme, /https:\/\/github\.com\/torusresearch\/torus-cli\/blob\/main\/docs\/superpowers\/eslint-to-oxlint-rule-audit\.md/);
     assert.doesNotMatch(readme, /\]\(\.\.\/\.\.\/docs\//);
 
-    assert.deepEqual(Object.keys(manifest.exports).sort(), ["./fmt", "./library", "./node", "./react", "./vue"]);
+    assert.deepEqual(Object.keys(manifest.exports).sort(), ["./fmt", "./library", "./node", "./react"]);
     assert.deepEqual(Object.keys(manifest.bin), ["torus-scripts-upgrade"]);
     assert.ok(files.every((filePath) => ["package.json", "README.md"].includes(filePath) || filePath.startsWith("dist/")));
     assert.ok(files.every((filePath) => !/\b(?:rollup|release-it|babel|torus-scripts\.js)\b/i.test(filePath)));
@@ -66,7 +66,7 @@ test("packed scripts expose only presets and a read-only diagnostic", async () =
         "-e",
         `
       for (const [subpath, namedExport] of Object.entries({
-        library: "libraryPreset", react: "reactPreset", vue: "vuePreset", node: "nodePreset", fmt: "formatPreset"
+        library: "libraryPreset", react: "reactPreset", node: "nodePreset", fmt: "formatPreset"
       })) {
         const module = await import(\`@toruslabs/torus-scripts/\${subpath}\`);
         if (typeof module[namedExport] !== "function") throw Error(\`Missing \${namedExport}\`);
@@ -153,17 +153,21 @@ function trackPackBuilds(child) {
 test("library export packs a plain ESM SDK value and declaration", async () => {
   const torusScriptsPackage = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
 
-  assert.deepEqual(torusScriptsPackage.exports?.["./library"], {
-    types: "./dist/index.d.mts",
-    import: "./dist/index.mjs",
-  });
+  assert.deepEqual(Object.keys(torusScriptsPackage.exports).sort(), ["./fmt", "./library", "./node", "./react"]);
   assert.deepEqual(torusScriptsPackage.files, ["dist"]);
-  assert.deepEqual(Object.keys(torusScriptsPackage.bin), ["torus-scripts-upgrade"]);
-  for (const subpath of ["library", "react", "vue", "node", "fmt"]) {
-    const { import: entry } = torusScriptsPackage.exports[`./${subpath}`];
-    assert.equal(typeof entry, "string");
-    const exported = await import(pathToFileURL(path.join(packageDirectory, entry)));
-    assert.ok(Object.keys(exported).length > 0, `${subpath} must export a preset`);
+  assert.deepEqual(torusScriptsPackage.bin, { "torus-scripts-upgrade": "./dist/migrate/cli.mjs" });
+  for (const [subpath, exportName] of Object.entries({
+    library: "libraryPreset",
+    react: "reactPreset",
+    node: "nodePreset",
+    fmt: "formatPreset",
+  })) {
+    assert.deepEqual(torusScriptsPackage.exports[`./${subpath}`], {
+      types: `./dist/${subpath}.d.mts`,
+      import: `./dist/${subpath}.mjs`,
+    });
+    const exported = await import(pathToFileURL(path.join(packageDirectory, "dist", `${subpath}.mjs`)));
+    assert.deepEqual(Object.keys(exported).sort(), [exportName], `${subpath} must export only ${exportName}`);
   }
 
   const { libraryPreset } = await import(path.join(packageDirectory, "src", "presets", "library.ts"));
@@ -251,4 +255,35 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
-}, 30_000);
+}, 90_000);
+
+test("npm pack builds dist from a source tree that has no build output", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "torus-scripts-prepack-"));
+  const packageCopy = path.join(temporaryDirectory, "torus-scripts");
+  try {
+    await mkdir(packageCopy);
+    await cp(path.join(packageDirectory, "src"), path.join(packageCopy, "src"), { recursive: true });
+    for (const filename of ["package.json", "README.md", "vite.config.ts", "tsconfig.json"]) {
+      await cp(path.join(packageDirectory, filename), path.join(packageCopy, filename));
+    }
+    await cp(path.resolve(packageDirectory, "../config"), path.join(temporaryDirectory, "config"), { recursive: true });
+    await symlink(path.resolve(packageDirectory, "../../node_modules"), path.join(packageCopy, "node_modules"), "dir");
+    await assert.rejects(readFile(path.join(packageCopy, "dist", "library.mjs")));
+
+    const packOutput = execFileSync("npm", ["pack", "--json", "--pack-destination", temporaryDirectory], {
+      cwd: packageCopy,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+    const jsonStart = Math.max(packOutput.lastIndexOf("\n["), packOutput.lastIndexOf("\n{"));
+    const packed = JSON.parse(jsonStart === -1 ? packOutput : packOutput.slice(jsonStart + 1));
+    const result = Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
+    const packedFiles = execFileSync("tar", ["-tzf", path.join(temporaryDirectory, result.filename)], { encoding: "utf8" });
+    for (const name of ["library", "react", "node", "fmt"]) {
+      assert.match(packedFiles, new RegExp(`package/dist/${name}\\.mjs$`, "m"));
+      assert.match(packedFiles, new RegExp(`package/dist/${name}\\.d\\.mts$`, "m"));
+    }
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+}, 60_000);

@@ -8,12 +8,12 @@ Torus CLI and devtools
 - [`@toruslabs/torus-scripts`](packages/torus-scripts): Vite+ build and format presets. Use `torus-scripts-upgrade` to inspect an old project.
 - [`@toruslabs/oxlint-config-typescript`](packages/oxlint-config-typescript): JavaScript and TypeScript lint preset.
 - [`@toruslabs/oxlint-config-react`](packages/oxlint-config-react): React and Tailwind lint presets.
-- [`@toruslabs/oxlint-config-vue`](packages/oxlint-config-vue): Vue lint preset.
+- [`@toruslabs/oxlint-config-vue`](packages/oxlint-config-vue): Vue and Tailwind lint presets.
 - [`@toruslabs/oxlint-config-node`](packages/oxlint-config-node): Node lint preset.
 
 ## Release checks
 
-CI checks Node 24.15.0 and Node 26 with npm 12.2.0. It checks dependency hardening, builds, tests, and Changesets status.
+CI checks Node 24.22.0 and Node 26 with npm 12.2.0. It checks dependency hardening, builds, tests, and Changesets status.
 
 GitHub CodeQL default setup scans JavaScript and TypeScript. The separate workflow runs Semgrep OSS.
 

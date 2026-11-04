@@ -7,6 +7,8 @@ description: Use when moving an existing consumer project from old Torus scripts
 
 Use `node_modules/@toruslabs/torus-scripts/README.md` in an installed consumer, or `packages/torus-scripts/README.md` in this repository, as the current source for presets, commands, and known lint gaps. A successful diagnostic does not prove that a project is ready to migrate.
 
+Do not commit this skill into the consumer repository. Read it from `node_modules`. A committed copy goes stale against the installed package version.
+
 ## Inspect before changes
 
 1. Find the consumer's workspace root. Check `git status`, Node and npm versions, lockfile, scripts, TypeScript profiles, build output, package entry points, lint rules, format rules, tests, and release steps.
@@ -27,7 +29,7 @@ Use `node_modules/@toruslabs/torus-scripts/README.md` in an installed consumer, 
 ## Monorepos moving off Lerna
 
 1. Map Lerna's workspace, build order, version, and publish tasks before removing it. Run `vp migrate` once at the workspace root. Give each package its own `build` task. Use `vp run -r build` at the root, and verify dependency order and each package's output. Put `vp run` options before the task name, as in `vp run -r --fail-if-no-match build`. `vp run` forwards arguments after the task name to the task, and npm lifecycle scripts fail on unknown options with `EUNKNOWNCONFIG`.
-2. Preserve public package paths before changing their manifests. For packages that expose `dist/lib.esm/index.js`, `dist/lib.cjs/index.js`, and `dist/lib.cjs/types/index.d.ts`, use a consumer-owned `vite.config.ts` with explicit output directories. Adapt this pattern to the installed Vite+ version:
+2. Preserve public package paths before changing their manifests. For packages that expose `dist/lib.esm/index.js` and `dist/lib.cjs/index.js`, use a consumer-owned `vite.config.ts` with explicit output directories. Vite+ writes the CJS declarations to `dist/lib.cjs/index.d.ts`. If the old manifest pointed `types` at `dist/lib.cjs/types/index.d.ts`, change the `types` field to the new path. Do not copy the file back into the old folder. Adapt this pattern to the installed Vite+ version:
 
 ```ts
 import { defineConfig } from "vite-plus";
@@ -41,7 +43,6 @@ export default defineConfig({
     },
     dts: true,
     outExtensions: () => ({ js: ".js", dts: ".d.ts" }),
-    copy: [{ from: "dist/lib.cjs/index.d.ts", to: "dist/lib.cjs/types" }],
     sourcemap: true,
   },
 });

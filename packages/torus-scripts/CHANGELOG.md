@@ -1,5 +1,11 @@
 # @toruslabs/torus-scripts
 
+## 9.0.1
+
+### Patch Changes
+
+- 4ee08c8: Keep the migration skill out of consumer git history, and point Vite+ package `types` and `exports` types at the real CJS declaration path.
+
 ## 9.0.0
 
 ### Major Changes

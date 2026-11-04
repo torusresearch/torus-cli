@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/oxlint-config-typescript",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Oxlint JavaScript and TypeScript preset for Torus libraries",
   "files": [

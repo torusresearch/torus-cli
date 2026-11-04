@@ -21,12 +21,7 @@ it("provides JS and TS unused-variable checks without framework plugins", () => 
   expect(config.plugins).toContain("typescript");
   expect(config.plugins).not.toEqual(expect.arrayContaining(["react", "jsx-a11y", "vue", "node"]));
   expect(config.rules).toHaveProperty("no-unused-vars");
-  expect(config.jsPlugins?.map((plugin) => (typeof plugin === "string" ? plugin : plugin.name))).toEqual([
-    "torus",
-    "tsdoc",
-    "simple-import-sort",
-    "import-js",
-  ]);
+  expect(config.jsPlugins?.map((plugin) => (typeof plugin === "string" ? plugin : plugin.name))).toEqual(["torus", "tsdoc", "simple-import-sort"]);
 });
 
 it("lints consumer source types and test fixtures", async () => {
@@ -89,7 +84,6 @@ it("reports each restored custom rule", async () => {
       "torus(member-ordering): Member field should be declared before all public constructor definitions.",
       "tsdoc(syntax)",
       "simple-import-sort(exports)",
-      "import-js(no-extraneous-dependencies): 'oxlint-tailwindcss' should be listed in the project's dependencies, not devDependencies.",
       "eslint(no-console)",
       "eslint(no-useless-constructor)",
       "Parameter 'unusedAfter' is declared but never used.",
@@ -118,7 +112,7 @@ it("reports duplicate class members when the source parses", async () => {
   );
 });
 
-it("accepts valid type names, member order, and test-only dev dependencies", async () => {
+it("accepts valid type names and member order", async () => {
   const fixtureDirectory = await mkdtemp(path.join(repositoryDirectory, "oxlint-custom-ok-"));
 
   try {

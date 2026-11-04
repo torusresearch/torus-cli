@@ -17,9 +17,8 @@
     }
   },
   "dependencies": {
-    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-simple-import-sort": "^14.0.0",
-    "eslint-plugin-tsdoc": "^0.5.2"
+    "eslint-plugin-tsdoc": "^0.5.4"
   },
   "peerDependencies": {
     "vite-plus": "^1.0.0"

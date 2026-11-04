@@ -13,7 +13,6 @@ export function typescriptLintPreset(): OxlintConfig {
       { name: "torus", specifier: fileURLToPath(new URL("./torus-plugin.mjs", import.meta.url)) },
       { name: "tsdoc", specifier: require.resolve("eslint-plugin-tsdoc") },
       { name: "simple-import-sort", specifier: require.resolve("eslint-plugin-simple-import-sort") },
-      { name: "import-js", specifier: require.resolve("eslint-plugin-import") },
     ],
     ignorePatterns: ["**/node_modules/**", "**/coverage/**", "**/build/**", "**/dist/**", "**/examples/**"],
     rules: {
@@ -26,12 +25,6 @@ export function typescriptLintPreset(): OxlintConfig {
       "torus/member-ordering": "warn",
       "tsdoc/syntax": "warn",
       "simple-import-sort/exports": "error",
-      "import-js/no-extraneous-dependencies": [
-        "error",
-        {
-          devDependencies: ["**/vite.config.*", "**/*.test.ts", "**/*.test.tsx", "**/testHelpers.ts", "**/test/configs/**", "**/*.stories.tsx"],
-        },
-      ],
     },
   };
 }

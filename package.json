@@ -1,6 +1,6 @@
 {
   "private": true,
-  "packageManager": "npm@12.2.0",
+  "packageManager": "npm@12.2.1",
   "engines": {
     "node": ">=24.22.0",
     "npm": ">=12"
@@ -25,7 +25,7 @@
     "@lavamoat/harden": "^0.8.1",
     "@types/node": "^24.13.6",
     "oxlint-plugin-vize": "^0.608.0",
-    "oxlint-tailwindcss": "^1.17.0",
+    "oxlint-tailwindcss": "^1.17.1",
     "typescript": "^7.0.2",
     "vite-plus": "^1.4.0"
   },

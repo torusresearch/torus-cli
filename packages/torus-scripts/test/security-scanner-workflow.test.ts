@@ -5,17 +5,17 @@ import { expect, it } from "vite-plus/test";
 
 import { repositoryDirectory } from "../../../test/lint-fixture.js";
 
-it("scans JavaScript and TypeScript with CodeQL and Semgrep without tokens", async () => {
+it("uses the MetaMask security scanner without a Semgrep token", async () => {
   const workflow = await readFile(path.join(repositoryDirectory, ".github/workflows/security-code-scanner.yml"), "utf8");
+  const pin = workflow.match(/security-scan\.yml@([0-9a-f]{40})/);
+
+  expect(workflow).toContain("MetaMask/action-security-code-scanner/.github/workflows/security-scan.yml@");
   expect(workflow).not.toContain("github/codeql-action/");
-  expect(workflow).toContain("setuptools<81");
-  expect(workflow).toContain("semgrep scan");
-  expect(workflow).toMatch(/semgrep scan[^\n]*\s\.(?:\s|$)/m);
-  expect(workflow).not.toMatch(/semgrep scan[^\n]*\spackages(?:\s|$)/m);
-  for (const generated of ["node_modules", "dist", "build", "coverage"]) {
-    expect(workflow).toContain(`--exclude '**/${generated}/**'`);
-  }
-  expect(workflow).toContain("p/javascript");
-  expect(workflow).toContain("p/typescript");
   expect(workflow).not.toContain("SEMGREP_APP_TOKEN");
+  expect(workflow).toContain("security-events: write");
+  expect(pin?.[1]).toMatch(/^[0-9a-f]{40}$/);
+  expect(workflow).toContain(`scanner-ref: ${pin?.[1]}`);
+  for (const generated of ["node_modules", "dist", "build", "coverage"]) {
+    expect(workflow).toContain(`**/${generated}/**`);
+  }
 });

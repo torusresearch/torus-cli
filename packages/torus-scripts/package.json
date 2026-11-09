@@ -8,7 +8,8 @@
   },
   "files": [
     "dist",
-    "skills/migrating-to-torus-cli/SKILL.md"
+    "skills/migrating-to-torus-cli/SKILL.md",
+    "skills/migrating-to-torus-cli/reference.md"
   ],
   "scripts": {
     "build": "vp pack",

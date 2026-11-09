@@ -1,10 +1,11 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { expect, it } from "vite-plus/test";
 
 import { repositoryDirectory, runVp, viteLintConfig, withFixture } from "../../test/lint-fixture.js";
 import { typescriptLintPreset } from "./index.js";
+import tsdocPlugin from "./tsdoc-plugin.mjs";
 
 const presetConfig = viteLintConfig(
   'import { typescriptLintPreset } from "../packages/oxlint-config-typescript/index.js";',
@@ -129,6 +130,55 @@ it("reports a tsdoc.json that fails to load", async () => {
       expect(lintDiagnostics(result.stdout).join("\n")).toContain("error loading TSDoc config file");
     }
   );
+});
+
+const tsdocSchema = "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json";
+
+function tsdocMessages(filename: string, source: string): string[] {
+  const messages: string[] = [];
+  const rule = tsdocPlugin.rules.syntax.create({
+    filename,
+    physicalFilename: filename,
+    sourceCode: {
+      text: source,
+      getAllComments: () => [{ type: "Block", range: [0, source.indexOf("*/") + 2] }],
+      getLocFromIndex: (offset: number) => ({ line: 1, column: offset }),
+    },
+    report: (diagnostic: { message: string }) => {
+      messages.push(diagnostic.message);
+    },
+  });
+  rule.Program();
+  return messages;
+}
+
+it("reloads tsdoc.json after it changes in the same process", async () => {
+  const source = "/** @unknownTag */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-reload-"));
+  const configPath = path.join(directory, "tsdoc.json");
+  const sourcePath = path.join(directory, "good.ts");
+  const defined = {
+    $schema: tsdocSchema,
+    tagDefinitions: [{ tagName: "@unknownTag", syntaxKind: "modifier" }],
+  };
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await writeFile(configPath, `${JSON.stringify(defined)}\n`);
+    expect(tsdocMessages(sourcePath, source).join("\n")).not.toContain("tsdoc-undefined-tag");
+
+    await writeFile(configPath, `${JSON.stringify({ $schema: tsdocSchema })}\n`);
+    await utimes(configPath, new Date(Date.now() + 1000), new Date(Date.now() + 1000));
+    expect(tsdocMessages(sourcePath, source).join("\n")).toContain("tsdoc-undefined-tag");
+
+    await rm(configPath);
+    expect(tsdocMessages(sourcePath, source).join("\n")).toContain("tsdoc-undefined-tag");
+
+    await writeFile(configPath, `${JSON.stringify(defined)}\n`);
+    expect(tsdocMessages(sourcePath, source).join("\n")).not.toContain("tsdoc-undefined-tag");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 it("reports duplicate class members when the source parses", async () => {

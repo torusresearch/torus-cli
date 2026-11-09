@@ -2,6 +2,7 @@
 // @typescript-eslint/utils, which forces TypeScript 5 into the tree and cannot
 // load with TypeScript 7. This wrapper keeps the rule on @microsoft/tsdoc.
 
+import { statSync } from "node:fs";
 import path from "node:path";
 
 import { TextRange, TSDocConfiguration, TSDocParser } from "@microsoft/tsdoc";
@@ -9,12 +10,24 @@ import { TSDocConfigFile } from "@microsoft/tsdoc-config";
 
 const configFiles = new Map();
 
+function isStale(configFile) {
+  if (configFile.checkForModifiedFiles()) return true;
+  // A missing file records no timestamp, so an edit check cannot see one appear later.
+  if (!configFile.fileNotFound || !configFile.filePath) return false;
+  try {
+    statSync(configFile.filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function configFor(filename) {
   const sourceFolder = path.dirname(path.resolve(filename));
   const configFilePath = TSDocConfigFile.findConfigPathForFolder(sourceFolder);
   const cacheKey = configFilePath || `${sourceFolder}/`;
   let configFile = configFiles.get(cacheKey);
-  if (!configFile) {
+  if (!configFile || isStale(configFile)) {
     configFile = TSDocConfigFile.loadFile(configFilePath);
     configFiles.set(cacheKey, configFile);
   }

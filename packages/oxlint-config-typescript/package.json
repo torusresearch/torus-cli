@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@microsoft/tsdoc": "^0.17.1",
+    "@microsoft/tsdoc-config": "^0.18.3",
     "eslint-plugin-simple-import-sort": "^14.0.0"
   },
   "peerDependencies": {

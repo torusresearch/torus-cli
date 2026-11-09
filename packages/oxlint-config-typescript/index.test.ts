@@ -96,6 +96,41 @@ it("reports each restored custom rule", async () => {
   }
 }, 30_000);
 
+it("applies custom tags from the nearest tsdoc.json", async () => {
+  await withFixture(
+    "typescript-tsdoc-config",
+    {
+      "package.json": '{ "name": "tsdoc-fixture" }\n',
+      "tsdoc.json":
+        '{ "$schema": "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json", "tagDefinitions": [{ "tagName": "@unknownTag", "syntaxKind": "modifier" }] }\n',
+      "vite.config.ts": presetConfig,
+      "good.ts": "/** @unknownTag */\nexport const value = 1;\n",
+    },
+    (directory) => {
+      const result = runVp(["lint", "--format", "json", "good.ts"], directory);
+      expect(lintDiagnostics(result.stdout).join("\n")).not.toContain("tsdoc(syntax)");
+      expect(result.status).toBe(0);
+    }
+  );
+});
+
+it("reports a tsdoc.json that fails to load", async () => {
+  await withFixture(
+    "typescript-tsdoc-config-error",
+    {
+      "package.json": '{ "name": "tsdoc-fixture" }\n',
+      "tsdoc.json":
+        '{ "$schema": "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json", "tagDefinitions": [{ "tagName": "unknownTag", "syntaxKind": "modifier" }] }\n',
+      "vite.config.ts": presetConfig,
+      "good.ts": "export const value = 1;\n",
+    },
+    (directory) => {
+      const result = runVp(["lint", "--format", "json", "good.ts"], directory);
+      expect(lintDiagnostics(result.stdout).join("\n")).toContain("error loading TSDoc config file");
+    }
+  );
+});
+
 it("reports duplicate class members when the source parses", async () => {
   await withFixture(
     "typescript-duplicate-member",

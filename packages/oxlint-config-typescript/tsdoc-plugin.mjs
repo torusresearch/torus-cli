@@ -22,18 +22,6 @@ function isStale(configFile) {
   }
 }
 
-function configFor(filename) {
-  const sourceFolder = path.dirname(path.resolve(filename));
-  const configFilePath = TSDocConfigFile.findConfigPathForFolder(sourceFolder);
-  const cacheKey = configFilePath || `${sourceFolder}/`;
-  let configFile = configFiles.get(cacheKey);
-  if (!configFile || isStale(configFile)) {
-    configFile = TSDocConfigFile.loadFile(configFilePath);
-    configFiles.set(cacheKey, configFile);
-  }
-  return configFile;
-}
-
 function parserFor(configFile) {
   const configuration = new TSDocConfiguration();
   if (configFile.fileNotFound) return { parser: new TSDocParser(configuration), applyError: undefined };
@@ -46,6 +34,27 @@ function parserFor(configFile) {
   return { parser: new TSDocParser(configuration), applyError };
 }
 
+function configFor(filename) {
+  const sourceFolder = path.dirname(path.resolve(filename));
+  const configFilePath = TSDocConfigFile.findConfigPathForFolder(sourceFolder);
+  const cacheKey = configFilePath || `${sourceFolder}/`;
+  let entry = configFiles.get(cacheKey);
+  if (!entry || isStale(entry.configFile)) {
+    let configFile;
+    try {
+      configFile = TSDocConfigFile.loadFile(configFilePath);
+    } catch (error) {
+      configFile = TSDocConfigFile.loadFile(undefined);
+      entry = { configFile, parser: new TSDocParser(new TSDocConfiguration()), applyError: undefined, loadError: error };
+      configFiles.set(cacheKey, entry);
+      return entry;
+    }
+    entry = { configFile, ...parserFor(configFile), loadError: undefined };
+    configFiles.set(cacheKey, entry);
+  }
+  return entry;
+}
+
 const syntax = {
   meta: {
     type: "problem",
@@ -53,9 +62,15 @@ const syntax = {
   },
   create(context) {
     const sourceCode = context.sourceCode;
-    const configFile = configFor(context.physicalFilename || context.filename);
-    const { parser, applyError } = parserFor(configFile);
+    const { configFile, parser, applyError, loadError } = configFor(context.physicalFilename || context.filename);
     function checkCommentBlocks() {
+      if (loadError) {
+        context.report({
+          loc: { line: 1, column: 0 },
+          message: `error loading TSDoc config file: ${loadError.message}`,
+        });
+        return;
+      }
       if (!configFile.fileNotFound && configFile.hasErrors) {
         context.report({
           loc: { line: 1, column: 0 },

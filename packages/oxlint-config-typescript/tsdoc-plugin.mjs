@@ -34,32 +34,6 @@ function parserFor(configFile) {
   return { parser: new TSDocParser(configuration), applyError };
 }
 
-function loadErrorEntry(configFilePath, error) {
-  let failedMtime;
-  try {
-    failedMtime = statSync(configFilePath).mtimeMs;
-  } catch {
-    failedMtime = undefined;
-  }
-  return {
-    configFile: {
-      fileNotFound: false,
-      filePath: configFilePath,
-      hasErrors: false,
-      checkForModifiedFiles() {
-        try {
-          return statSync(configFilePath).mtimeMs !== failedMtime;
-        } catch {
-          return failedMtime !== undefined;
-        }
-      },
-    },
-    parser: new TSDocParser(new TSDocConfiguration()),
-    applyError: undefined,
-    loadError: error,
-  };
-}
-
 function configFor(filename) {
   const sourceFolder = path.dirname(path.resolve(filename));
   const configFilePath = TSDocConfigFile.findConfigPathForFolder(sourceFolder);
@@ -70,7 +44,9 @@ function configFor(filename) {
       const configFile = TSDocConfigFile.loadFile(configFilePath);
       entry = { configFile, ...parserFor(configFile), loadError: undefined };
     } catch (error) {
-      entry = loadErrorEntry(configFilePath, error);
+      // Don't cache the failure. The throw can come from an extends file, whose
+      // permissions can be fixed without the top tsdoc.json changing.
+      return { loadError: error };
     }
     configFiles.set(cacheKey, entry);
   }

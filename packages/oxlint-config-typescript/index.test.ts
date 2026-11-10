@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { expect, it } from "vite-plus/test";
@@ -177,6 +177,55 @@ it("reloads tsdoc.json after it changes in the same process", async () => {
     await writeFile(configPath, `${JSON.stringify(defined)}\n`);
     expect(tsdocMessages(sourcePath, source).join("\n")).not.toContain("tsdoc-undefined-tag");
   } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("reports a supportForTags config error once when another file reuses the config", async () => {
+  const source = "/** Documented. */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-once-"));
+  const message = 'The "supportForTags" field refers to an undefined tag "@missingTag".';
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await writeFile(
+      path.join(directory, "tsdoc.json"),
+      `${JSON.stringify({ $schema: tsdocSchema, supportForTags: { "@missingTag": true } })}\n`
+    );
+    for (const name of ["a.ts", "b.ts"]) {
+      const reports = tsdocMessages(path.join(directory, name), source).join("\n").split(message);
+      expect(reports).toHaveLength(2);
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("retries an unreadable extends file without a change to the top tsdoc.json", async () => {
+  const source = "/** @unknownTag */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-extends-"));
+  const basePath = path.join(directory, "base.json");
+  const sourcePath = path.join(directory, "good.ts");
+  const defined = {
+    $schema: tsdocSchema,
+    tagDefinitions: [{ tagName: "@unknownTag", syntaxKind: "modifier" }],
+  };
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await writeFile(path.join(directory, "tsdoc.json"), `${JSON.stringify({ $schema: tsdocSchema, extends: ["./base.json"] })}\n`);
+    await writeFile(basePath, "{}\n");
+    await chmod(basePath, 0o000);
+    const failed = tsdocMessages(sourcePath, source).join("\n");
+    expect(failed).toContain("EACCES");
+
+    await chmod(basePath, 0o644);
+    await writeFile(basePath, `${JSON.stringify(defined)}\n`);
+    const recovered = tsdocMessages(sourcePath, source).join("\n");
+    expect(recovered).not.toContain("EACCES");
+    expect(recovered).not.toContain("tsdoc-undefined-tag");
+  } finally {
+    await chmod(basePath, 0o644).catch(() => undefined);
     await rm(directory, { recursive: true, force: true });
   }
 });

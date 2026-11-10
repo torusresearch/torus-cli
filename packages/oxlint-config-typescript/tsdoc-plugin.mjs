@@ -34,22 +34,44 @@ function parserFor(configFile) {
   return { parser: new TSDocParser(configuration), applyError };
 }
 
+function loadErrorEntry(configFilePath, error) {
+  let failedMtime;
+  try {
+    failedMtime = statSync(configFilePath).mtimeMs;
+  } catch {
+    failedMtime = undefined;
+  }
+  return {
+    configFile: {
+      fileNotFound: false,
+      filePath: configFilePath,
+      hasErrors: false,
+      checkForModifiedFiles() {
+        try {
+          return statSync(configFilePath).mtimeMs !== failedMtime;
+        } catch {
+          return failedMtime !== undefined;
+        }
+      },
+    },
+    parser: new TSDocParser(new TSDocConfiguration()),
+    applyError: undefined,
+    loadError: error,
+  };
+}
+
 function configFor(filename) {
   const sourceFolder = path.dirname(path.resolve(filename));
   const configFilePath = TSDocConfigFile.findConfigPathForFolder(sourceFolder);
   const cacheKey = configFilePath || `${sourceFolder}/`;
   let entry = configFiles.get(cacheKey);
   if (!entry || isStale(entry.configFile)) {
-    let configFile;
     try {
-      configFile = TSDocConfigFile.loadFile(configFilePath);
+      const configFile = TSDocConfigFile.loadFile(configFilePath);
+      entry = { configFile, ...parserFor(configFile), loadError: undefined };
     } catch (error) {
-      configFile = TSDocConfigFile.loadFile(undefined);
-      entry = { configFile, parser: new TSDocParser(new TSDocConfiguration()), applyError: undefined, loadError: error };
-      configFiles.set(cacheKey, entry);
-      return entry;
+      entry = loadErrorEntry(configFilePath, error);
     }
-    entry = { configFile, ...parserFor(configFile), loadError: undefined };
     configFiles.set(cacheKey, entry);
   }
   return entry;

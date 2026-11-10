@@ -1,4 +1,4 @@
-import { mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { expect, it } from "vite-plus/test";
@@ -176,6 +176,34 @@ it("reloads tsdoc.json after it changes in the same process", async () => {
 
     await writeFile(configPath, `${JSON.stringify(defined)}\n`);
     expect(tsdocMessages(sourcePath, source).join("\n")).not.toContain("tsdoc-undefined-tag");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("reports an unreadable tsdoc.json and loads it once the file is readable", async () => {
+  const source = "/** @unknownTag */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-unreadable-"));
+  const configPath = path.join(directory, "tsdoc.json");
+  const sourcePath = path.join(directory, "good.ts");
+  const defined = {
+    $schema: tsdocSchema,
+    tagDefinitions: [{ tagName: "@unknownTag", syntaxKind: "modifier" }],
+  };
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await mkdir(configPath);
+    const failed = tsdocMessages(sourcePath, source).join("\n");
+    expect(failed).toContain("error loading TSDoc config file");
+    expect(failed).toContain("EISDIR");
+
+    await rm(configPath, { recursive: true });
+    await writeFile(configPath, `${JSON.stringify(defined)}\n`);
+    await utimes(configPath, new Date(Date.now() + 1000), new Date(Date.now() + 1000));
+    const recovered = tsdocMessages(sourcePath, source).join("\n");
+    expect(recovered).not.toContain("error loading TSDoc config file");
+    expect(recovered).not.toContain("tsdoc-undefined-tag");
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

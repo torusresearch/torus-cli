@@ -188,10 +188,7 @@ it("reports a supportForTags config error once when another file reuses the conf
 
   try {
     await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
-    await writeFile(
-      path.join(directory, "tsdoc.json"),
-      `${JSON.stringify({ $schema: tsdocSchema, supportForTags: { "@missingTag": true } })}\n`
-    );
+    await writeFile(path.join(directory, "tsdoc.json"), `${JSON.stringify({ $schema: tsdocSchema, supportForTags: { "@missingTag": true } })}\n`);
     for (const name of ["a.ts", "b.ts"]) {
       const reports = tsdocMessages(path.join(directory, name), source).join("\n").split(message);
       expect(reports).toHaveLength(2);

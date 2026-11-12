@@ -1,5 +1,11 @@
 # @toruslabs/torus-scripts
 
+## 9.0.2
+
+### Patch Changes
+
+- 7291658: `libraryPreset` now leaves sourcemaps off unless the caller sets `sourcemap: true`. The migration example uses the same setting.
+
 ## 9.0.1
 
 ### Patch Changes

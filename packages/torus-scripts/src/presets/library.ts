@@ -20,7 +20,7 @@ export function libraryPreset(options: LibraryOptions): LibraryPreset {
       entry: options.entry,
       dts: options.dts ?? true,
       format: options.format ?? ["esm"],
-      sourcemap: options.sourcemap ?? true,
+      sourcemap: options.sourcemap ?? false,
     },
   };
 }

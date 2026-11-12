@@ -227,7 +227,7 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
       entry: "src/index.ts",
       dts: true,
       format: ["esm"],
-      sourcemap: true,
+      sourcemap: false,
     },
   });
   assert.deepEqual(

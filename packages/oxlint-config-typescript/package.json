@@ -17,8 +17,9 @@
     }
   },
   "dependencies": {
-    "eslint-plugin-simple-import-sort": "^14.0.0",
-    "eslint-plugin-tsdoc": "^0.5.4"
+    "@microsoft/tsdoc": "^0.17.1",
+    "@microsoft/tsdoc-config": "^0.18.3",
+    "eslint-plugin-simple-import-sort": "^14.0.0"
   },
   "peerDependencies": {
     "vite-plus": "^1.0.0"

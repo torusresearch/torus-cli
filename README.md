@@ -27,4 +27,4 @@ Review package files, security alerts, and the Changesets preview before release
 2. Review and merge that pull request.
 3. On `main`, run `npm ci`, `npm run build`, and `npm run release-packages`. Then run `git push --follow-tags`.
 
-This workspace uses TypeScript 7.0.2 with Vite+ 1.4.0. Its source packages use explicit TypeScript project files for declaration builds.
+This workspace uses TypeScript 7.0.2 with Vite+ 1.5.0. Its source packages use explicit TypeScript project files for declaration builds.

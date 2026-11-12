@@ -9,6 +9,6 @@ export default {
     },
     dts: true,
     format: ["esm"],
-    sourcemap: true,
+    sourcemap: false,
   },
 };

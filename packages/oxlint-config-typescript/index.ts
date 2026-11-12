@@ -11,7 +11,7 @@ export function typescriptLintPreset(): OxlintConfig {
     plugins: ["eslint", "typescript", "unicorn", "oxc", "import", "promise", "vitest"],
     jsPlugins: [
       { name: "torus", specifier: fileURLToPath(new URL("./torus-plugin.mjs", import.meta.url)) },
-      { name: "tsdoc", specifier: require.resolve("eslint-plugin-tsdoc") },
+      { name: "tsdoc", specifier: fileURLToPath(new URL("./tsdoc-plugin.mjs", import.meta.url)) },
       { name: "simple-import-sort", specifier: require.resolve("eslint-plugin-simple-import-sort") },
     ],
     ignorePatterns: ["**/node_modules/**", "**/coverage/**", "**/build/**", "**/dist/**", "**/examples/**"],

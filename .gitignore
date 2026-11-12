@@ -4,3 +4,4 @@ toruslabs-*.tgz
 
 create-torus-app-*tgz
 .DS_Store
+.vitest/

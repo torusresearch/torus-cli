@@ -1,10 +1,11 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { expect, it } from "vite-plus/test";
 
 import { repositoryDirectory, runVp, viteLintConfig, withFixture } from "../../test/lint-fixture.js";
 import { typescriptLintPreset } from "./index.js";
+import tsdocPlugin from "./tsdoc-plugin.mjs";
 
 const presetConfig = viteLintConfig(
   'import { typescriptLintPreset } from "../packages/oxlint-config-typescript/index.js";',
@@ -95,6 +96,164 @@ it("reports each restored custom rule", async () => {
     await rm(fixtureDirectory, { recursive: true, force: true });
   }
 }, 30_000);
+
+it("applies custom tags from the nearest tsdoc.json", async () => {
+  await withFixture(
+    "typescript-tsdoc-config",
+    {
+      "package.json": '{ "name": "tsdoc-fixture" }\n',
+      "tsdoc.json":
+        '{ "$schema": "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json", "tagDefinitions": [{ "tagName": "@unknownTag", "syntaxKind": "modifier" }] }\n',
+      "vite.config.ts": presetConfig,
+      "good.ts": "/** @unknownTag */\nexport const value = 1;\n",
+    },
+    (directory) => {
+      const result = runVp(["lint", "--format", "json", "good.ts"], directory);
+      expect(lintDiagnostics(result.stdout).join("\n")).not.toContain("tsdoc(syntax)");
+      expect(result.status).toBe(0);
+    }
+  );
+});
+
+it("reports a tsdoc.json that fails to load", async () => {
+  await withFixture(
+    "typescript-tsdoc-config-error",
+    {
+      "package.json": '{ "name": "tsdoc-fixture" }\n',
+      "tsdoc.json":
+        '{ "$schema": "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json", "tagDefinitions": [{ "tagName": "unknownTag", "syntaxKind": "modifier" }] }\n',
+      "vite.config.ts": presetConfig,
+      "good.ts": "export const value = 1;\n",
+    },
+    (directory) => {
+      const result = runVp(["lint", "--format", "json", "good.ts"], directory);
+      expect(lintDiagnostics(result.stdout).join("\n")).toContain("error loading TSDoc config file");
+    }
+  );
+});
+
+const tsdocSchema = "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json";
+
+function tsdocMessages(filename: string, source: string): string[] {
+  const messages: string[] = [];
+  const rule = tsdocPlugin.rules.syntax.create({
+    filename,
+    physicalFilename: filename,
+    sourceCode: {
+      text: source,
+      getAllComments: () => [{ type: "Block", range: [0, source.indexOf("*/") + 2] }],
+      getLocFromIndex: (offset: number) => ({ line: 1, column: offset }),
+    },
+    report: (diagnostic: { message: string }) => {
+      messages.push(diagnostic.message);
+    },
+  });
+  rule.Program();
+  return messages;
+}
+
+it("reloads tsdoc.json after it changes in the same process", async () => {
+  const source = "/** @unknownTag */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-reload-"));
+  const configPath = path.join(directory, "tsdoc.json");
+  const sourcePath = path.join(directory, "good.ts");
+  const defined = {
+    $schema: tsdocSchema,
+    tagDefinitions: [{ tagName: "@unknownTag", syntaxKind: "modifier" }],
+  };
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await writeFile(configPath, `${JSON.stringify(defined)}\n`);
+    expect(tsdocMessages(sourcePath, source).join("\n")).not.toContain("tsdoc-undefined-tag");
+
+    await writeFile(configPath, `${JSON.stringify({ $schema: tsdocSchema })}\n`);
+    await utimes(configPath, new Date(Date.now() + 1000), new Date(Date.now() + 1000));
+    expect(tsdocMessages(sourcePath, source).join("\n")).toContain("tsdoc-undefined-tag");
+
+    await rm(configPath);
+    expect(tsdocMessages(sourcePath, source).join("\n")).toContain("tsdoc-undefined-tag");
+
+    await writeFile(configPath, `${JSON.stringify(defined)}\n`);
+    expect(tsdocMessages(sourcePath, source).join("\n")).not.toContain("tsdoc-undefined-tag");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("reports a supportForTags config error once when another file reuses the config", async () => {
+  const source = "/** Documented. */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-once-"));
+  const message = 'The "supportForTags" field refers to an undefined tag "@missingTag".';
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await writeFile(path.join(directory, "tsdoc.json"), `${JSON.stringify({ $schema: tsdocSchema, supportForTags: { "@missingTag": true } })}\n`);
+    for (const name of ["a.ts", "b.ts"]) {
+      const reports = tsdocMessages(path.join(directory, name), source).join("\n").split(message);
+      expect(reports).toHaveLength(2);
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("retries an unreadable extends file without a change to the top tsdoc.json", async () => {
+  const source = "/** @unknownTag */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-extends-"));
+  const basePath = path.join(directory, "base.json");
+  const sourcePath = path.join(directory, "good.ts");
+  const defined = {
+    $schema: tsdocSchema,
+    tagDefinitions: [{ tagName: "@unknownTag", syntaxKind: "modifier" }],
+  };
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await writeFile(path.join(directory, "tsdoc.json"), `${JSON.stringify({ $schema: tsdocSchema, extends: ["./base.json"] })}\n`);
+    await writeFile(basePath, "{}\n");
+    await chmod(basePath, 0o000);
+    const failed = tsdocMessages(sourcePath, source).join("\n");
+    expect(failed).toContain("EACCES");
+
+    await chmod(basePath, 0o644);
+    await writeFile(basePath, `${JSON.stringify(defined)}\n`);
+    const recovered = tsdocMessages(sourcePath, source).join("\n");
+    expect(recovered).not.toContain("EACCES");
+    expect(recovered).not.toContain("tsdoc-undefined-tag");
+  } finally {
+    await chmod(basePath, 0o644).catch(() => undefined);
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("reports an unreadable tsdoc.json and loads it once the file is readable", async () => {
+  const source = "/** @unknownTag */\nexport const value = 1;\n";
+  const directory = await mkdtemp(path.join(repositoryDirectory, "typescript-tsdoc-unreadable-"));
+  const configPath = path.join(directory, "tsdoc.json");
+  const sourcePath = path.join(directory, "good.ts");
+  const defined = {
+    $schema: tsdocSchema,
+    tagDefinitions: [{ tagName: "@unknownTag", syntaxKind: "modifier" }],
+  };
+
+  try {
+    await writeFile(path.join(directory, "package.json"), '{ "name": "tsdoc-fixture" }\n');
+    await mkdir(configPath);
+    const failed = tsdocMessages(sourcePath, source).join("\n");
+    expect(failed).toContain("error loading TSDoc config file");
+    expect(failed).toContain("EISDIR");
+
+    await rm(configPath, { recursive: true });
+    await writeFile(configPath, `${JSON.stringify(defined)}\n`);
+    await utimes(configPath, new Date(Date.now() + 1000), new Date(Date.now() + 1000));
+    const recovered = tsdocMessages(sourcePath, source).join("\n");
+    expect(recovered).not.toContain("error loading TSDoc config file");
+    expect(recovered).not.toContain("tsdoc-undefined-tag");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 it("reports duplicate class members when the source parses", async () => {
   await withFixture(

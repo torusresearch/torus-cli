@@ -23,7 +23,7 @@ Review package files, security alerts, and the Changesets preview before release
 
 ## Release
 
-1. Run the "Create release pull request" workflow on `main` from the Actions tab. It runs `npm run version-packages` and opens or updates the `chore: release packages` pull request.
+1. Run the "Create release pull request" workflow on `main` from the Actions tab. It runs `npm run version-packages` and opens the `chore: release packages` pull request. If one is already open, the workflow closes it and opens a new one, because the org ruleset blocks the force-push an update needs.
 2. Review and merge that pull request.
 3. On `main`, run `npm ci`, `npm run build`, and `npm run release-packages`. Then run `git push --follow-tags`.
 

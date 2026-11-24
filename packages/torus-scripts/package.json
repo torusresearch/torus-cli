@@ -9,7 +9,9 @@
   "files": [
     "dist",
     "skills/migrating-to-torus-cli/SKILL.md",
-    "skills/migrating-to-torus-cli/reference.md"
+    "skills/migrating-to-torus-cli/reference.md",
+    "skills/torus-repo-rules/SKILL.md",
+    "skills/torus-repo-rules/reference.md"
   ],
   "scripts": {
     "build": "vp pack",

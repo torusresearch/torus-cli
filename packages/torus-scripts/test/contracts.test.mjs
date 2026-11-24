@@ -33,6 +33,8 @@ function packWorkspace(workspace, destination) {
 describe("packed torus-scripts", () => {
   const skillPath = "skills/migrating-to-torus-cli/SKILL.md";
   const referencePath = "skills/migrating-to-torus-cli/reference.md";
+  const repoRulesSkillPath = "skills/torus-repo-rules/SKILL.md";
+  const repoRulesReferencePath = "skills/torus-repo-rules/reference.md";
   let temporaryDirectory;
   let tarball;
   let files;
@@ -66,7 +68,15 @@ describe("packed torus-scripts", () => {
     assert.ok(files.includes("dist/migrate/cli.mjs"), "pack must contain freshly built output");
     assert.ok(files.includes(skillPath), "pack must contain the agent migration skill");
     assert.ok(files.includes(referencePath), "pack must contain the skill reference");
-    assert.ok(files.every((filePath) => ["package.json", "README.md", skillPath, referencePath].includes(filePath) || filePath.startsWith("dist/")));
+    assert.ok(files.includes(repoRulesSkillPath), "pack must contain the repo rules skill");
+    assert.ok(files.includes(repoRulesReferencePath), "pack must contain the repo rules skill reference");
+    assert.ok(
+      files.every(
+        (filePath) =>
+          ["package.json", "README.md", skillPath, referencePath, repoRulesSkillPath, repoRulesReferencePath].includes(filePath) ||
+          filePath.startsWith("dist/")
+      )
+    );
     assert.ok(files.every((filePath) => !/\b(?:rollup|release-it|babel|torus-scripts\.js)\b/i.test(filePath)));
     assert.ok(files.every((filePath) => !filePath.startsWith("dist/migrate/") || /^dist\/migrate\/cli\.(?:mjs|d\.mts)(?:\.map)?$/.test(filePath)));
 
@@ -214,7 +224,13 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
   const torusScriptsPackage = JSON.parse(await readFile(path.join(packageDirectory, "package.json"), "utf8"));
 
   assert.deepEqual(Object.keys(torusScriptsPackage.exports).sort(), ["./fmt", "./library", "./node", "./react"]);
-  assert.deepEqual(torusScriptsPackage.files, ["dist", "skills/migrating-to-torus-cli/SKILL.md", "skills/migrating-to-torus-cli/reference.md"]);
+  assert.deepEqual(torusScriptsPackage.files, [
+    "dist",
+    "skills/migrating-to-torus-cli/SKILL.md",
+    "skills/migrating-to-torus-cli/reference.md",
+    "skills/torus-repo-rules/SKILL.md",
+    "skills/torus-repo-rules/reference.md",
+  ]);
   assert.deepEqual(torusScriptsPackage.bin, { "torus-scripts-upgrade": "./dist/migrate/cli.mjs" });
   for (const [subpath, exportName] of Object.entries({
     library: "libraryPreset",

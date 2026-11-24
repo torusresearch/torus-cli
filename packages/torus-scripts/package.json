@@ -11,7 +11,9 @@
     "skills/migrating-to-torus-cli/SKILL.md",
     "skills/migrating-to-torus-cli/reference.md",
     "skills/torus-repo-rules/SKILL.md",
-    "skills/torus-repo-rules/reference.md"
+    "skills/torus-repo-rules/reference.md",
+    "skills/web3auth-backend-repo-upgrade/SKILL.md",
+    "skills/web3auth-backend-repo-upgrade/reference.md"
   ],
   "scripts": {
     "build": "vp pack",

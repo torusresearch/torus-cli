@@ -15,6 +15,8 @@ description: >-
 
 This skill does the EMBED-573 stack upgrade steps that are not Vite+ and not lint. Vite+ migration, build presets, and lint presets belong to the `migrating-to-torus-cli` skill. When the user asks for that work, load that skill instead.
 
+For a backend service (a `Dockerfile`, a Compose file, or a deploy workflow), also load the `web3auth-backend-repo-upgrade` skill. Use both together. That skill adds the backend steps and lists where it replaces guidance in this skill.
+
 Plan the upgrade. The user commits. Do one step at a time when they ask to implement.
 
 ### Tickets

@@ -64,6 +64,8 @@ The package includes an agent skill at `skills/migrating-to-torus-cli/`. In a co
 
 A second skill at `skills/torus-repo-rules/` does only the stack upgrade steps that are not Vite+ and not lint: GitHub policy files, engines, `.npmrc`, tsconfig profiles, Changesets, CI, and dependency updates. Install and use it the same way.
 
+A third skill at `skills/web3auth-backend-repo-upgrade/` adds the backend-only steps: Docker images, Compose files, deploy workflows, KICS and Trivy, private Changesets, and runtime majors such as redis and Sentry. It is not a full plan. For a backend, load it together with `migrating-to-torus-cli` (full upgrade) or `torus-repo-rules` (no Vite+ and no lint).
+
 Run `torus-scripts-upgrade <path>` to inspect an old project without changing files. It reports unsupported custom behavior and exits nonzero for those cases. Run `vp migrate` at the workspace root, not inside each package, and review its changes. The diagnostic does not run `vp migrate` for you.
 
 Replace the old commands:

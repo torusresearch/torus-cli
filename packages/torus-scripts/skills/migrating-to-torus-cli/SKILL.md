@@ -68,6 +68,8 @@ Example: A project can get “No known unsupported behavior detected” while it
 
 ## Stack upgrade
 
+For a backend service (a `Dockerfile`, a Compose file, or a deploy workflow), also load the `web3auth-backend-repo-upgrade` skill. Use both together. That skill adds the backend steps and lists where it replaces guidance in this skill.
+
 Plan the upgrade. The user commits. Do one step at a time when they ask to implement.
 
 ### Tickets

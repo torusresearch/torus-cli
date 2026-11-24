@@ -62,6 +62,10 @@ The old `@toruslabs/eslint-config-*` packages are removed. Do not treat an Oxlin
 
 The package includes an agent skill at `skills/migrating-to-torus-cli/`. In a consumer project, read it at `node_modules/@toruslabs/torus-scripts/skills/migrating-to-torus-cli/SKILL.md`. To make it available as a project skill in Cursor, copy that directory to `.cursor/skills/migrating-to-torus-cli/` in that project, but do not commit that copy. The skill belongs to this package; a committed copy goes stale and the consumer repository then carries two versions. Keep the skill and this README from the same package version. The same skill plans a Web3Auth stack upgrade. `reference.md` in that directory holds the CODEOWNERS, Dependabot, and `.npmrc` lookup tables.
 
+A second skill at `skills/torus-repo-rules/` does only the stack upgrade steps that are not Vite+ and not lint: GitHub policy files, engines, `.npmrc`, tsconfig profiles, Changesets, CI, and dependency updates. Install and use it the same way.
+
+A third skill at `skills/web3auth-backend-repo-upgrade/` adds the backend-only steps: Docker images, Compose files, deploy workflows, KICS and Trivy, private Changesets, and runtime majors such as redis and Sentry. It is not a full plan. For a backend, load it together with `migrating-to-torus-cli` (full upgrade) or `torus-repo-rules` (no Vite+ and no lint).
+
 Run `torus-scripts-upgrade <path>` to inspect an old project without changing files. It reports unsupported custom behavior and exits nonzero for those cases. Run `vp migrate` at the workspace root, not inside each package, and review its changes. The diagnostic does not run `vp migrate` for you.
 
 Replace the old commands:

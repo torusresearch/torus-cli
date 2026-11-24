@@ -1,0 +1,1 @@
+../../../packages/torus-scripts/skills/torus-repo-rules/SKILL.md

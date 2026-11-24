@@ -26,7 +26,7 @@ Use this skill together with one base skill. It is not a full plan, and it does 
 
 The base skill owns the tickets, the working agreement, the step list, and the version rules. Follow its steps in order. This skill adds work to steps 1, 5, 6, 7, and 9, and replaces some base guidance. Where the two conflict on a backend, this skill wins. The conflicts are listed in **Overrides of the base skill**.
 
-A repository is a backend when it has one or more of these: a `Dockerfile`, a `docker-compose*.yml`, a deploy workflow (ECR, ECS), a server entry such as `node dist/index.js`, or no npm publish.
+A repository is a backend when it has one or more of these: a `Dockerfile`, a `docker-compose*.yml`, a deploy workflow (ECR, ECS), or a server entry such as `node dist/index.js`. A repository that does not publish to npm, but has none of these, is not a backend. A private library stays on the base skill only.
 
 ## Overrides of the base skill
 
@@ -99,6 +99,7 @@ Use the templates in [reference.md](reference.md). The rules:
 - In the production dependency stage, `chown -R root:root` the app before the final `COPY --from`. BuildKit keeps the source owner on `COPY --from`, and a `chown` in the final stage copies `node_modules` into a second layer.
 - The final stage runs `USER node`, has a `HEALTHCHECK` on `/health`, and uses an exec-form `CMD ["node", "dist/index.js"]`.
 - `apk add` needs root. Put it before `USER node`. Remove `python3`, `make`, and `g++` only when no installed package builds a native addon. Check `hasInstallScript` in the lockfile first.
+- `--ignore-scripts` also skips native addon builds. For each lockfile package with `hasInstallScript` that the app loads at runtime, add `RUN npm rebuild <package>` after `npm ci` in the build and production dependency stages. Keep `python3`, `make`, and `g++` in those stages. Then load the addon in the image smoke test.
 - `Dockerfile.dev` takes `ARG NODE_IMAGE`, so CI can test each matrix version. `node` owns `/app`. Sources stay root-owned. Use a long health check start period when the container runs migrations first.
 
 ## Compose
@@ -116,7 +117,7 @@ Apply to `docker-compose.yml`, `docker-compose.dev.yml`, and `docker-compose-ci.
 See [reference.md](reference.md) for the job outlines.
 
 - One `ci.yml` named `Validate`. Triggers: `pull_request` and `workflow_call` with an optional `ref` input and an optional `WIZ_SENSOR_TOKEN` secret. Remove `any-branch.yml` and the copied test jobs.
-- The `test` job: Wiz sensor, checkout with `persist-credentials: false`, setup-node, npm 12, `npm ci`, `npm run harden:check`, `npm run check` (`vp check` also typechecks), `npm run build`, then `npm run test:ci` with `NODE_IMAGE=node:${{ matrix.node }}-alpine`.
+- The `test` job: Wiz sensor, checkout with `persist-credentials: false`, setup-node, npm 12, `npm ci`, `npm run harden:check`, `npm run check` (`vp check` also typechecks) when `migrating-to-torus-cli` is the base skill or `npm run typecheck` when `torus-repo-rules` is the base skill, `npm run build`, then `npm run test:ci` with `NODE_IMAGE=node:${{ matrix.node }}-alpine`.
 - The `docker` job: build the image, start the Compose dependencies with `--wait`, run the image, poll `/health`, and check that the user is not root. Use a `trap` that prints the container logs and removes the containers on exit.
 - The `release-notes` job: only on `pull_request`, skipped on `changeset-release/*` and `dependabot/*`. Check out with `fetch-depth: 0` and `persist-credentials: false`. Run `npm exec --no -- changeset status --since="origin/${BASE_REF}"`. Do not run a second `git fetch`, because the token is gone after checkout.
 - Deploy workflows (`develop.yml`, `master.yml`) call `./.github/workflows/ci.yml` and pass `WIZ_SENSOR_TOKEN`. Add `concurrency` with `cancel-in-progress: false`. Add the Wiz sensor to every job. Use a region matrix instead of copied jobs.

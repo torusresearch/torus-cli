@@ -31,6 +31,7 @@ RUN chown -R node:node /home/node/app
 USER node
 
 RUN npm ci --ignore-scripts --no-audit --no-fund
+# Native addons: add RUN npm rebuild <package> here and in prod-deps. See SKILL.md.
 RUN npm run build
 
 FROM base AS prod-deps
@@ -173,6 +174,8 @@ updates:
 ```
 
 ## package.json scripts
+
+`serve`, `start`, `check`, and `test` use Vite+. When `torus-repo-rules` is the base skill, keep the repository's current commands for those scripts, do not add `check`, and run `typecheck` in CI.
 
 ```json
 {

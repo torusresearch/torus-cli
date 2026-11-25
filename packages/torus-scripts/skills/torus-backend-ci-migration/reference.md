@@ -90,6 +90,54 @@ Notes:
 - When the old `master.yml` pushes the image once and deploys several services (citadel-server pushes to ECR, runs migrations, then deploys each service), keep that job chain. Put `environment: production` on the first job, and keep `needs:` between them.
 - The tag job runs once, after every region succeeds. A failed region skips the tag; a re-run of the failed jobs then creates it.
 
+## changeset.yml (npm)
+
+auth-service's `changeset.yml` with the npm install steps. Copy the action pins from the repo.
+
+```yaml
+name: changeset
+
+# Every PR into master needs a changeset, unless it is a release PR or has the skip-changeset label.
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions: {}
+
+jobs:
+  check:
+    if: >-
+      !startsWith(github.head_ref, 'changeset-release/')
+      && github.event.pull_request.user.login != 'dependabot[bot]'
+      && !contains(github.event.pull_request.labels.*.name, 'skip-changeset')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Wiz sensor
+      - name: Checkout
+        uses: actions/checkout@<pin>
+        with:
+          # changeset status compares the PR with the base branch.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use Node.js
+        uses: actions/setup-node@<pin>
+        with:
+          node-version-file: .nvmrc
+          cache: "npm"
+      - name: Install npm 12
+        run: npm install --global npm@<version>
+      - name: Install dependencies
+        run: npm ci
+      # fetch-depth: 0 already fetched origin/<base>. A second fetch fails without persisted credentials.
+      - name: Check for a changeset
+        run: npm exec --no -- changeset status --since="origin/${BASE_REF}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+```
+
 ## release-pr.yml changes to torus-cli's file
 
 ```yaml

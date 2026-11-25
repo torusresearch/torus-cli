@@ -55,7 +55,7 @@ Create a branch from the current default branch. Do these steps in order.
 3. **Release check.** Copy `scripts/releaseCheck.sh` and `scripts/releaseCheck.test.sh` from auth-service without changes. Make both executable. Add a `Test release check` step to the `test` job in `ci.yml`, after the tests. The test covers majors and maintenance branches too; keep those cases, because the script is shared.
 4. **Release workflow.** Write `.github/workflows/release.yml` from [reference.md](reference.md). Move the LRC job from `develop.yml` and the production region matrix from `master.yml` into it without changing their deploy steps, except: add `environment:` to each deploy job, and gate production on the release check. Delete `develop.yml` and `master.yml`. Remove `ci-develop.yml`, `any-branch.yml`, or other copies of the same deploy.
 5. **Release PR workflow.** Copy torus-cli's `.github/workflows/release-pr.yml`. Replace the `if:` on the job with a first step that fails unless `GITHUB_REF_NAME` is `master`. Add the Wiz sensor step.
-6. **Changeset check.** Keep the `release-notes` job in `ci.yml` when it exists. Otherwise copy `changeset.yml` from auth-service and use branch filter `[master]`.
+6. **Changeset check.** Use the same standalone `changeset.yml` as the frontend apps, in the npm form from [reference.md](reference.md). It skips `changeset-release/*` PRs, Dependabot PRs, and PRs with the `skip-changeset` label, and it runs again when a label changes. Remove the `release-notes` job from `ci.yml`, so the check runs once. Create the label: `gh label create skip-changeset --description "PR needs no changeset"`.
 7. **Branch filters.** Use `master` in every workflow that names `develop` or `master`: `ci.yml`, `container-scan.yml` push branches, `security-code-scanner.yml`, and Dependabot `target-branch`.
 8. **Verify.** Run `./scripts/releaseCheck.test.sh` (7 cases pass). Commit a test changeset and run `npm exec --no -- changeset status --since=origin/master` (pass), then remove it and run it again (fail). Parse every workflow file (`ruby -ryaml -e 'YAML.load_file(ARGV[0])' <file>`) and run the repo's format check. Run `actionlint` when it is installed.
 9. **PR.** Open the PR into the current default branch. Write the body as in **PR body** in [../torus-frontend-ci-migration/reference.md](../torus-frontend-ci-migration/reference.md), with LRC in place of develop and without the maintenance diagram.
@@ -82,6 +82,7 @@ Changing environment settings is a change to the repository settings. Show the u
 
 - `develop.yml` and `master.yml` are gone. `release.yml` deploys LRC on every push and production only after a version bump and the admin approval.
 - `release-pr.yml` runs only on `master`.
+- `changeset.yml` checks every PR into `master`, and `ci.yml` has no `release-notes` job.
 - `scripts/releaseCheck.test.sh` passes in CI.
 - No workflow bumps or commits the version.
 - The environments have the approvers and branch rules above, or the PR body lists them as not done.

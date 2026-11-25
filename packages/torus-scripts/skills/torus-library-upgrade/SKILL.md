@@ -1,15 +1,16 @@
 ---
-name: migrating-to-torus-cli
+name: torus-library-upgrade
 description: >-
-  Use when moving an existing consumer project from old Torus scripts, ESLint
-  presets, or build tools to current Torus CLI and Vite+ presets. Also use when
-  planning a Web3Auth stack upgrade, an EMBED tooling/dependencies/security
-  story, a torus-scripts 9 migration, or a forked-agent plan for that upgrade.
-  The epic is always EMBED-573. Ask which story ticket to follow when the
-  conversation does not already name it.
+  Upgrade a Torus library or SDK that publishes to npm: move it from old Torus
+  scripts, ESLint presets, or build tools to current Torus CLI and Vite+
+  presets, and plan its Web3Auth stack upgrade (an EMBED
+  tooling/dependencies/security story, a torus-scripts 9 migration, or a
+  forked-agent plan). It is also the shared plan that torus-frontend-upgrade
+  and torus-backend-upgrade add to. The epic is always EMBED-573. Ask which
+  story ticket to follow when the conversation does not already name it.
 ---
 
-# Migrate a consumer to Torus CLI
+# Upgrade a Torus library
 
 If the user asked for a Web3Auth stack upgrade, an EMBED story, or a forked-agent plan, follow Stack upgrade and use the migration sections when a step points at them. Otherwise follow Inspect, Migrate, Monorepos, and Verify. Do not run the stack upgrade steps for a plain migration.
 
@@ -68,7 +69,7 @@ Example: A project can get “No known unsupported behavior detected” while it
 
 ## Stack upgrade
 
-For a backend service (a `Dockerfile`, a Compose file, or a deploy workflow), also load the `web3auth-backend-repo-upgrade` skill. Use both together. That skill adds the backend steps and lists where it replaces guidance in this skill.
+This plan is for a library or SDK. For a Torus frontend app that deploys to S3 and CloudFront, also load the `torus-frontend-upgrade` skill. For a Torus backend service (a `Dockerfile`, a Compose file, or a deploy workflow, including citadel-server), also load the `torus-backend-upgrade` skill. Use the two skills together. The added skill lists where it replaces guidance in this skill. A consensys-vertical-apps backend uses `consensys-vertical-apps-backend-upgrade` instead. The package README has the table of all skills and where to use each.
 
 Plan the upgrade. The user commits. Do one step at a time when they ask to implement.
 
@@ -140,7 +141,7 @@ Create that pull request as a draft with `gh pr create --draft` against the defa
 
 #### 3. Read-only diagnostic
 
-Read the Inspect, Migrate, Monorepos, and Verify sections in this skill, and the README from the same package version. To load this skill in Cursor, copy the skill directory from `node_modules/@toruslabs/torus-scripts/skills/migrating-to-torus-cli/` to `.cursor/skills/migrating-to-torus-cli/`. Do not commit that copy, and do not add it to `.gitignore`. The default `.git/info/exclude` is comments only, so an untracked `.cursor/` still shows in `git status`. Append `.cursor/` to `.git/info/exclude` when `git check-ignore` does not already match that path.
+Read the Inspect, Migrate, Monorepos, and Verify sections in this skill, and the README from the same package version. To load this skill in Cursor, copy the skill directory from `node_modules/@toruslabs/torus-scripts/skills/torus-library-upgrade/` to `.cursor/skills/torus-library-upgrade/`, and do the same for the added frontend or backend skill. Do not commit that copy, and do not add it to `.gitignore`. The default `.git/info/exclude` is comments only, so an untracked `.cursor/` still shows in `git status`. Append `.cursor/` to `.git/info/exclude` when `git check-ignore` does not already match that path.
 
 Run `torus-scripts-upgrade` on the repo root and record its exit code and findings. Also inspect `package.json` scripts and entry points, ESLint config, `tsconfig`, Babel, Prettier, and release scripts. Do not edit build files.
 

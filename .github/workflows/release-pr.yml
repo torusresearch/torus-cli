@@ -21,6 +21,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          # No write token on disk during npm ci. changesets/action commits through the API with its github-token.
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
@@ -31,9 +33,12 @@ jobs:
       # The org ruleset blocks force-pushes, so the action cannot rewrite an existing release branch.
       - name: Delete the old release branch
         run: |
-          if git ls-remote --exit-code --heads origin changeset-release/main; then
-            git push origin --delete changeset-release/main
+          # git/ref/ matches the exact branch; a missing branch returns 404.
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/changeset-release/main" --silent 2>/dev/null; then
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/changeset-release/main"
           fi
+        env:
+          GH_TOKEN: ${{ github.token }}
       # The GitHub API commit mode signs the release commit, which `main` requires.
       - name: Create or update the release pull request
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2

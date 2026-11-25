@@ -1,16 +1,17 @@
 ---
-name: web3auth-backend-repo-upgrade
+name: torus-backend-upgrade
 description: >-
-  Add the backend-only steps to an EMBED-573 stack upgrade of a Web3Auth
-  backend service: Docker images, Compose files, deploy workflows to ECR and
-  ECS, KICS and Trivy, Wiz, private Changesets, and runtime majors such as
-  redis, Sentry, and celebrate. Use together with migrating-to-torus-cli or
-  torus-repo-rules when the repository has a Dockerfile, a Compose file, or a
-  deploy workflow, or when the user asks to upgrade a backend repo. Do not use
-  it alone and do not use it for a published library.
+  Add the backend-only steps to an EMBED-573 stack upgrade of a Torus or
+  Web3Auth backend service (broadcast-channel-server, torus-signer,
+  citadel-server, and similar): Docker images, Compose files, deploy workflows
+  to ECR and ECS, KICS and Trivy, Wiz, private Changesets, and runtime majors
+  such as redis, Sentry, and celebrate. Use together with torus-library-upgrade
+  for a Torus backend, or with consensys-vertical-apps-backend-upgrade for a
+  consensys-vertical-apps backend. Do not use it alone, and do not use it for a
+  library or a frontend app.
 ---
 
-# Upgrade a Web3Auth backend repository
+# Upgrade a Torus backend repository
 
 This skill comes from the broadcast-channel-server upgrade ([PR #215](https://github.com/torusresearch/broadcast-channel-server/pull/215), EMBED-605) and its follow-up container hardening ([PR #234](https://github.com/torusresearch/broadcast-channel-server/pull/234)). The backend reference repository is [broadcast-channel-server](https://github.com/torusresearch/broadcast-channel-server) on `develop`. Copy file shape and action pins from it at execution time.
 
@@ -18,11 +19,14 @@ This skill comes from the broadcast-channel-server upgrade ([PR #215](https://gi
 
 Use this skill together with one base skill. It is not a full plan, and it does not replace the base skill.
 
-| Repository and request                                    | Load                                    |
-| --------------------------------------------------------- | --------------------------------------- |
-| Backend, full stack upgrade (Vite+, lint, and repo rules) | `migrating-to-torus-cli` and this skill |
-| Backend, repo rules only (no Vite+ and no lint)           | `torus-repo-rules` and this skill       |
-| Library, SDK, or frontend package                         | the base skill only                     |
+| Repository                                                                                                | Load                                                     |
+| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Torus backend, including citadel-server (Vite+, lint, and repo rules)                                     | `torus-library-upgrade` and this skill                   |
+| consensys-vertical-apps backend, such as va-mmcx-subscription-api (repo rules only, no Vite+ and no lint) | `consensys-vertical-apps-backend-upgrade` and this skill |
+| Torus library or SDK                                                                                      | `torus-library-upgrade` only                             |
+| Torus frontend app                                                                                        | `torus-library-upgrade` and `torus-frontend-upgrade`     |
+
+The package README has the table of all skills and where to use each.
 
 The base skill owns the tickets, the working agreement, the step list, and the version rules. Follow its steps in order. This skill adds work to steps 1, 5, 6, 7, and 9, and replaces some base guidance. Where the two conflict on a backend, this skill wins. The conflicts are listed in **Overrides of the base skill**.
 
@@ -30,7 +34,7 @@ A repository is a backend when it has one or more of these: a `Dockerfile`, a `d
 
 ## Overrides of the base skill
 
-- **No release PR workflow.** A backend publishes nothing. Do not add `release-pr` in the stack upgrade. Do not ask for the GitHub setting that lets Actions open pull requests. The `torus-backend-ci-migration` skill adds `release-pr` later, for the release flow.
+- **No release PR workflow.** A backend publishes nothing. Do not add `release-pr` in the stack upgrade. Do not ask for the GitHub setting that lets Actions open pull requests. The `torus-backend-ci-upgrade` skill adds `release-pr` later, for the release flow.
 - **Private Changesets.** Set `"private": true` in `package.json`. In `.changeset/config.json`, use `access: "restricted"`, `privatePackages: { version: true, tag: false }`, and the real default branch (often `develop`). Add `.changeset/README.md` that says nothing is published. Keep `version-packages` as `changeset version && npm install --package-lock-only --ignore-scripts`. Do not add `release-packages`.
 - **Release notes check in CI.** CI checks for a changeset instead. See **CI and deploy workflows**.
 - **Engines on patched Node releases.** Use the Node security releases, not a bare `>=24.22.0`. broadcast-channel-server uses `"node": ">=24.22.1 <25 || >=26.12.1"`, `.nvmrc` `26.12.1`, and CI matrix `["24.22.1", "26.12.1"]`. A plain `>=24.22.1` lets Node 25 and older 26 releases in, and those releases do not have the security fixes. Look up the current security releases during the run.
@@ -46,7 +50,7 @@ Use the Dependabot file in [reference.md](reference.md), not the base file. CODE
 ### Step 5: repository rules
 
 - TypeScript: extend `@toruslabs/config/tsconfig.node.json`. Set `"include": ["src"]` and `"rootDir": "./src"`. The build output moves from `dist/src/index.js` to `dist/index.js`. Update `main`, the `prod` script, the Dockerfile `CMD`, and every deploy task definition that names the old path.
-- Replace `tsx` with `vpx` for `start` and `serve` (`vpx --watch src/index.ts`). Knex migrations use `NODE_OPTIONS='--import vite-plus/register' knex migrate:latest --knexfile ./src/database/knexfile.ts`. These are Vite+ changes. Do them only when `migrating-to-torus-cli` is the base skill.
+- Replace `tsx` with `vpx` for `start` and `serve` (`vpx --watch src/index.ts`). Knex migrations use `NODE_OPTIONS='--import vite-plus/register' knex migrate:latest --knexfile ./src/database/knexfile.ts`. These are Vite+ changes. Do them only when `torus-library-upgrade` is the base skill.
 - Husky 9 pre-commit runs `./node_modules/.bin/lint-staged`. Remove the old `husky.sh` lines.
 - Vitest 5 clears mocks by default. When tests read mock calls from setup or from earlier tests, set `clearMocks: false` in `vite.config.mts` and in the test config. Add a comment with the Vite+ and Vitest migration links.
 - Add `.dockerignore` with `coverage/`, `dist/`, `node_modules/`, and env files. Host output owned by root otherwise blocks test writes inside the container.
@@ -117,9 +121,9 @@ Apply to `docker-compose.yml`, `docker-compose.dev.yml`, and `docker-compose-ci.
 See [reference.md](reference.md) for the job outlines.
 
 - One `ci.yml` named `Validate`. Triggers: `pull_request` and `workflow_call` with an optional `ref` input and an optional `WIZ_SENSOR_TOKEN` secret. Remove `any-branch.yml` and the copied test jobs.
-- The `test` job: Wiz sensor, checkout with `persist-credentials: false`, setup-node, npm 12, `npm ci`, `npm run harden:check`, `npm run check` (`vp check` also typechecks) when `migrating-to-torus-cli` is the base skill or `npm run typecheck` when `torus-repo-rules` is the base skill, `npm run build`, then `npm run test:ci` with `NODE_IMAGE=node:${{ matrix.node }}-alpine`.
+- The `test` job: Wiz sensor, checkout with `persist-credentials: false`, setup-node, npm 12, `npm ci`, `npm run harden:check`, `npm run check` (`vp check` also typechecks) when `torus-library-upgrade` is the base skill or `npm run typecheck` when `consensys-vertical-apps-backend-upgrade` is the base skill, `npm run build`, then `npm run test:ci` with `NODE_IMAGE=node:${{ matrix.node }}-alpine`.
 - The `docker` job: build the image, start the Compose dependencies with `--wait`, run the image, poll `/health`, and check that the user is not root. Use a `trap` that prints the container logs and removes the containers on exit.
-- The `release-notes` job: only on `pull_request`, skipped on `changeset-release/*` and `dependabot/*`. Check out with `fetch-depth: 0` and `persist-credentials: false`. Run `npm exec --no -- changeset status --since="origin/${BASE_REF}"`. Do not run a second `git fetch`, because the token is gone after checkout. `torus-backend-ci-migration` later replaces this job with a standalone `changeset.yml`.
+- The `release-notes` job: only on `pull_request`, skipped on `changeset-release/*` and `dependabot/*`. Check out with `fetch-depth: 0` and `persist-credentials: false`. Run `npm exec --no -- changeset status --since="origin/${BASE_REF}"`. Do not run a second `git fetch`, because the token is gone after checkout. `torus-backend-ci-upgrade` later replaces this job with a standalone `changeset.yml`.
 - Deploy workflows (`develop.yml`, `master.yml`) call `./.github/workflows/ci.yml` and pass `WIZ_SENSOR_TOKEN`. Add `concurrency` with `cancel-in-progress: false`. Add the Wiz sensor to every job. Use a region matrix instead of copied jobs.
 - Build for ECR with `docker build --provenance=false`. ECR rejects the provenance attestation that Docker 29 adds.
 - Quote every shell variable in deploy steps.

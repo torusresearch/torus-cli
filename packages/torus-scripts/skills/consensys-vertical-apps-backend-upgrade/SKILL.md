@@ -1,21 +1,23 @@
 ---
-name: torus-repo-rules
+name: consensys-vertical-apps-backend-upgrade
 description: >-
-  Set Torus repository rules: GitHub policy files (CODEOWNERS, PR template,
-  Dependabot), engines, .nvmrc, @lavamoat/harden, .npmrc, @toruslabs/config
-  tsconfig profiles, Changesets, CI workflows, release PR, security scanner,
-  dependency updates, audit, and package.json cleanup. Use for the EMBED-573
-  stack upgrade steps that are not Vite+ and not lint, or when the user asks
-  to set repo rules on a Torus repository. Vite+ and lint steps belong to the
-  migrating-to-torus-cli skill. The epic is always EMBED-573. Ask which story
-  ticket to follow when the conversation does not already name it.
+  Upgrade a consensys-vertical-apps backend repository (va-mmcx-rule-engine-api,
+  va-mmcx-subscription-api, and similar) with the repository rules only:
+  GitHub policy files (CODEOWNERS, PR template, Dependabot), engines, .nvmrc,
+  @lavamoat/harden, .npmrc, @toruslabs/config tsconfig profiles, Changesets,
+  CI workflows, release PR, security scanner, dependency updates, audit, and
+  package.json cleanup. No Vite+ and no lint migration. Load
+  torus-backend-upgrade with it for the Docker, Compose, and deploy steps. Do
+  not use it for a Torus repository; citadel-server is a Torus backend. The
+  epic is always EMBED-573. Ask which story ticket to follow when the
+  conversation does not already name it.
 ---
 
-# Set Torus repository rules
+# Upgrade a consensys-vertical-apps backend repository
 
-This skill does the EMBED-573 stack upgrade steps that are not Vite+ and not lint. Vite+ migration, build presets, and lint presets belong to the `migrating-to-torus-cli` skill. When the user asks for that work, load that skill instead.
+This skill does the EMBED-573 stack upgrade steps that are not Vite+ and not lint, for consensys-vertical-apps backend repositories such as va-mmcx-rule-engine-api and va-mmcx-subscription-api. Vite+ migration, build presets, and lint presets belong to the `torus-library-upgrade` skill. Torus repositories use that skill, with `torus-frontend-upgrade` or `torus-backend-upgrade`. citadel-server is a Torus backend. The package README has the table of all skills and where to use each.
 
-For a backend service (a `Dockerfile`, a Compose file, or a deploy workflow), also load the `web3auth-backend-repo-upgrade` skill. Use both together. That skill adds the backend steps and lists where it replaces guidance in this skill.
+For a backend service (a `Dockerfile`, a Compose file, or a deploy workflow), also load the `torus-backend-upgrade` skill. Use both together. That skill adds the backend steps and lists where it replaces guidance in this skill.
 
 Plan the upgrade. The user commits. Do one step at a time when they ask to implement.
 
@@ -30,7 +32,7 @@ Fetch both issues from `consensyssoftware.atlassian.net` before planning. Use th
 Read the story's **Sequence and prerequisites** section before choosing dependency versions. That section is the list of releases this repository adopts. Classify each entry:
 
 - **Release-adoption gate** or **direct runtime package prerequisite**: install that package's latest published release. Look it up with `npm view <package> version` during this run. Ignore the 3-day window (`min-release-age` and Dependabot cooldown) and install with `npm install --min-release-age=0`. A range already in `package.json` is not a reason to stay on an older major.
-- **Shared tooling** (`torus-cli` / `@toruslabs/torus-scripts`): install the published `@toruslabs/torus-scripts` release the story names, also with `--min-release-age=0`. The epic text may still say `9.0.0`. Do not install an older release than the one this skill's guidance comes from. Version 9 removes the `torus-scripts` binary and ships only `torus-scripts-upgrade`. When a script or CI step still runs `torus-scripts`, do not take that major here. Keep the current range, and record that the bump goes with the `migrating-to-torus-cli` Vite+ step.
+- **Shared tooling** (`torus-cli` / `@toruslabs/torus-scripts`): install the published `@toruslabs/torus-scripts` release the story names, also with `--min-release-age=0`. The epic text may still say `9.0.0`. Do not install an older release than the one this skill's guidance comes from. Version 9 removes the `torus-scripts` binary and ships only `torus-scripts-upgrade`. When a script or CI step still runs `torus-scripts`, do not take that major here. Keep the current range, and record that the bump goes with the `torus-library-upgrade` Vite+ step.
 - **Anything else** in that section: follow the wording. Step 4 does not bump packages the section does not list. Step 7 raises those other direct ranges on the same major.
 
 A release-adoption gate with no published release blocks the dependency bump. Name the package and stop that step. A publish date inside the 3-day window does not block it.
@@ -91,7 +93,7 @@ Read the repo before changes. Do not edit build files.
 
 1. Find the workspace root. Check `git status`, Node and npm versions, lockfile, package manager, scripts, engines, entry paths, TypeScript profiles, release steps, and existing CI files.
 2. Inspect `package.json` scripts and entry paths, `tsconfig.json`, and release automation. Record what runs today: install, build, typecheck, tests, release.
-3. A Vite+ or lint migration from the `migrating-to-torus-cli` skill may run on the same repository. Record the repo state it will start from. Do not run that migration here.
+3. A Vite+ or lint migration from the `torus-library-upgrade` skill may run on the same repository. Record the repo state it will start from. Do not run that migration here.
 4. Report findings and gaps before the next step.
 
 #### 4. Runtime prerequisites
@@ -112,7 +114,7 @@ Apply the repository rules that are not Vite+ and not lint. A single package cop
 - `@toruslabs/config@5` sets `strictNullChecks` and drops DOM libs. Add DOM libs for browser packages and fix the new type errors.
 - Extend `@toruslabs/config/tsconfig.library.json` or `@toruslabs/config/tsconfig.node.json`, after confirming those files exist in the installed registry version. Do not extend a relative `node_modules` path. Typecheck that package after the change.
 - Set up Changesets at the workspace root. `baseBranch` is the real default branch. Put only packages that must share a version in `fixed`. Use `access: "public"` for public scoped packages. Decide whether private packages version (`privatePackages.version`). The version script runs Changesets and then updates the lockfile. Keep or replace old release automation deliberately. A standalone package can keep `npm publish` until its release process is set up.
-- Record in the story what the `migrating-to-torus-cli` skill covers on this repo: Vite+ tasks, build presets, and lint presets. Do not run those steps here.
+- Record in the story what the `torus-library-upgrade` skill covers on this repo: Vite+ tasks, build presets, and lint presets. Do not run those steps here.
 
 #### 6. CI, release PR, and security scanner
 
@@ -185,4 +187,4 @@ Finish the step 2 PR body: majors, export and types paths, scan coverage, open a
 
 ### Done when
 
-Every shared EMBED-573 bullet is mapped to a step, marked as not applying, or named as the `migrating-to-torus-cli` skill's scope, with the reason. Story-specific acceptance checks are included. The plan quotes **Sequence and prerequisites** and names the latest version installed for each package in it. It also names the `@types/node` 26 release installed in step 5.
+Every shared EMBED-573 bullet is mapped to a step, marked as not applying, or named as the `torus-library-upgrade` skill's scope, with the reason. Story-specific acceptance checks are included. The plan quotes **Sequence and prerequisites** and names the latest version installed for each package in it. It also names the `@types/node` 26 release installed in step 5.

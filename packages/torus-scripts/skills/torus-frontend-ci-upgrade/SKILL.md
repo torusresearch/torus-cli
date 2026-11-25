@@ -1,5 +1,5 @@
 ---
-name: torus-frontend-ci-migration
+name: torus-frontend-ci-upgrade
 description: >-
   Move a Torus or Web3Auth frontend app that deploys to S3 and CloudFront from
   the develop/staging/master branch deploys to one master trunk, Changesets
@@ -7,7 +7,7 @@ description: >-
   production by the admin team), with v<major> maintenance branches. Use when
   the user asks to migrate a frontend app's CI or release process, or to apply
   the auth-service release flow to another frontend repo. Do not use it for a
-  published npm library or a backend service (use torus-backend-ci-migration).
+  published npm library or a backend service (use torus-backend-ci-upgrade).
 ---
 
 # Migrate a frontend app to the release flow
@@ -16,11 +16,13 @@ This skill applies the auth-service release flow ([Web3Auth/auth-service#406](ht
 
 ## When to use
 
-| Repository                                                                                                                 | Skill                                |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Frontend app that deploys `dist/` to S3 and CloudFront (auth-dashboard, passwordless-frontend, torus-website, and similar) | this skill                           |
-| Backend service that deploys a Docker image to ECS                                                                         | `torus-backend-ci-migration`         |
-| Library or SDK that publishes to npm                                                                                       | `torus-repo-rules` (release PR only) |
+| Repository                                                                                                                 | Skill                                         |
+| -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Frontend app that deploys `dist/` to S3 and CloudFront (auth-dashboard, passwordless-frontend, torus-website, and similar) | this skill                                    |
+| Backend service that deploys a Docker image to ECS                                                                         | `torus-backend-ci-upgrade`                    |
+| Library or SDK that publishes to npm                                                                                       | `torus-library-upgrade` (its release PR step) |
+
+This skill changes only CI and release. When the app also needs the stack upgrade (Vite+, lint, engines, dependencies), do it first with `torus-library-upgrade` and `torus-frontend-upgrade`, or in a separate PR. The package README has the table of all skills and where to use each.
 
 ## Target flow
 

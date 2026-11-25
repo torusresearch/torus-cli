@@ -8,16 +8,17 @@
   },
   "files": [
     "dist",
-    "skills/migrating-to-torus-cli/SKILL.md",
-    "skills/migrating-to-torus-cli/reference.md",
-    "skills/torus-repo-rules/SKILL.md",
-    "skills/torus-repo-rules/reference.md",
-    "skills/web3auth-backend-repo-upgrade/SKILL.md",
-    "skills/web3auth-backend-repo-upgrade/reference.md",
-    "skills/torus-frontend-ci-migration/SKILL.md",
-    "skills/torus-frontend-ci-migration/reference.md",
-    "skills/torus-backend-ci-migration/SKILL.md",
-    "skills/torus-backend-ci-migration/reference.md"
+    "skills/torus-library-upgrade/SKILL.md",
+    "skills/torus-library-upgrade/reference.md",
+    "skills/consensys-vertical-apps-backend-upgrade/SKILL.md",
+    "skills/consensys-vertical-apps-backend-upgrade/reference.md",
+    "skills/torus-backend-upgrade/SKILL.md",
+    "skills/torus-backend-upgrade/reference.md",
+    "skills/torus-frontend-upgrade/SKILL.md",
+    "skills/torus-frontend-ci-upgrade/SKILL.md",
+    "skills/torus-frontend-ci-upgrade/reference.md",
+    "skills/torus-backend-ci-upgrade/SKILL.md",
+    "skills/torus-backend-ci-upgrade/reference.md"
   ],
   "scripts": {
     "build": "vp pack",

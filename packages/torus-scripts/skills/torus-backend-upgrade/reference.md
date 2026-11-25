@@ -175,7 +175,7 @@ updates:
 
 ## package.json scripts
 
-`serve`, `start`, `check`, and `test` use Vite+. When `torus-repo-rules` is the base skill, keep the repository's current commands for those scripts, do not add `check`, and run `typecheck` in CI.
+`serve`, `start`, `check`, and `test` use Vite+. When `consensys-vertical-apps-backend-upgrade` is the base skill, keep the repository's current commands for those scripts, do not add `check`, and run `typecheck` in CI.
 
 ```json
 {

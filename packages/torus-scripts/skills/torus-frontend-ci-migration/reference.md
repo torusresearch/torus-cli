@@ -78,9 +78,10 @@ Follow the repository PR template. Fill these parts:
 - **New process:** a Mermaid flowchart for `master`, one for `v<major>` maintenance branches (omit it when the repo has no versioned folders), and a table.
 - Use the same rows in both tables: branches, start a release, version, changelog, approval before staging, approval before production, major release, tag and GitHub Release, maintenance.
 - **Changes:** one line for each file.
+- **Dependency changes:** a table of every `package.json` change against the default branch: package, old range, new range, and why. Include ranges that a fix commit set back, with the reason.
 - **GitHub settings:** the environment table, marked as done or not done.
 - **Before merge:** the AWS OIDC trust policy.
 - **After merge:** merge into `master` when the PR targets `develop`, make `master` the default branch, archive the old branches, prepare the maintenance branches, reopen the first release PR to start its checks.
-- **How has this been tested:** the release check test, the changeset status check, the YAML parse, the format check, and the statement that no workflow has run on GitHub yet.
+- **How has this been tested:** the release check test, the changeset status check, the YAML parse, the format check, the local validate steps (with the Node version), the checks that do not run on this PR and why, and the statement that the release workflows (`release.yml`, `release-pr.yml`, `deploy.yml`) have not run on GitHub yet.
 
 [Web3Auth/auth-service#406](https://github.com/Web3Auth/auth-service/pull/406) is a complete example.

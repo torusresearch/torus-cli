@@ -5,7 +5,7 @@
 This outline uses broadcast-channel-server's deploy steps. Copy the action pins from the repo's current workflows. Keep the repo's own ECR, ECS, region, and migration steps. `<...>` marks a value from the repo.
 
 ```yaml
-name: deploy
+name: release
 
 # Every push to master deploys LRC.
 # A push that changes the package.json version also deploys production (admin approval), then tags it.
@@ -155,7 +155,7 @@ jobs:
             exit 1
           fi
       # Wiz sensor, then the torus-cli steps unchanged:
-      # checkout (fetch-depth: 0), setup-node from .nvmrc, npm 12, npm ci,
-      # delete the old changeset-release/master branch, changesets/action with
-      # version-script: npm run version-packages.
+      # checkout (fetch-depth: 0, persist-credentials: false), setup-node from .nvmrc,
+      # npm 12, npm ci, delete the old changeset-release/master branch with gh api
+      # (GH_TOKEN: github.token), changesets/action with version-script: npm run version-packages.
 ```

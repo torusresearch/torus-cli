@@ -30,7 +30,7 @@ A repository is a backend when it has one or more of these: a `Dockerfile`, a `d
 
 ## Overrides of the base skill
 
-- **No release PR workflow.** A backend publishes nothing. Do not add `release-pr`. Do not ask for the GitHub setting that lets Actions open pull requests.
+- **No release PR workflow.** A backend publishes nothing. Do not add `release-pr` in the stack upgrade. Do not ask for the GitHub setting that lets Actions open pull requests. The `torus-backend-ci-migration` skill adds `release-pr` later, for the release flow.
 - **Private Changesets.** Set `"private": true` in `package.json`. In `.changeset/config.json`, use `access: "restricted"`, `privatePackages: { version: true, tag: false }`, and the real default branch (often `develop`). Add `.changeset/README.md` that says nothing is published. Keep `version-packages` as `changeset version && npm install --package-lock-only --ignore-scripts`. Do not add `release-packages`.
 - **Release notes check in CI.** CI checks for a changeset instead. See **CI and deploy workflows**.
 - **Engines on patched Node releases.** Use the Node security releases, not a bare `>=24.22.0`. broadcast-channel-server uses `"node": ">=24.22.1 <25 || >=26.12.1"`, `.nvmrc` `26.12.1`, and CI matrix `["24.22.1", "26.12.1"]`. A plain `>=24.22.1` lets Node 25 and older 26 releases in, and those releases do not have the security fixes. Look up the current security releases during the run.

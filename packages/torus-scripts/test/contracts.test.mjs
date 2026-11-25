@@ -37,6 +37,10 @@ describe("packed torus-scripts", () => {
   const repoRulesReferencePath = "skills/torus-repo-rules/reference.md";
   const backendSkillPath = "skills/web3auth-backend-repo-upgrade/SKILL.md";
   const backendReferencePath = "skills/web3auth-backend-repo-upgrade/reference.md";
+  const ciMigrationPaths = ["frontend", "backend"].flatMap((kind) => [
+    `skills/torus-${kind}-ci-migration/SKILL.md`,
+    `skills/torus-${kind}-ci-migration/reference.md`,
+  ]);
   let temporaryDirectory;
   let tarball;
   let files;
@@ -74,6 +78,7 @@ describe("packed torus-scripts", () => {
     assert.ok(files.includes(repoRulesReferencePath), "pack must contain the repo rules skill reference");
     assert.ok(files.includes(backendSkillPath), "pack must contain the backend upgrade skill");
     assert.ok(files.includes(backendReferencePath), "pack must contain the backend upgrade skill reference");
+    for (const ciMigrationPath of ciMigrationPaths) assert.ok(files.includes(ciMigrationPath), `pack must contain ${ciMigrationPath}`);
     assert.ok(
       files.every(
         (filePath) =>
@@ -86,6 +91,7 @@ describe("packed torus-scripts", () => {
             repoRulesReferencePath,
             backendSkillPath,
             backendReferencePath,
+            ...ciMigrationPaths,
           ].includes(filePath) || filePath.startsWith("dist/")
       )
     );
@@ -244,6 +250,10 @@ test("library export packs a plain ESM SDK value and declaration", async () => {
     "skills/torus-repo-rules/reference.md",
     "skills/web3auth-backend-repo-upgrade/SKILL.md",
     "skills/web3auth-backend-repo-upgrade/reference.md",
+    "skills/torus-frontend-ci-migration/SKILL.md",
+    "skills/torus-frontend-ci-migration/reference.md",
+    "skills/torus-backend-ci-migration/SKILL.md",
+    "skills/torus-backend-ci-migration/reference.md",
   ]);
   assert.deepEqual(torusScriptsPackage.bin, { "torus-scripts-upgrade": "./dist/migrate/cli.mjs" });
   for (const [subpath, exportName] of Object.entries({

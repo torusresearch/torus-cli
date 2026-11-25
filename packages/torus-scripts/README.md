@@ -66,6 +66,8 @@ A second skill at `skills/torus-repo-rules/` does only the stack upgrade steps t
 
 A third skill at `skills/web3auth-backend-repo-upgrade/` adds the backend-only steps: Docker images, Compose files, deploy workflows, KICS and Trivy, private Changesets, and runtime majors such as redis and Sentry. It is not a full plan. For a backend, load it together with `migrating-to-torus-cli` (full upgrade) or `torus-repo-rules` (no Vite+ and no lint).
 
+Two skills move an app's CI to one `master` trunk, Changesets release PRs, and GitHub Environment approvals. `skills/torus-frontend-ci-migration/` is for a frontend app that deploys to S3 and CloudFront: staging needs the product team, production needs the admin team, and `v<major>` maintenance branches release to production. `skills/torus-backend-ci-migration/` is for a backend service that deploys to ECS: every push deploys LRC, and a release deploys production after the admin team approves. Both follow [Web3Auth/auth-service#406](https://github.com/Web3Auth/auth-service/pull/406). Install and use them the same way.
+
 Run `torus-scripts-upgrade <path>` to inspect an old project without changing files. It reports unsupported custom behavior and exits nonzero for those cases. Run `vp migrate` at the workspace root, not inside each package, and review its changes. The diagnostic does not run `vp migrate` for you.
 
 Replace the old commands:

@@ -33,8 +33,10 @@ permissions: {}
 
 jobs:
   check:
+    # A repo that also publishes npm packages has changeset-release/* PRs; they consume entries and add none.
     if: >-
-      github.event.pull_request.user.login != 'dependabot[bot]'
+      !startsWith(github.head_ref, 'changeset-release/')
+      && github.event.pull_request.user.login != 'dependabot[bot]'
       && !contains(github.event.pull_request.labels.*.name, 'skip-changeset')
     runs-on: ubuntu-latest
     permissions:
@@ -89,7 +91,9 @@ echo "### ${title}"
 echo
 if [[ -n "$PREV_SHA" ]]; then
   echo "\`${PREV_SHA:0:7}\` → \`${to:0:7}\`"
-  entries=$(git diff --name-only --diff-filter=A "$PREV_SHA" "$to" -- .changeset)
+  # Walk the commits, not the two end points: `changeset version` (an npm release PR) deletes entries,
+  # and an entry added and deleted inside the range would not show in a diff of the end points.
+  entries=$(git log --reverse --diff-filter=A --name-only --format='commit %H' "$PREV_SHA..$to" -- .changeset)
   commits=$(git log --no-merges --oneline "$PREV_SHA..$to")
 else
   echo "_No production deployment found. Showing the last 20 commits._"
@@ -100,12 +104,21 @@ echo
 echo "**Changelog**"
 echo
 found=0
-for file in $(grep -E '^\.changeset/.+\.md$' <<<"$entries" | grep -v '^\.changeset/README\.md$' || true); do
-  # The entry text is everything after the second '---' line of the changeset.
-  text=$(git show "$to:$file" | awk 'n >= 2 { print } /^---$/ { n++ }' | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//')
-  echo "- ${text} (\`${file}\`)"
-  found=1
-done
+seen=" "
+while read -r line; do
+  case "$line" in
+    "commit "*) commit="${line#commit }" ;;
+    .changeset/README.md) ;;
+    .changeset/*.md)
+      [[ "$seen" == *" $line "* ]] && continue
+      seen+="$line "
+      # The entry text is everything after the second '---' line, read from the commit that added it.
+      text=$(git show "$commit:$line" | awk 'n >= 2 { print } /^---$/ { n++ }' | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//')
+      echo "- ${text} (\`${line}\`)"
+      found=1
+      ;;
+  esac
+done <<<"$entries"
 [[ $found -eq 0 ]] && echo "- No changeset entries."
 echo
 echo "**Commits**"
@@ -169,6 +182,11 @@ check "no production deployment yet" "$out" "No production deployment found"
 
 out=$(PREV_SHA="$prod" TITLE="Changes in this PR" "$script" HEAD)
 check "custom title" "$out" "### Changes in this PR"
+
+# An npm release PR runs `changeset version`, which deletes the entry before production deploys.
+git rm -q .changeset/fix-login.md && git commit -qm "chore: release packages"
+out=$(PREV_SHA="$prod" "$script" HEAD)
+check "an entry consumed by changeset version is still listed" "$out" "- Fix the login redirect. (\`.changeset/fix-login.md\`)"
 
 exit $((failures > 0))
 ```

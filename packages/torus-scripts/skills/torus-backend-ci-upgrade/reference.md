@@ -1,14 +1,14 @@
 # Backend CI migration reference
 
-## release.yml outline
+## deploy.yml outline
 
 This outline uses broadcast-channel-server's deploy steps. Copy the action pins from the repo's current workflows. Keep the repo's own ECR, ECS, region, and migration steps. `<...>` marks a value from the repo.
 
 ```yaml
-name: release
+name: deploy
 
-# Every push to master deploys LRC.
-# A push that changes the package.json version also deploys production (admin approval), then tags it.
+# Every merge to master deploys LRC.
+# The same run then waits for approval: staging (product team, when the repo has it), then production (admin team).
 on:
   push:
     branches: [master]
@@ -34,29 +34,26 @@ jobs:
       id-token: write
     steps:
       # Wiz sensor, checkout (persist-credentials: false), AWS credentials, ECR login,
-      # docker build --provenance=false and push, ECS update-service and wait: as in the old develop.yml.
+      # docker build --provenance=false and push (tag with $GITHUB_SHA), ECS update-service and wait:
+      # as in the old develop.yml.
 
-  release-check:
-    needs: test
+  # Only when the repo has a staging environment.
+  deploy-staging:
+    needs: deploy-lrc
     runs-on: ubuntu-latest
-    outputs:
-      release: ${{ steps.check.outputs.release }}
-      version: ${{ steps.check.outputs.version }}
+    # The staging environment requires the product team, so this job waits for approval.
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      # Wiz sensor
-      - name: Checkout
-        uses: actions/checkout@<pin>
-        with:
-          # Full history for the parent commit and the tags.
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Check for a new version
-        id: check
-        run: ./scripts/releaseCheck.sh
+      # The staging deploy steps from the old workflow, unchanged.
 
   deploy-production:
-    needs: release-check
-    if: needs.release-check.outputs.release == 'true'
+    needs: deploy-staging # deploy-lrc when the repo has no staging
     runs-on: ubuntu-latest
     # The production environment requires the admin team, so each region waits for approval.
     environment: production
@@ -72,90 +69,11 @@ jobs:
         name: [<regions>]
     steps:
       # The steps of the old master.yml release job, unchanged.
-
-  tag-release:
-    needs: [release-check, deploy-production]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      # Wiz sensor, checkout (persist-credentials: false), then the
-      # "Create GitHub release" step from auth-service's release.yml.
-      # A backend has only master, so --latest is always true; drop the latest= line.
 ```
 
 Notes:
 
-- `deploy-production` needs only `release-check`, not `deploy-lrc`. LRC already runs on every push, and a failed LRC deploy must not hide a release. When the team wants LRC first, add `deploy-lrc` to `needs`.
+- Every deploy builds or pushes the image with the commit SHA as its tag. The SHA identifies what runs in each environment.
 - When the old `master.yml` pushes the image once and deploys several services (citadel-server pushes to ECR, runs migrations, then deploys each service), keep that job chain. Put `environment: production` on the first job, and keep `needs:` between them.
-- The tag job runs once, after every region succeeds. A failed region skips the tag; a re-run of the failed jobs then creates it.
-
-## changeset.yml (npm)
-
-auth-service's `changeset.yml` with the npm install steps. Copy the action pins from the repo.
-
-```yaml
-name: changeset
-
-# Every PR into master needs a changeset, unless it is a release PR or has the skip-changeset label.
-on:
-  pull_request:
-    branches: [master]
-    types: [opened, synchronize, reopened, labeled, unlabeled]
-
-permissions: {}
-
-jobs:
-  check:
-    if: >-
-      !startsWith(github.head_ref, 'changeset-release/')
-      && github.event.pull_request.user.login != 'dependabot[bot]'
-      && !contains(github.event.pull_request.labels.*.name, 'skip-changeset')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      # Wiz sensor
-      - name: Checkout
-        uses: actions/checkout@<pin>
-        with:
-          # changeset status compares the PR with the base branch.
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Use Node.js
-        uses: actions/setup-node@<pin>
-        with:
-          node-version-file: .nvmrc
-          cache: "npm"
-      - name: Install npm 12
-        run: npm install --global npm@<version>
-      - name: Install dependencies
-        run: npm ci
-      # fetch-depth: 0 already fetched origin/<base>. A second fetch fails without persisted credentials.
-      - name: Check for a changeset
-        run: npm exec --no -- changeset status --since="origin/${BASE_REF}"
-        env:
-          BASE_REF: ${{ github.base_ref }}
-```
-
-## release-pr.yml changes to torus-cli's file
-
-```yaml
-jobs:
-  release-pr:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Check the branch
-        run: |
-          if [[ "$GITHUB_REF_NAME" != master ]]; then
-            echo "::error::Run this workflow on master."
-            exit 1
-          fi
-      # Wiz sensor, then the torus-cli steps unchanged:
-      # checkout (fetch-depth: 0, persist-credentials: false), setup-node from .nvmrc,
-      # npm 12, npm ci, delete the old changeset-release/master branch with gh api
-      # (GH_TOKEN: github.token), changesets/action with version-script: npm run version-packages.
-```
+- A failed or rejected job skips the jobs after it. Re-run the failed job to continue that run.
+- To roll back, open an older successful run and re-run its production job. It deploys that run's commit.

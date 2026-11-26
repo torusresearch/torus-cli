@@ -34,7 +34,7 @@ A repository is a backend when it has one or more of these: a `Dockerfile`, a `d
 
 ## Overrides of the base skill
 
-- **No release PR and no version.** A backend publishes nothing and runs one version: the latest approved commit. Set `"private": true` in `package.json`. Do not add `release-pr` or `version-packages`, and do not ask for the GitHub setting that lets Actions open pull requests.
+- **No release PR and no version.** A backend publishes nothing and runs one version: the latest approved commit. Set `"private": true` in `package.json`. Do not add `release-pr` or `version-packages` for the service, and do not ask for the GitHub setting that lets Actions open pull requests. Exception: a repo that also publishes npm packages (fetch-node-details) keeps or adds `release-pr` and `version-packages` for those packages, as `torus-library-upgrade` describes.
 - **Changesets for the changelog only.** Keep or add private Changesets (`@changesets/cli` and the config in `torus-backend-ci-upgrade`'s reference). Each runtime change gets an entry. Nobody runs `changeset version`. `torus-backend-ci-upgrade` adds the changeset check, the PR comment, and the production changelog.
 - **Engines on patched Node releases.** Use the Node security releases, not a bare `>=24.22.0`. broadcast-channel-server uses `"node": ">=24.22.1 <25 || >=26.12.1"`, `.nvmrc` `26.12.1`, and CI matrix `["24.22.1", "26.12.1"]`. A plain `>=24.22.1` lets Node 25 and older 26 releases in, and those releases do not have the security fixes. Look up the current security releases during the run.
 - **No `npm pack` check in CI.** A private service does not ship a tarball.

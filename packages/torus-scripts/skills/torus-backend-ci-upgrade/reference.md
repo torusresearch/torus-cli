@@ -74,7 +74,8 @@ title="${TITLE:-Changes not in production yet}"
 
 if [[ -z "${PREV_SHA+set}" ]]; then
   PREV_SHA=""
-  for id in $(gh api "repos/${GITHUB_REPOSITORY}/deployments?environment=${PROD_ENVIRONMENT:-production}&per_page=30" --jq '.[].id'); do
+  # Every merge adds a production deployment that waits (one per region), so read all pages, newest first.
+  for id in $(gh api --paginate "repos/${GITHUB_REPOSITORY}/deployments?environment=${PROD_ENVIRONMENT:-production}&per_page=100" --jq '.[].id'); do
     state=$(gh api "repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses?per_page=1" --jq '.[0].state // empty')
     if [[ "$state" == success ]]; then
       PREV_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/deployments/${id}" --jq .sha)
@@ -216,8 +217,10 @@ jobs:
             echo
             PREV_SHA=$(git merge-base "origin/${BASE_REF}" HEAD) TITLE="Changes in this PR" ./scripts/prdChangelog.sh HEAD
           } > comment.md
-          id=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --paginate \
-            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- unreleased-changes -->"))) | .id' | head -1)
+          # Read every match first: `| head -1` would end gh early, and pipefail fails the step.
+          ids=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- unreleased-changes -->"))) | .id')
+          id="${ids%%$'\n'*}"
           if [[ -n "$id" ]]; then
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" -F body=@comment.md > /dev/null
           else
@@ -280,8 +283,6 @@ jobs:
   prd-changelog:
     needs: deploy-staging # deploy-lrc when the repo has no staging
     runs-on: ubuntu-latest
-    # A GitHub API error must not block a deploy.
-    continue-on-error: true
     permissions:
       contents: read
       deployments: read
@@ -296,6 +297,9 @@ jobs:
           persist-credentials: false
       - name: Write the production changelog
         id: changelog
+        # On the step, not the job: the job then succeeds, so a GitHub API error never skips production.
+        # The release then shows the last 20 commits, because prev stays empty.
+        continue-on-error: true
         run: ./scripts/prdChangelog.sh "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ github.token }}

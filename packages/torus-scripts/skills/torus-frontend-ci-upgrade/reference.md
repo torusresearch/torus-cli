@@ -7,7 +7,8 @@ The reference repository is [Web3Auth/auth-service](https://github.com/Web3Auth/
 | `.github/workflows/release.yml`    | Push to `master` or `v<major>`: validate, develop, release check, staging, production, tag |
 | `.github/workflows/deploy.yml`     | Reusable build and S3/CloudFront deploy for one environment                                |
 | `.github/workflows/release-pr.yml` | `workflow_dispatch`: opens the `changeset-release/<branch>` PR                             |
-| `.github/workflows/changeset.yml`  | PR check: a changeset is required                                                          |
+| `.github/workflows/changeset.yml`  | PR check: a changeset is required when the PR changes `RUNTIME_PATHS`                      |
+| `scripts/changesetCheck.sh`        | The path-aware changeset check, and `changesetCheck.test.sh` with 4 cases                  |
 | `.github/workflows/validate.yml`   | Adds the `Test release check` step                                                         |
 | `scripts/releaseCheck.sh`          | Writes `release`, `version`, `major` to `$GITHUB_OUTPUT`                                   |
 | `scripts/releaseCheck.test.sh`     | 7 cases against a temporary git repo                                                       |

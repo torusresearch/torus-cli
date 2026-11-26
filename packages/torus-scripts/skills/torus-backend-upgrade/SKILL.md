@@ -34,7 +34,8 @@ A repository is a backend when it has one or more of these: a `Dockerfile`, a `d
 
 ## Overrides of the base skill
 
-- **No release PR and no Changesets.** A backend publishes nothing and runs one version: the latest approved commit. Set `"private": true` in `package.json`. Do not add `release-pr`, Changesets, `version-packages`, or a changeset check, and do not ask for the GitHub setting that lets Actions open pull requests. A repo that already has `.changeset/` can keep it; record that nothing consumes it. `torus-backend-ci-upgrade` later sets up approval deploys without a version.
+- **No release PR and no version.** A backend publishes nothing and runs one version: the latest approved commit. Set `"private": true` in `package.json`. Do not add `release-pr` or `version-packages`, and do not ask for the GitHub setting that lets Actions open pull requests.
+- **Changesets for the changelog only.** Keep or add private Changesets (`@changesets/cli` and the config in `torus-backend-ci-upgrade`'s reference). Each runtime change gets an entry. Nobody runs `changeset version`. `torus-backend-ci-upgrade` adds the changeset check, the PR comment, and the production changelog.
 - **Engines on patched Node releases.** Use the Node security releases, not a bare `>=24.22.0`. broadcast-channel-server uses `"node": ">=24.22.1 <25 || >=26.12.1"`, `.nvmrc` `26.12.1`, and CI matrix `["24.22.1", "26.12.1"]`. A plain `>=24.22.1` lets Node 25 and older 26 releases in, and those releases do not have the security fixes. Look up the current security releases during the run.
 - **No `npm pack` check in CI.** A private service does not ship a tarball.
 - **Dependabot adds `docker`.** Add a `docker` ecosystem entry with the same weekly schedule and 3-day cooldown. Group GitHub Actions updates, and group npm minor and patch updates by dependency type. See [reference.md](reference.md).
@@ -121,7 +122,7 @@ See [reference.md](reference.md) for the job outlines.
 - One `ci.yml` named `Validate`. Triggers: `pull_request` and `workflow_call` with an optional `ref` input and an optional `WIZ_SENSOR_TOKEN` secret. Remove `any-branch.yml` and the copied test jobs.
 - The `test` job: Wiz sensor, checkout with `persist-credentials: false`, setup-node, npm 12, `npm ci`, `npm run harden:check`, `npm run check` (`vp check` also typechecks) when `torus-library-upgrade` is the base skill or `npm run typecheck` when `consensys-vertical-apps-backend-upgrade` is the base skill, `npm run build`, then `npm run test:ci` with `NODE_IMAGE=node:${{ matrix.node }}-alpine`.
 - The `docker` job: build the image, start the Compose dependencies with `--wait`, run the image, poll `/health`, and check that the user is not root. Use a `trap` that prints the container logs and removes the containers on exit.
-- No `release-notes` job: a backend has no changesets.
+- No `release-notes` job. The changeset check is a separate `changeset.yml` from `torus-backend-ci-upgrade`, and it requires an entry only for runtime changes.
 - Deploy workflows (`develop.yml`, `master.yml`) call `./.github/workflows/ci.yml` and pass `WIZ_SENSOR_TOKEN`. Add `concurrency` with `cancel-in-progress: false`. Add the Wiz sensor to every job. Use a region matrix instead of copied jobs.
 - Build for ECR with `docker build --provenance=false`. ECR rejects the provenance attestation that Docker 29 adds.
 - Quote every shell variable in deploy steps.

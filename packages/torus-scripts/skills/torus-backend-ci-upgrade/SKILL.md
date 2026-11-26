@@ -6,7 +6,8 @@ description: >-
   Environment approvals. Every merge to master deploys LRC, then waits for
   approval before staging (product team, when the repo has staging) and
   production (admin team). No release PR and no version bump, but a changelog:
-  a changeset entry for every runtime change, a PR comment with the changes not
+  a changeset entry for every change outside an allowlist (docs, CI, tests),
+  a PR comment with the changes not
   in production yet, a changelog before the production approval, and a GitHub
   Release for each production deploy. Use when the user asks to migrate a
   backend's CI or deploy process. Do not use it for a frontend app (use
@@ -34,7 +35,7 @@ A repo that also publishes npm packages (fetch-node-details) keeps its release P
 ## Target flow
 
 - `master` is the only trunk. Feature PRs go into `master`.
-- **Changelog entry.** A PR that changes what ships (source, Dockerfile, dependencies, migrations, config the service reads) adds a changeset: `npx changeset` (or `yarn changeset`). The `changeset` check fails without one. Docs, CI, and test-only PRs, Dependabot PRs, and PRs with the `skip-changeset` label need none. Nobody runs `changeset version`: the entries are the changelog.
+- **Changelog entry.** A PR adds a changeset (`npx changeset` or `yarn changeset`) unless every file it changes is on the `NO_CHANGESET_PATHS` allowlist: CI workflows, docs, tests, and CI-only scripts. The `changeset` check fails without one. It is an allowlist: a file that is not on it needs an entry, so a forgotten path fails the check instead of dropping a changelog entry silently. Dependabot PRs and PRs with the `skip-changeset` label need none. Nobody runs `changeset version`: the entries are the changelog.
 - **PR comment.** Each PR gets one comment, updated on every push: the changes merged to `master` but not in production yet, and the changes in this PR.
 - Every merge to `master` runs the tests, then deploys LRC. No approval.
 - After LRC succeeds, the same run waits for approval to deploy staging (product team), when the repo has a staging environment.
@@ -48,21 +49,21 @@ A repo that also publishes npm packages (fetch-node-details) keeps its release P
 1. Read every workflow in `.github/workflows/`, `package.json`, `.changeset/`, `.github/CODEOWNERS`, and `.github/dependabot.yml`. Write down for each environment: the branch, the ECR repository, the ECS cluster and services, the regions, the migration step, and the secrets.
 2. List the existing environments: `gh api repos/<org>/<repo>/environments --jq '.environments[].name'`. Reuse names that exist (citadel-server uses `lrc` and `prd`). Otherwise use `lrc`, `staging`, and `production`.
 3. Find the teams in CODEOWNERS. The admin team owns `*` and `.github/CODEOWNERS`. The product team owns `src/`. Get their ids: `gh api orgs/<org>/teams/<slug> --jq .id`.
-4. Write down the paths that ship. They become `RUNTIME_PATHS`, for example `^(src/|Dockerfile|package\.json|package-lock\.json|migrations/)`.
+4. Write down the paths that never change what ships: CI workflows, docs, tests, test-only config (for example `docker-compose-ci.yml`), and CI-only scripts. They become `NO_CHANGESET_PATHS`, starting from `^(\.github/|\.vscode/|docs/|test/|README\.md$|CHANGELOG\.md$)|(^|/)__tests__/|\.test\.([cm]?[jt]s|sh)$|(^|/)(changesetCheck|prdChangelog)\.sh$`. Keep `Dockerfile`, dependencies, migrations, and config the service reads off the list.
 
 ## Steps
 
 Create a branch from the current default branch. Do these steps in order.
 
 1. **No other dependency changes.** Check `git diff origin/<default-branch> -- package.json`: only `@changesets/cli` may be new.
-2. **Changesets for entries.** When `.changeset/` is missing, add `@changesets/cli` and the config from [reference.md](reference.md). Add `.changeset/README.md` that says: add an entry for every runtime change; nobody runs `changeset version`. Do not add `version-packages`.
-3. **Changeset check.** Copy `scripts/changesetCheck.sh` and `scripts/changesetCheck.test.sh` from auth-service without changes, and make both executable. Write `.github/workflows/changeset.yml` from [reference.md](reference.md) with this repo's `RUNTIME_PATHS`. Remove the `release-notes` job from `ci.yml`. Add a `Test changeset check` step to the `test` job in `ci.yml`. Create the label: `gh label create skip-changeset --description "PR needs no changeset"`.
+2. **Changesets for entries.** When `.changeset/` is missing, add `@changesets/cli` and the config from [reference.md](reference.md). Add `.changeset/README.md` that says: add an entry unless every changed file is on the allowlist; nobody runs `changeset version`. Do not add `version-packages`.
+3. **Changeset check.** Copy `scripts/changesetCheck.sh` and `scripts/changesetCheck.test.sh` from auth-service without changes, and make both executable. Write `.github/workflows/changeset.yml` from [reference.md](reference.md) with this repo's `NO_CHANGESET_PATHS`. Remove the `release-notes` job from `ci.yml`. Add a `Test changeset check` step to the `test` job in `ci.yml`. Create the label: `gh label create skip-changeset --description "PR needs no changeset"`.
 4. **Changelog script.** Copy `scripts/prdChangelog.sh` and `scripts/prdChangelog.test.sh` from [reference.md](reference.md), and make both executable. Add a `Test changelog` step to the `test` job in `ci.yml`.
 5. **PR comment.** Write `.github/workflows/unreleased.yml` from [reference.md](reference.md).
 6. **Deploy workflow.** Write `.github/workflows/deploy.yml` (workflow name `deploy`) from [reference.md](reference.md). Move the LRC job from `develop.yml` and the production region matrix from `master.yml` into it without changing their deploy steps, except: add `environment:` to each deploy job, chain the jobs with `needs:` (LRC, then staging, then `prd-changelog`, then production, then `release`), and set one `concurrency` group for each environment. Set `PROD_ENVIRONMENT` to the production environment name. Delete `develop.yml` and `master.yml`. Remove `ci-develop.yml`, `any-branch.yml`, or other copies of the same deploy.
 7. **No release PR and no version for the service.** Do not add `release-pr.yml`, a release check script, or a `version-packages` script for the service, and do not run `changeset version` for it. Exception: a repo that also publishes npm packages (fetch-node-details) keeps its `release-pr.yml`, `version-packages`, and Changesets for those packages. The same entries then feed both the npm changelog and the `prod-*` release notes.
 8. **Branch filters.** Use `master` in every workflow that names `develop` or `master`: `ci.yml`, `container-scan.yml` push branches, `security-code-scanner.yml`, and Dependabot `target-branch`.
-9. **Verify.** Run `./scripts/changesetCheck.test.sh` (4 cases pass) and `./scripts/prdChangelog.test.sh` (7 cases pass). Run `prdChangelog.sh` once against the real repo (`GITHUB_REPOSITORY=<org>/<repo> PROD_ENVIRONMENT=<name> GH_TOKEN=$(gh auth token) ./scripts/prdChangelog.sh origin/master`) and check that it finds the last production deployment. Parse every workflow file (`ruby -ryaml -e 'YAML.load_file(ARGV[0])' <file>`) and run the repo's format check. Run `actionlint` when it is installed. Then run every step of the repo's validate job locally, in the CI order: install with the lockfile frozen, harden check, type check, lint, format check, tests, build. In CI, the first failed step skips the steps after it, so a local run is the only way to see all failures at once.
+9. **Verify.** Run `./scripts/changesetCheck.test.sh` (7 cases pass) and `./scripts/prdChangelog.test.sh` (7 cases pass). Run `prdChangelog.sh` once against the real repo (`GITHUB_REPOSITORY=<org>/<repo> PROD_ENVIRONMENT=<name> GH_TOKEN=$(gh auth token) ./scripts/prdChangelog.sh origin/master`) and check that it finds the last production deployment. Parse every workflow file (`ruby -ryaml -e 'YAML.load_file(ARGV[0])' <file>`) and run the repo's format check. Run `actionlint` when it is installed. Then run every step of the repo's validate job locally, in the CI order: install with the lockfile frozen, harden check, type check, lint, format check, tests, build. In CI, the first failed step skips the steps after it, so a local run is the only way to see all failures at once.
 10. **PR.** Open the PR into the current default branch. Write the body as in **PR body** in [../torus-frontend-ci-upgrade/reference.md](../torus-frontend-ci-upgrade/reference.md), with these changes: LRC in place of develop, no release PR, no version row, a changelog row (changeset entries, PR comment, `prd-changelog`, GitHub Release), and no maintenance diagram. After each fix commit, update the PR body from the live body (`gh pr view --json body`), not from a saved draft, so that bot sections such as Cursor Bugbot stay as they are.
 
 ## GitHub settings
@@ -91,7 +92,7 @@ Make the `changeset` check required in the branch rules for `master`, or record 
 ## Done when
 
 - `develop.yml` and `master.yml` are gone. `deploy.yml` deploys LRC on every merge, shows the changelog before the production approval, deploys staging and production only after their approvals, and creates a `prod-*` GitHub Release.
-- `changeset.yml` requires an entry for runtime changes, and `unreleased.yml` comments on PRs.
+- `changeset.yml` requires an entry for every file that is not on the allowlist, and `unreleased.yml` comments on PRs.
 - `changesetCheck.test.sh` and `prdChangelog.test.sh` pass in CI.
 - No workflow bumps the service version, opens a release PR for the service, or runs `changeset version` for it. A repo that also publishes npm packages keeps its npm release PR.
 - The environments have the approvers and branch rules above, or the PR body lists them as not done.

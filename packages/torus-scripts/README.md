@@ -75,8 +75,8 @@ Pick the skills by repository type. The stack upgrade and the CI move are separa
 - `torus-frontend-upgrade` and `torus-backend-upgrade` are not full plans. They add the frontend or backend steps to `torus-library-upgrade`, and list where they replace its guidance.
 - `consensys-vertical-apps-backend-upgrade` does the repository rules only: GitHub policy files, engines, `.npmrc`, tsconfig profiles, Changesets, CI, and dependency updates. No Vite+ and no lint.
 - `torus-frontend-ci-upgrade` moves a frontend app's CI to one `master` trunk, Changesets release PRs, and GitHub Environment approvals, as in [Web3Auth/auth-service#406](https://github.com/Web3Auth/auth-service/pull/406).
-- `torus-backend-ci-upgrade` moves a backend's CI to one `master` trunk: every merge deploys LRC, then waits for approval before staging and production. No release PR and no version. The changelog is changeset entries: required for runtime changes, listed in a comment on each PR, shown before the production approval, and saved in a GitHub Release for each production deploy.
-- Both CI skills require a changeset only when a PR changes files that ship. Docs, CI, and test-only PRs need none.
+- `torus-backend-ci-upgrade` moves a backend's CI to one `master` trunk: every merge deploys LRC, then waits for approval before staging and production. No release PR and no version. The changelog is changeset entries: required unless a PR changes only allowlisted files, listed in a comment on each PR, shown before the production approval, and saved in a GitHub Release for each production deploy.
+- Both CI skills require a changeset unless every changed file is on the `NO_CHANGESET_PATHS` allowlist (CI workflows, docs, tests, CI-only scripts). Any other file, including build config, needs an entry.
 
 Run `torus-scripts-upgrade <path>` to inspect an old project without changing files. It reports unsupported custom behavior and exits nonzero for those cases. Run `vp migrate` at the workspace root, not inside each package, and review its changes. The diagnostic does not run `vp migrate` for you.
 

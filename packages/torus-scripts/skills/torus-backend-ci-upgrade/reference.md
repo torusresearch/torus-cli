@@ -22,8 +22,8 @@ Uses `scripts/changesetCheck.sh` from auth-service. The check needs no install.
 ```yaml
 name: changeset
 
-# A PR into master that changes files that ship needs a changeset.
-# Docs, CI, and test-only PRs, Dependabot PRs, and PRs with the skip-changeset label need none.
+# A PR into master needs a changeset unless every file it changes is on the allowlist below (docs, CI, tests).
+# Dependabot PRs and PRs with the skip-changeset label need none.
 on:
   pull_request:
     branches: [master]
@@ -51,8 +51,8 @@ jobs:
         run: ./scripts/changesetCheck.sh "origin/${BASE_REF}"
         env:
           BASE_REF: ${{ github.base_ref }}
-          # Files that ship in the image.
-          RUNTIME_PATHS: '<for example ^(src/|Dockerfile|package\.json|package-lock\.json|migrations/)>'
+          # Allowlist: files that never change what ships. Every other file needs a changeset.
+          NO_CHANGESET_PATHS: '^(\.github/|\.vscode/|docs/|test/|README\.md$|CHANGELOG\.md$)|(^|/)__tests__/|\.test\.([cm]?[jt]s|sh)$|(^|/)(changesetCheck|prdChangelog)\.sh$'
 ```
 
 ## scripts/prdChangelog.sh

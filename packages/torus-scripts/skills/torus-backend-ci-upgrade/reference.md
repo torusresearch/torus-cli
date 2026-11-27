@@ -89,6 +89,11 @@ fi
 
 echo "### ${title}"
 echo
+# A production commit that is not in this clone (for example from a deleted branch) cannot be compared.
+if [[ -n "$PREV_SHA" ]] && ! git cat-file -e "${PREV_SHA}^{commit}" 2>/dev/null; then
+  echo "_Production runs \`${PREV_SHA:0:7}\`, which is not in this clone._"
+  PREV_SHA=""
+fi
 if [[ -n "$PREV_SHA" ]]; then
   echo "\`${PREV_SHA:0:7}\` → \`${to:0:7}\`"
   # Walk the commits, not the two end points: `changeset version` (an npm release PR) deletes entries,
@@ -112,8 +117,15 @@ while read -r line; do
     .changeset/*.md)
       [[ "$seen" == *" $line "* ]] && continue
       seen+="$line "
-      # The entry text is everything after the second '---' line, read from the commit that added it.
-      text=$(git show "$commit:$line" | awk 'n >= 2 { print } /^---$/ { n++ }' | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//')
+      # Read the latest text: from <to-ref> when the entry still exists, else from just before the commit
+      # that deleted it (`changeset version`). Reading the adding commit would miss later edits.
+      if git cat-file -e "$to:$line" 2>/dev/null; then
+        source="$to"
+      else
+        source="$(git log -1 --format=%H "$PREV_SHA..$to" -- "$line")^"
+      fi
+      # The entry text is everything after the second '---' line.
+      text=$(git show "$source:$line" | awk 'n >= 2 { print } /^---$/ { n++ }' | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//')
       echo "- ${text} (\`${line}\`)"
       found=1
       ;;
@@ -155,6 +167,10 @@ prod=$(git rev-parse HEAD)
 printf -- '---\n"app": patch\n---\n\nFix the login\nredirect.\n' > .changeset/fix-login.md
 echo b > src/app.ts
 git add . && git commit -qm "fix: login redirect"
+printf -- '---\n"app": patch\n---\n\nFix logout.\n' > .changeset/fix-logout.md
+git add . && git commit -qm "fix: logout"
+printf -- '---\n"app": patch\n---\n\nFix logout on Safari.\n' > .changeset/fix-logout.md
+git add . && git commit -qm "docs: reword the logout entry"
 echo "more" >> .changeset/README.md
 git add . && git commit -qm "docs: changeset readme"
 
@@ -173,6 +189,8 @@ check "lists the changeset text on one line" "$out" "- Fix the login redirect. (
 check "lists the commits since production" "$out" "fix: login redirect"
 check "does not list the production commit" "$out" "chore: base" absent
 check "skips the changeset README" "$out" "README.md" absent
+check "shows the edited text of an entry" "$out" "- Fix logout on Safari. (\`.changeset/fix-logout.md\`)"
+check "does not show the old text of an edited entry" "$out" "- Fix logout. (" absent
 
 out=$(PREV_SHA="$(git rev-parse HEAD)" "$script" HEAD)
 check "nothing new after production" "$out" "- No changeset entries."
@@ -180,13 +198,17 @@ check "nothing new after production" "$out" "- No changeset entries."
 out=$(PREV_SHA="" "$script" HEAD)
 check "no production deployment yet" "$out" "No production deployment found"
 
+out=$(PREV_SHA="0123456789abcdef0123456789abcdef01234567" "$script" HEAD)
+check "a production commit not in the clone falls back" "$out" "which is not in this clone"
+
 out=$(PREV_SHA="$prod" TITLE="Changes in this PR" "$script" HEAD)
 check "custom title" "$out" "### Changes in this PR"
 
 # An npm release PR runs `changeset version`, which deletes the entry before production deploys.
-git rm -q .changeset/fix-login.md && git commit -qm "chore: release packages"
+git rm -q .changeset/fix-login.md .changeset/fix-logout.md && git commit -qm "chore: release packages"
 out=$(PREV_SHA="$prod" "$script" HEAD)
 check "an entry consumed by changeset version is still listed" "$out" "- Fix the login redirect. (\`.changeset/fix-login.md\`)"
+check "a consumed entry shows its edited text" "$out" "- Fix logout on Safari. (\`.changeset/fix-logout.md\`)"
 
 exit $((failures > 0))
 ```

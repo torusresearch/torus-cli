@@ -155,24 +155,6 @@ updates:
         update-types: ["minor", "patch"]
 ```
 
-## Changesets config
-
-```json
-{
-  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
-  "baseBranch": "develop",
-  "access": "restricted",
-  "privatePackages": {
-    "version": true,
-    "tag": false
-  },
-  "updateInternalDependencies": "patch",
-  "fixed": [],
-  "linked": [],
-  "ignore": []
-}
-```
-
 ## package.json scripts
 
 `serve`, `start`, `check`, and `test` use Vite+. When `consensys-vertical-apps-backend-upgrade` is the base skill, keep the repository's current commands for those scripts, do not add `check`, and run `typecheck` in CI.
@@ -186,9 +168,7 @@ updates:
   "typecheck": "tsc --noEmit",
   "harden:check": "harden check -p npm -l moderate",
   "test": "vp test run --config test/node.config.mts --coverage",
-  "test:ci": "docker compose -f docker-compose-ci.yml up --build --abort-on-container-exit --exit-code-from <app-service>",
-  "changeset": "changeset",
-  "version-packages": "changeset version && npm install --package-lock-only --ignore-scripts"
+  "test:ci": "docker compose -f docker-compose-ci.yml up --build --abort-on-container-exit --exit-code-from <app-service>"
 }
 ```
 
@@ -216,10 +196,6 @@ permissions:
 jobs:
   test: # matrix node: [<24 patch>, <26 patch>]; harden:check, check, build, test:ci with NODE_IMAGE
   docker: # docker build, compose up -d --wait <deps>, docker run, poll /health, id -u != 0, trap logs + cleanup
-  release-notes:
-    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !startsWith(github.head_ref, 'dependabot/')
-    # checkout with ref: ${{ inputs.ref || github.sha }}, fetch-depth: 0, persist-credentials: false
-    # run: npm exec --no -- changeset status --since="origin/${BASE_REF}"
 ```
 
 Deploy workflows:
